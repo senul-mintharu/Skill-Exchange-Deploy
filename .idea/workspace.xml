@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="f4266368-430d-4413-be70-0c41a90e9d37" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/backend/WedaLK/demo/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/WedaLK/demo/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/WedaLK/demo/src/main/java/lk/wedalk/auth/controller/AuthController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/WedaLK/demo/src/main/java/lk/wedalk/auth/controller/AuthController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/WedaLK/demo/src/main/java/lk/wedalk/auth/dto/AuthResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/WedaLK/demo/src/main/java/lk/wedalk/auth/dto/AuthResponse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/WedaLK/demo/src/main/java/lk/wedalk/auth/dto/LoginRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/WedaLK/demo/src/main/java/lk/wedalk/auth/dto/LoginRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/WedaLK/demo/src/main/java/lk/wedalk/auth/dto/RegisterRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/WedaLK/demo/src/main/java/lk/wedalk/auth/dto/RegisterRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/WedaLK/demo/src/main/java/lk/wedalk/auth/service/AuthService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/WedaLK/demo/src/main/java/lk/wedalk/auth/service/AuthService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/WedaLK/demo/src/main/java/lk/wedalk/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/WedaLK/demo/src/main/java/lk/wedalk/config/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/WedaLK/demo/src/main/java/lk/wedalk/requests/service/ServiceRequestService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/WedaLK/demo/src/main/java/lk/wedalk/requests/service/ServiceRequestService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/WedaLK/demo/src/main/java/lk/wedalk/users/model/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/WedaLK/demo/src/main/java/lk/wedalk/users/model/User.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/WedaLK/demo/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/backend/WedaLK/demo/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/WedaLK/docs/1_SERVICE_REQUEST_IMPLEMENTATION.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/WedaLK/docs/2_Codex_1st_Review.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/WedaLK/docs/3_DATABASE_CONNECTION_TEST.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/WedaLK/docs/4_AUTHENTICATION_GUIDE.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/App.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/App.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/components/common/ProtectedRoute.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/common/ProtectedRoute.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/pages/auth/LoginPage.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/auth/LoginPage.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/pages/seeker/CreateRequestPage.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/seeker/CreateRequestPage.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/pages/seeker/MyRequestsPage.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/seeker/MyRequestsPage.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/services/apiClient.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/services/apiClient.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/services/authService.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/services/authService.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/services/requestService.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/services/requestService.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/utils/storage.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/utils/storage.js" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;HirushaSipsara&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/VimukthiHerath/Skill-Exchange.git&quot;,
+    &quot;accountId&quot;: &quot;7f6f8322-7f72-40f6-8194-ce06e6e99ad4&quot;
+  }
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 2
+}</component>
+  <component name="ProjectId" id="39iTm9jhcodMzVCWWKBtw38rWLR" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "SCRUM-13-Seeker-want-to-post-a-service-request-with-description-and-categ…spond",
+    "last_opened_file_path": "F:/Projects/Skill-Exchange",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-fbdcb00ec9e3-intellij.indexing.shared.core-IU-251.27812.49" />
+        <option value="bundled-js-predefined-d6986cc7102b-09060db00ec0-JavaScript-IU-251.27812.49" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="f4266368-430d-4413-be70-0c41a90e9d37" name="Changes" comment="" />
+      <created>1771178049077</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1771178049077</updated>
+      <workItem from="1771178050730" duration="26000" />
+      <workItem from="1771244164621" duration="105000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>

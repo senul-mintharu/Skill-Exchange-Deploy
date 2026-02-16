@@ -1,22 +1,250 @@
-/**
- * RequestDetailsPage.jsx — Service Request Detail Page
- *
- * This file should contain:
- * - Full details of a single service request
- * - URL param: useParams() to get request ID
- * - Sections:
- *     - Request info: title, description, category, district, address
- *     - Budget range, preferred date, status badge
- *     - Request images (if any)
- *     - Assigned worker info (if status === ASSIGNED)
- *     - Quotes section: list of QuoteCard components
- *         - Accept/reject buttons for seeker (if status === OPEN)
- *     - Action buttons based on status:
- *         - OPEN: Cancel request
- *         - ASSIGNED: Mark as Completed / Mark as Not Completed
- *         - COMPLETED: Leave a review (if not already reviewed)
- * - Fetch request details: requestService.getRequestById(id)
- * - Fetch quotes: quoteService.getQuotesByRequest(id)
- *
- * Export: default RequestDetailsPage component
- */
+import React, { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import Navbar from '../../components/common/Navbar';
+import { getRequestById } from '../../services/requestService';
+import './RequestDetailsPage.css';
+
+const RequestDetailsPage = () => {
+    const { requestId } = useParams();
+    
+    const [request, setRequest] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        const fetchRequestDetails = async () => {
+            try {
+                const data = await getRequestById(requestId);
+                // Transform API data to match UI needs (handling missing fields with defaults)
+                const transformedRequest = {
+                    ...data,
+                    postedDate: new Date(data.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                    }),
+                    // Default values for fields potentially missing in backend
+                    urgency: data.urgency || 'Standard',
+                    budget: data.budget || 'Not specified',
+                    verification: 'Standard Request',
+                    photos: data.photos || [], // Assuming backend might return photos later
+                    timeline: [
+                        { status: "Request Posted", date: new Date(data.createdAt).toLocaleDateString(), active: true, completed: true },
+                        { status: "Receiving Quotes", date: "In Progress", active: true, completed: false },
+                        { status: "Hire Professional", date: "", active: false, completed: false },
+                        { status: "Job Completion", date: "", active: false, completed: false }
+                    ]
+                };
+                setRequest(transformedRequest);
+            } catch (err) {
+                console.error("Error fetching request details:", err);
+                setError('Failed to load request details. Please try again.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (requestId) {
+            fetchRequestDetails();
+        }
+    }, [requestId]);
+
+    if (loading) {
+        return (
+            <div className="page-wrapper">
+                <Navbar variant="portal" />
+                <div className="rd-loading">
+                    <div className="rd-spinner"></div>
+                    <p>Loading details...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error || !request) {
+        return (
+            <div className="page-wrapper">
+                <Navbar variant="portal" />
+                <div className="rd-error">
+                    <h3>Something went wrong</h3>
+                    <p>{error || 'Request not found'}</p>
+                    <Link to="/my-requests" className="rd-btn-secondary">Back to My Requests</Link>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="page-wrapper">
+            <Navbar variant="portal" />
+            
+            <main className="rd-container">
+                <div className="rd-breadcrumb">
+                    <Link to="/my-requests" className="rd-back-link">
+                        <span className="material-icons">arrow_back</span> Back to My Requests
+                    </Link>
+                </div>
+
+                <div className="rd-grid">
+                    {/* Main Content Column */}
+                    <div className="rd-main-col">
+                        <div className="rd-card rd-details-card">
+                            <div className="rd-card-header">
+                                <div className="rd-meta-group">
+                                    <span className="rd-id">#{request.id}</span>
+                                    <span className="rd-divider">|</span>
+                                    <span className="rd-date">Posted {request.postedDate}</span>
+                                </div>
+                                <span className="rd-status-badge">{request.status}</span>
+                            </div>
+                            
+                            <div className="rd-card-body">
+                                <div className="rd-title-row">
+                                    <div>
+                                        {/* Use title if available, otherwise category as title */}
+                                        <h1 className="rd-title">{request.title || request.category}</h1>
+                                        <p className="rd-category">{request.category}</p>
+                                    </div>
+                                    <div className="rd-actions">
+                                        <button className="rd-btn rd-btn-secondary">
+                                            ✏️ Edit
+                                        </button>
+                                        <button className="rd-btn rd-btn-danger">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="rd-info-grid">
+                                    <div className="rd-info-item">
+                                        <div className="rd-info-icon">
+                                            <span className="rd-info-emoji">⏱️</span>
+                                        </div>
+                                        <div>
+                                            <p className="rd-label">Urgency</p>
+                                            <p className="rd-value">{request.urgency}</p>
+                                        </div>
+                                    </div>
+                                    <div className="rd-info-item">
+                                        <div className="rd-info-icon">
+                                            <span className="rd-info-emoji">💰</span>
+                                        </div>
+                                        <div>
+                                            <p className="rd-label">Budget</p>
+                                            <p className="rd-value">{request.budget}</p>
+                                        </div>
+                                    </div>
+                                    <div className="rd-info-item">
+                                        <div className="rd-info-icon">
+                                            <span className="rd-info-emoji">📍</span>
+                                        </div>
+                                        <div>
+                                            <p className="rd-label">Location</p>
+                                            <p className="rd-value">{request.locationArea}</p>
+                                        </div>
+                                    </div>
+                                    <div className="rd-info-item">
+                                        <div className="rd-info-icon">
+                                            <span className="rd-info-emoji">🛡️</span>
+                                        </div>
+                                        <div>
+                                            <p className="rd-label">Verification</p>
+                                            <p className="rd-value">{request.verification}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="rd-description-section">
+                                    <h3>Description</h3>
+                                    <p className="rd-description">{request.description}</p>
+                                </div>
+
+                                <div className="rd-photos-section">
+                                    <h4>Attached Photos</h4>
+                                    <div className="rd-photos-grid">
+                                        {request.photos.map((photo, index) => (
+                                            <div key={index} className="rd-photo-wrapper">
+                                                <img src={photo.src} alt={photo.alt} className="rd-photo" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Quotes Section */}
+                        <div className="rd-card rd-quotes-card">
+                            <div className="rd-quotes-header">
+                                <h3>📜 Quotes Received</h3>
+                                <span className="rd-quotes-count">{request.quotesCount}</span>
+                            </div>
+                            
+                            <div className="rd-quotes-body">
+                                <div className="rd-quotes-empty">
+                                    <div className="rd-empty-icon-wrapper">
+                                        <span className="rd-empty-emoji">⏳</span>
+                                        <span className="rd-search-badge">🔍</span>
+                                    </div>
+                                    <h4>Awaiting Quotes</h4>
+                                    <p>We've sent your request to verified professionals in {request.locationArea}. Hang tight! Professionals usually respond with quotes within 24 hours.</p>
+                                    
+                                    <div className="rd-tip-box">
+                                        <span className="rd-tip-emoji">💡</span>
+                                        <div>
+                                            <p className="rd-tip-title">Tip for faster responses:</p>
+                                            <p className="rd-tip-text">Adding more photos of the problem area can help professionals give you a more accurate quote faster.</p>
+                                            <button className="rd-link-btn">Add More Photos</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Sidebar Column */}
+                    <div className="rd-sidebar-col">
+                        <div className="rd-card rd-timeline-card">
+                            <h3>📈 Request Timeline</h3>
+                            <div className="rd-timeline">
+                                <div className="rd-timeline-line"></div>
+                                {request.timeline.map((item, index) => (
+                                    <div key={index} className={`rd-timeline-item ${item.active ? 'active' : ''} ${item.completed ? 'completed' : ''}`}>
+                                        <div className="rd-timeline-marker">
+                                            {item.completed ? '✓' : index + 1}
+                                        </div>
+                                        <div className="rd-timeline-content">
+                                            <p className="rd-timeline-status">{item.status}</p>
+                                            {item.date && <p className="rd-timeline-date">{item.date}</p>}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="rd-card rd-map-card">
+                            <div className="rd-map-placeholder">
+                                <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlr0JM-MPQoAegLZS8W5LRqAinPbVNOYG4ZUju8ufz_vQLUtBcrad_uK9K3ujh9j4DHa8-Za85pg4sCDAOEnnw6xvVfgWitViKwAF90TCJGJ5_xgPLIRczXRB-QpjrpDzerBjh6ABsAlpD8ogpDkHsVhcHWKysFeD1SyuxpFeVU_R71wQT4KtNrUsfj9mb7Bbz8gpSfFQQm7Ia-jcUmfNl6kt3MJLVGggG2b7A2xw4L8My4yMCyH7oYR-Y6iaSf9mXsUeDWSCOX8c" alt="Map" />
+                                <div className="rd-map-overlay">
+                                    <p className="rd-map-label">Service Location</p>
+                                    <p className="rd-map-value">{request.locationArea}</p>
+                                </div>
+                            </div>
+                            <div className="rd-map-footer">
+                                <span className="rd-verified-icon">🛡️</span>
+                                <span>Professionals in this area are verified</span>
+                            </div>
+                        </div>
+
+                        <div className="rd-help-card">
+                            <h3>Need Help?</h3>
+                            <p>Our support team is available 24/7 to assist with your request.</p>
+                            <button className="rd-support-btn">Contact Support</button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    );
+};
+
+export default RequestDetailsPage;

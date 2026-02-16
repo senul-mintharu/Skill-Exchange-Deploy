@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './Navbar.css';
 
-const Navbar = () => {
+const Navbar = ({ variant = 'landing' }) => {
     const [scrolled, setScrolled] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -29,9 +29,11 @@ const Navbar = () => {
 
     const closeMobile = () => setMobileOpen(false);
 
+    const isPortal = variant === 'portal';
+
     return (
         <>
-            <nav className={`navbar ${scrolled ? 'navbar--scrolled' : ''}`} id="main-navbar">
+            <nav className={`navbar ${scrolled ? 'navbar--scrolled' : ''} ${isPortal ? 'navbar--portal' : ''}`} id="main-navbar">
                 <div className="navbar__inner container">
                     {/* Logo */}
                     <Link to="/" className="navbar__logo" onClick={closeMobile}>
@@ -41,15 +43,31 @@ const Navbar = () => {
                         </span>
                     </Link>
 
-                    {/* Desktop Nav — matches the photo layout */}
+                    {/* Desktop Nav */}
                     <div className="navbar__right">
-                        <a href="#hero" className="navbar__link">Home</a>
-                        <a href="#how-it-works" className="navbar__link">How It Works</a>
-                        <a href="#services" className="navbar__link">Services</a>
-                        <Link to="/login" className="navbar__link">Sign up / Log in</Link>
-                        <Link to="/register" className="btn btn-sm btn-secondary navbar__btn-tasker">
-                            Become a Tasker
-                        </Link>
+                        {!isPortal ? (
+                            <>
+                                <a href="#hero" className="navbar__link">Home</a>
+                                <a href="#how-it-works" className="navbar__link">How It Works</a>
+                                <a href="#services" className="navbar__link">Services</a>
+                                <Link to="/login" className="navbar__link">Sign up / Log in</Link>
+                                <Link to="/register" className="btn btn-sm btn-secondary navbar__btn-tasker">
+                                    Become a Tasker
+                                </Link>
+                            </>
+                        ) : (
+                            <>
+                                <Link to="/" className="navbar__link">Dashboard</Link>
+                                <Link to="/my-requests" className="navbar__link active">My Requests</Link>
+                                <Link to="#" className="navbar__link">Messages</Link>
+                                <div className="navbar__portal-actions">
+                                    <button className="navbar__icon-btn">
+                                        <span className="navbar__emoji">🔔</span>
+                                    </button>
+                                    <div className="navbar__avatar">U</div>
+                                </div>
+                            </>
+                        )}
                     </div>
 
                     {/* Hamburger */}
@@ -75,15 +93,32 @@ const Navbar = () => {
             {/* Mobile Drawer */}
             <div className={`navbar__drawer ${mobileOpen ? 'navbar__drawer--open' : ''}`} id="mobile-drawer">
                 <ul className="navbar__drawer-links">
-                    <li><a href="#hero" className="navbar__drawer-link" onClick={closeMobile}>Home</a></li>
-                    <li><a href="#how-it-works" className="navbar__drawer-link" onClick={closeMobile}>How It Works</a></li>
-                    <li><a href="#services" className="navbar__drawer-link" onClick={closeMobile}>Services</a></li>
-                    <li><Link to="/login" className="navbar__drawer-link" onClick={closeMobile}>Sign up / Log in</Link></li>
+                    {!isPortal ? (
+                        <>
+                            <li><a href="#hero" className="navbar__drawer-link" onClick={closeMobile}>Home</a></li>
+                            <li><a href="#how-it-works" className="navbar__drawer-link" onClick={closeMobile}>How It Works</a></li>
+                            <li><a href="#services" className="navbar__drawer-link" onClick={closeMobile}>Services</a></li>
+                            <li><Link to="/login" className="navbar__drawer-link" onClick={closeMobile}>Sign up / Log in</Link></li>
+                        </>
+                    ) : (
+                        <>
+                            <li><Link to="/" className="navbar__drawer-link" onClick={closeMobile}>Dashboard</Link></li>
+                            <li><Link to="/my-requests" className="navbar__drawer-link" onClick={closeMobile}>My Requests</Link></li>
+                            <li><Link to="#" className="navbar__drawer-link" onClick={closeMobile}>Messages</Link></li>
+                        </>
+                    )}
                 </ul>
                 <div className="navbar__drawer-actions">
-                    <Link to="/register" className="btn btn-primary" onClick={closeMobile} style={{ width: '100%' }}>
-                        Become a Tasker
-                    </Link>
+                    {!isPortal ? (
+                        <Link to="/register" className="btn btn-primary" onClick={closeMobile} style={{ width: '100%' }}>
+                            Become a Tasker
+                        </Link>
+                    ) : (
+                        <div className="navbar__drawer-profile">
+                            <div className="navbar__avatar">U</div>
+                            <span className="navbar__username">User</span>
+                        </div>
+                    )}
                 </div>
             </div>
         </>
