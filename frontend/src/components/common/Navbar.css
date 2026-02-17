@@ -239,18 +239,42 @@
     position: sticky;
 }
 
-.navbar--portal .navbar__logo-text,
-.navbar--portal .navbar__link {
+.navbar--portal .navbar__logo-text {
     color: white;
 }
 
-.navbar--portal .navbar__link:hover {
-    color: rgba(255, 255, 255, 0.8);
+.navbar--portal .navbar__link {
+    position: relative;
+    color: white;
+    padding-bottom: 4px; /* Space for underline */
+}
+
+.navbar--portal .navbar__link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: white;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.navbar--portal .navbar__link:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
+.navbar--portal .navbar__link.active::after {
+    transform: scaleX(1);
+    transform-origin: left;
 }
 
 .navbar--portal .navbar__link.active {
     font-weight: 600;
-    border-bottom: 2px solid white;
 }
 
 .navbar__portal-actions {

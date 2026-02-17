@@ -24,6 +24,7 @@ function App() {
         <Route path="/create-request" element={<CreateRequestPage />} />
         <Route path="/my-requests" element={<MyRequestsPage />} />
         <Route path="/my-requests/:requestId" element={<RequestDetailsPage />} />
+        <Route path="/requests/:requestId" element={<RequestDetailsPage />} />
         <Route path="/find-work" element={<FindWorkPage />} />
       </Routes>
     </BrowserRouter>
