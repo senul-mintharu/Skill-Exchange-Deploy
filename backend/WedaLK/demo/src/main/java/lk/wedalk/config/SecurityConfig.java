@@ -1,20 +1,36 @@
 package lk.wedalk.config;
 
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+
 /**
- * SecurityConfig.java — Spring Security Configuration (Sprint 2/3)
+ * SecurityConfig.java — Spring Security Configuration (DISABLED)
  *
- * This file should contain:
- * - @Configuration and @EnableWebSecurity annotations
- * - SecurityFilterChain bean defining HTTP security rules
- * - Password encoder bean (BCryptPasswordEncoder)
- * - JWT filter registration (when implementing token-based auth)
- * - Endpoint authorization rules:
- *     - Public: /api/auth/**, /api/health
- *     - Authenticated: /api/requests/**, /api/quotes/**, etc.
- *     - Admin only: /api/admin/**
- * - CSRF disabled for stateless REST API
- * - Session management set to STATELESS
- *
- * Note: This will be implemented in Sprint 2/3 when authentication is added.
- *       For Sprint 1, you may permit all requests.
+ * Authentication is disabled for development.
+ * All endpoints are publicly accessible.
  */
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(csrf -> csrf.disable()) // Disable CSRF for REST API
+                .authorizeHttpRequests(auth -> auth
+                        .anyRequest().permitAll() // Allow all requests without authentication
+                );
+
+        return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+}

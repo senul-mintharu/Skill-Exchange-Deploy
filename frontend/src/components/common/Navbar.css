@@ -230,6 +230,82 @@
     margin-top: auto;
 }
 
+/* ========== Portal Styles ========== */
+.navbar--portal {
+    background: linear-gradient(135deg, #2c666d 0%, #1f4a50 100%);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    position: sticky;
+}
+
+.navbar--portal .navbar__logo-text,
+.navbar--portal .navbar__link {
+    color: white;
+}
+
+.navbar--portal .navbar__link:hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.navbar--portal .navbar__link.active {
+    font-weight: 600;
+    border-bottom: 2px solid white;
+}
+
+.navbar__portal-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-left: 1rem;
+}
+
+.navbar__icon-btn {
+    padding: 0.5rem;
+    border-radius: 50%;
+    color: white;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.navbar__emoji {
+    font-size: 1.25rem;
+}
+
+.navbar__avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2C666E, #3d8b94);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 0.875rem;
+    border: 2px solid #2C666E;
+    box-shadow: 0 0 0 2px white;
+}
+
+.navbar__drawer-profile {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: var(--radius-md);
+}
+
+.navbar__username {
+    font-weight: 600;
+    color: var(--dark);
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 768px) {
     .navbar__right {

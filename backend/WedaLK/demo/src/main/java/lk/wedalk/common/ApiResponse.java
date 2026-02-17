@@ -1,20 +1,29 @@
 package lk.wedalk.common;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 /**
  * ApiResponse.java — Standard API Response Wrapper
  *
- * This file should contain:
- * - A generic class ApiResponse<T> used to wrap all API responses
- * - Fields:
- *     - boolean success   — whether the request was successful
- *     - String message    — a human-readable message (e.g., "Request created successfully")
- *     - T data            — the response payload (can be null for error responses)
- * - Static factory methods for convenience:
- *     - ApiResponse.success(data, message)
- *     - ApiResponse.error(message)
- * - Use Lombok @Data, @AllArgsConstructor, @NoArgsConstructor for brevity
- *
- * Purpose:
- *   Provides a consistent JSON response format across all endpoints.
- *   Example: { "success": true, "message": "OK", "data": { ... } }
+ * Provides a consistent JSON response format across all endpoints.
+ * Example: { "success": true, "message": "OK", "data": { ... } }
  */
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class ApiResponse<T> {
+
+    private boolean success;
+    private String message;
+    private T data;
+
+    public static <T> ApiResponse<T> success(T data, String message) {
+        return new ApiResponse<>(true, message, data);
+    }
+
+    public static <T> ApiResponse<T> error(String message) {
+        return new ApiResponse<>(false, message, null);
+    }
+}

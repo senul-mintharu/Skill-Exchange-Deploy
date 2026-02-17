@@ -3,14 +3,17 @@ package lk.wedalk.common.exceptions;
 /**
  * NotFoundException.java — Resource Not Found Exception
  *
- * This file should contain:
- * - A custom exception class extending RuntimeException
- * - Constructor accepting a message string (e.g., "User not found with id: 5")
- * - Optionally, a constructor accepting entity name + field + value for generic
- * messages
- *
- * Purpose:
  * Thrown when a requested resource (user, request, quote, etc.) does not exist.
  * Should be caught by a @ControllerAdvice global exception handler and return
  * HTTP 404.
  */
+public class NotFoundException extends RuntimeException {
+
+    public NotFoundException(String message) {
+        super(message);
+    }
+
+    public NotFoundException(String entityName, String field, Object value) {
+        super(String.format("%s not found with %s: %s", entityName, field, value));
+    }
+}

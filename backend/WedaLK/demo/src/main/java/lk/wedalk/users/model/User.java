@@ -1,26 +1,68 @@
 package lk.wedalk.users.model;
 
+import jakarta.persistence.*;
+import lk.wedalk.common.enums.Role;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
 /**
  * User.java — User JPA Entity
  *
- * This file should contain:
- * - @Entity, @Table(name = "users") annotations
- * - Fields:
- * - Long id — @Id, @GeneratedValue (primary key)
- * - String fullName — user's full name
- * - String email — unique email, used for login
- * - String password — hashed password (BCrypt)
- * - String phone — contact number
- * - String district — district in Sri Lanka (e.g., Colombo, Kandy)
- * - Role role — @Enumerated(EnumType.STRING) — SEEKER, WORKER, or ADMIN
- * - boolean isSuspended — whether the account is suspended by admin
- * - LocalDateTime createdAt — @CreationTimestamp
- * - LocalDateTime updatedAt — @UpdateTimestamp
- * - Lombok: @Data, @NoArgsConstructor, @AllArgsConstructor, @Builder
- *
- * Relationships:
- * - One-to-One: WorkerProfile (if role == WORKER)
- * - One-to-Many: ServiceRequest (as seeker)
- * - One-to-Many: Quotation (as worker)
- * - One-to-Many: Review (as reviewer and reviewee)
+ * Represents a user in the system (Seeker, Worker, or Admin).
  */
+@Entity
+@Table(name = "users")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 100)
+    private String fullName;
+
+    @Column(nullable = false, unique = true, length = 100)
+    private String email;
+
+    @Column(nullable = false)
+    private String password;
+
+    @Column(length = 20)
+    private String phone;
+
+    @Column(length = 100)
+    private String district;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Role role;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean isSuspended = false;
+
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+}

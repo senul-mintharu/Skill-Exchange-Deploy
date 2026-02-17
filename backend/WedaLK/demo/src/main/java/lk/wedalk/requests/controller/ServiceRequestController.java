@@ -1,21 +1,66 @@
 package lk.wedalk.requests.controller;
 
+import jakarta.validation.Valid;
+import lk.wedalk.common.ApiResponse;
+import lk.wedalk.common.enums.ServiceCategory;
+import lk.wedalk.requests.dto.RequestCreateRequest;
+import lk.wedalk.requests.dto.RequestResponse;
+import lk.wedalk.requests.service.ServiceRequestService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
 /**
  * ServiceRequestController.java — Service Request REST Controller
  *
- * This file should contain:
- * - @RestController, @RequestMapping("/api/requests") annotations
- * - Inject ServiceRequestService
- * - Endpoints:
- * - POST /api/requests — Create a new service request (seeker)
- * - GET /api/requests/{id} — Get request by ID
- * - GET /api/requests/my — Get current seeker's requests
- * - GET /api/requests/open — Browse open requests (workers)
- * - GET /api/requests/search?district=&category= — Search requests
- * - PATCH /api/requests/{id}/status — Update request status
- * - PATCH /api/requests/{id}/cancel — Cancel request (seeker)
- * - All endpoints return ApiResponse<RequestResponse>
- *
- * Purpose:
  * Exposes service request CRUD and search APIs.
+ * Authentication is disabled - all endpoints are publicly accessible.
  */
+@RestController
+@RequestMapping("/api/requests")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:3000") // Allow frontend access
+public class ServiceRequestController {
+
+    private final ServiceRequestService serviceRequestService;
+
+    @PostMapping
+    public ResponseEntity<ApiResponse<RequestResponse>> createRequest(
+            @Valid @RequestBody RequestCreateRequest request,
+            @RequestParam(required = false, defaultValue = "1") Long seekerId) {
+        // For now, accept seekerId as parameter or use default test user
+        RequestResponse response = serviceRequestService.createRequest(seekerId, request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(response, "Service request created successfully"));
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<ApiResponse<List<RequestResponse>>> getMyRequests(
+            @RequestParam(required = false, defaultValue = "1") Long seekerId) {
+        List<RequestResponse> requests = serviceRequestService.getMyRequests(seekerId);
+        return ResponseEntity.ok(ApiResponse.success(requests, "Requests retrieved successfully"));
+    }
+
+    @GetMapping("/open")
+    public ResponseEntity<ApiResponse<List<RequestResponse>>> getOpenRequests() {
+        List<RequestResponse> requests = serviceRequestService.getOpenRequests();
+        return ResponseEntity.ok(ApiResponse.success(requests, "Open requests retrieved successfully"));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<RequestResponse>> getRequestById(@PathVariable Long id) {
+        RequestResponse request = serviceRequestService.getRequestById(id);
+        return ResponseEntity.ok(ApiResponse.success(request, "Request retrieved successfully"));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<RequestResponse>>> searchRequests(
+            @RequestParam(required = false) String locationArea,
+            @RequestParam(required = false) ServiceCategory category) {
+        List<RequestResponse> requests = serviceRequestService.searchRequests(locationArea, category);
+        return ResponseEntity.ok(ApiResponse.success(requests, "Search completed successfully"));
+    }
+}
