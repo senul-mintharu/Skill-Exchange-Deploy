@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { createRequest } from '../../services/requestService';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { createRequest, updateRequest } from '../../services/requestService';
 import './CreateRequestPage.css';
 import Navbar from '../../components/common/Navbar';
 
@@ -12,19 +12,33 @@ import Navbar from '../../components/common/Navbar';
  */
 const CreateRequestPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    
+    // Check if we are in "Edit Mode"
+    const isEditMode = location.state && location.state.requestToEdit;
+    const requestToEdit = isEditMode ? location.state.requestToEdit : null;
+
     const [currentStep, setCurrentStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
 
     const [formData, setFormData] = useState({
-        category: '',
-        locationArea: '',
-        description: '',
-        urgency: 'MEDIUM'
+        category: requestToEdit?.category || '',
+        locationArea: requestToEdit?.locationArea || '',
+        description: requestToEdit?.description || '',
+        urgency: requestToEdit?.urgency || 'MEDIUM', // Changed from 'Standard' to 'MEDIUM' to match existing options
+        budget: requestToEdit?.budget || '' // Added budget field
     });
 
     const [errors, setErrors] = useState({});
+
+    // Populate form if editing (effect for safety, though initial state handles most)
+    useEffect(() => {
+        if (isEditMode) {
+             // Ensure step is set correctly if needed, or just let users flow through
+        }
+    }, [isEditMode]);
 
     // Category options with icons
     const categories = [
@@ -72,6 +86,8 @@ const CreateRequestPage = () => {
             } else if (formData.description.length > 2000) {
                 newErrors.description = 'Description must not exceed 2000 characters';
             }
+            // Add budget validation if needed for step 2, or a new step
+            // if (!formData.budget) newErrors.budget = 'Budget is required';
         }
 
         setErrors(newErrors);
@@ -91,20 +107,51 @@ const CreateRequestPage = () => {
     };
 
     const handleSubmit = async () => {
+        // Final validation before submission
+        if (!formData.description || !formData.locationArea || !formData.category || !formData.urgency) {
+            setError('Please fill in all required details before submitting.');
+            return;
+        }
+        // Assuming budget is also required for submission, add validation here if not part of a step
+        if (!formData.budget) {
+            setError('Please provide a budget for your request.');
+            return;
+        }
+
         setError('');
         setLoading(true);
 
         try {
-            await createRequest(formData);
-            setSuccess(true);
-            setTimeout(() => {
-                navigate('/my-requests');
-            }, 2000);
+            if (isEditMode) {
+                await updateRequest(requestToEdit.id, {
+                    category: formData.category,
+                    locationArea: formData.locationArea, // Use locationArea as per original formData
+                    description: formData.description,
+                    urgency: formData.urgency,
+                    budget: formData.budget
+                });
+                setSuccess(true);
+                setTimeout(() => {
+                    navigate(`/my-requests/${requestToEdit.id}`);
+                }, 2000);
+            } else {
+                await createRequest({
+                    category: formData.category,
+                    locationArea: formData.locationArea, // Use locationArea as per original formData
+                    description: formData.description,
+                    urgency: formData.urgency,
+                    budget: formData.budget
+                });
+                setSuccess(true);
+                setTimeout(() => {
+                    navigate('/my-requests');
+                }, 2000);
+            }
         } catch (err) {
-            console.error('Error creating request:', err);
+            console.error('Error creating/updating request:', err);
             setError(
                 err.response?.data?.message ||
-                'Failed to create request. Please try again.'
+                `Failed to ${isEditMode ? 'update' : 'create'} request. Please try again.`
             );
         } finally {
             setLoading(false);
@@ -224,6 +271,26 @@ const CreateRequestPage = () => {
                     ))}
                 </div>
             </div>
+
+            {/* New Budget Input */}
+            <div className="form-section">
+                <label className="section-label" htmlFor="budget">
+                    What is your budget for this task?
+                </label>
+                <div className="budget-input-wrapper">
+                    <span className="input-icon">රු</span> {/* Sri Lankan Rupee symbol */}
+                    <input
+                        type="number"
+                        id="budget"
+                        value={formData.budget}
+                        onChange={(e) => handleChange('budget', e.target.value)}
+                        placeholder="Enter your budget (e.g., 5000)"
+                        className={`budget-input ${errors.budget ? 'error' : ''}`}
+                        min="0"
+                    />
+                </div>
+                {errors.budget && <span className="error-message">{errors.budget}</span>}
+            </div>
         </div>
     );
 
@@ -243,7 +310,7 @@ const CreateRequestPage = () => {
 
             {success && (
                 <div className="alert alert-success">
-                    ✓ Request created successfully! Redirecting...
+                    ✓ Request {isEditMode ? 'updated' : 'created'} successfully! Redirecting...
                 </div>
             )}
 
@@ -274,6 +341,16 @@ const CreateRequestPage = () => {
                             <span className={`urgency-dot ${formData.urgency.toLowerCase()}`}></span>
                             {urgencyOptions.find(u => u.value === formData.urgency)?.label}
                         </p>
+                    </div>
+                    <button onClick={() => setCurrentStep(2)} className="edit-btn">Edit</button>
+                </div>
+
+                {/* Display Budget in Review */}
+                <div className="review-card">
+                    <div className="review-icon">💰</div>
+                    <div className="review-content">
+                        <h3>Budget</h3>
+                        <p>රු {formData.budget}</p>
                     </div>
                     <button onClick={() => setCurrentStep(2)} className="edit-btn">Edit</button>
                 </div>
@@ -331,14 +408,18 @@ const CreateRequestPage = () => {
                     {/* Right Content - Form Area */}
                     <div className="wizard-main">
                         {/* Progress Stepper */}
-                        <div className="stepper">
-                            <div className="stepper-header">
-                                <span className="step-label">Step {currentStep} of 3</span>
-                                <div className="step-dots">
-                                    <div className={`step-dot ${currentStep >= 1 ? 'active' : ''}`}></div>
-                                    <div className={`step-dot ${currentStep >= 2 ? 'active' : ''}`}></div>
-                                    <div className={`step-dot ${currentStep >= 3 ? 'active' : ''}`}></div>
-                                </div>
+                        <div className="cr-header-container">
+                            <div className="cr-header">
+                                <h1>{isEditMode ? 'Edit Your Request' : 'Post a New Request'}</h1>
+                                <p>{isEditMode ? 'Update the details of your service request below.' : 'Tell us what you need, and we\'ll connect you with verified professionals.'}</p>
+                            </div>
+
+                            <div className="cr-steps">
+                                <div className={`cr-step ${currentStep >= 1 ? 'active' : ''}`}>1</div>
+                                <div className="cr-connector"></div>
+                                <div className={`cr-step ${currentStep >= 2 ? 'active' : ''}`}>2</div>
+                                <div className="cr-connector"></div>
+                                <div className={`cr-step ${currentStep >= 3 ? 'active' : ''}`}>3</div>
                             </div>
                         </div>
 
@@ -365,7 +446,7 @@ const CreateRequestPage = () => {
                                     className="btn-submit"
                                     disabled={loading || success}
                                 >
-                                    {loading ? 'Posting...' : success ? 'Posted!' : 'Post My Request'}
+                                    {loading ? (isEditMode ? 'Updating...' : 'Posting...') : success ? (isEditMode ? 'Updated!' : 'Posted!') : (isEditMode ? 'Update Request' : 'Post Request')}
                                 </button>
                             )}
                         </div>

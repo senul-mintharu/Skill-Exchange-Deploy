@@ -105,39 +105,65 @@
 }
 
 /* Progress Stepper */
-.stepper {
-    margin-bottom: 2.5rem;
+.cr-header-container {
+    margin-bottom: 2rem;
+    text-align: center;
 }
 
-.stepper-header {
+.cr-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+    font-family: var(--font-display, 'Outfit', sans-serif);
+}
+
+.cr-header p {
+    color: #6b7280;
+    font-size: 1rem;
+}
+
+.cr-steps {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
+    margin-top: 2rem;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
 }
 
-.step-label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #2c666d;
-}
-
-.step-dots {
+.cr-step {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid #e5e7eb;
+    color: #9ca3af;
     display: flex;
-    gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    z-index: 1;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.step-dot {
-    width: 2rem;
-    height: 0.375rem;
-    border-radius: 999px;
-    background: #e5e7eb;
-    transition: all 0.3s;
-}
-
-.step-dot.active {
+.cr-step.active {
     background: #2c666d;
+    border-color: #2c666d;
+    color: white;
+    box-shadow: 0 4px 10px rgba(44, 102, 109, 0.3);
+    transform: scale(1.1);
+}
+
+.cr-connector {
+    flex: 1;
+    height: 3px;
+    background: #e5e7eb;
+    margin: 0 -0.5rem;
+    z-index: 0;
 }
 
 /* Step Content */
@@ -674,4 +700,41 @@
     .btn-submit {
         width: 100%;
     }
+}
+
+/* Budget Input */
+.budget-input-wrapper {
+    position: relative;
+    max-width: 300px;
+}
+
+.budget-input {
+    width: 100%;
+    padding: 0.875rem 1rem 0.875rem 3.5rem; /* Space for Rs prefix */
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    background: white;
+    color: #1f2937;
+    -moz-appearance: textfield; /* Firefox */
+    appearance: textfield;
+}
+
+.budget-input:focus {
+    outline: none;
+    border-color: #2c666d;
+    box-shadow: 0 0 0 3px rgba(44, 102, 109, 0.1);
+}
+
+.budget-input.error {
+    border-color: #ef4444;
+}
+
+/* Hide spin buttons for number input */
+.budget-input::-webkit-outer-spin-button,
+.budget-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
