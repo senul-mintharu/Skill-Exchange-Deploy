@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import './Navbar.css';
 
 const Navbar = ({ variant = 'landing' }) => {
     const [scrolled, setScrolled] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
+    const location = useLocation();
+
+    const isActive = (path) => {
+        return location.pathname === path ? 'active' : '';
+    };
 
     useEffect(() => {
         const handleScroll = () => {
@@ -57,9 +62,9 @@ const Navbar = ({ variant = 'landing' }) => {
                             </>
                         ) : (
                             <>
-                                <Link to="/" className="navbar__link">Dashboard</Link>
-                                <Link to="/find-work" className="navbar__link">Find Work</Link>
-                                <Link to="/my-requests" className="navbar__link active">My Requests</Link>
+                                <Link to="/" className={`navbar__link ${isActive('/')}`}>Dashboard</Link>
+                                <Link to="/find-work" className={`navbar__link ${isActive('/find-work')}`}>Find Work</Link>
+                                <Link to="/my-requests" className={`navbar__link ${isActive('/my-requests')}`}>My Requests</Link>
                                 <Link to="#" className="navbar__link">Messages</Link>
                                 <div className="navbar__portal-actions">
                                     <button className="navbar__icon-btn">

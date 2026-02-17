@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../../components/common/Navbar';
 import { getRequestById, deleteRequest } from '../../services/requestService';
+import { formatBudget } from '../../utils/constants';
 import './RequestDetailsPage.css';
 
 const RequestDetailsPage = () => {
     const { requestId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
+    const isWorker = !location.pathname.startsWith('/my-requests');
     
     const [request, setRequest] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -26,7 +29,7 @@ const RequestDetailsPage = () => {
                     }),
                     // Default values for fields potentially missing in backend
                     urgency: data.urgency || 'Standard',
-                    budget: data.budget || 'Not specified',
+                    budget: data.budget,
                     verification: 'Standard Request',
                     photos: data.photos || [], // Assuming backend might return photos later
                     timeline: [
@@ -69,7 +72,9 @@ const RequestDetailsPage = () => {
                 <div className="rd-error">
                     <h3>Something went wrong</h3>
                     <p>{error || 'Request not found'}</p>
-                    <Link to="/my-requests" className="rd-btn-secondary">Back to My Requests</Link>
+                    <Link to={isWorker ? '/find-work' : '/my-requests'} className="rd-btn-secondary">
+                        {isWorker ? 'Back to Find Work' : 'Back to My Requests'}
+                    </Link>
                 </div>
             </div>
         );
@@ -81,8 +86,8 @@ const RequestDetailsPage = () => {
             
             <main className="rd-container">
                 <div className="rd-breadcrumb">
-                    <Link to="/my-requests" className="rd-back-link">
-                        <span className="material-icons">arrow_back</span> Back to My Requests
+                    <Link to={isWorker ? '/find-work' : '/my-requests'} className="rd-back-link">
+                        <span className="material-icons">arrow_back</span> {isWorker ? 'Back to Find Work' : 'Back to My Requests'}
                     </Link>
                 </div>
 
@@ -107,27 +112,39 @@ const RequestDetailsPage = () => {
                                         <p className="rd-category">{request.category}</p>
                                     </div>
                                     <div className="rd-actions">
-                                        <button 
-                                            className="rd-btn rd-btn-secondary"
-                                            onClick={() => navigate('/create-request', { state: { requestToEdit: request } })}
-                                        >
-                                            ✏️ Edit
-                                        </button>
-                                        <button 
-                                            className="rd-btn rd-btn-danger"
-                                            onClick={async () => {
-                                                if (window.confirm('Are you sure you want to delete this request? This action cannot be undone.')) {
-                                                    try {
-                                                        await deleteRequest(request.id);
-                                                        navigate('/my-requests');
-                                                    } catch (err) {
-                                                        alert('Failed to delete request');
-                                                    }
-                                                }
-                                            }}
-                                        >
-                                            🗑️ Delete
-                                        </button>
+                                        {!isWorker && (
+                                            <>
+                                                <button 
+                                                    className="rd-btn rd-btn-secondary"
+                                                    onClick={() => navigate('/create-request', { state: { requestToEdit: request } })}
+                                                >
+                                                    ✏️ Edit
+                                                </button>
+                                                <button 
+                                                    className="rd-btn rd-btn-danger"
+                                                    onClick={async () => {
+                                                        if (window.confirm('Are you sure you want to delete this request? This action cannot be undone.')) {
+                                                            try {
+                                                                await deleteRequest(request.id);
+                                                                navigate('/my-requests');
+                                                            } catch (err) {
+                                                                alert('Failed to delete request');
+                                                            }
+                                                        }
+                                                    }}
+                                                >
+                                                    🗑️ Delete
+                                                </button>
+                                            </>
+                                        )}
+                                        {isWorker && (
+                                            <button
+                                                className="rd-btn rd-btn-primary"
+                                                onClick={() => alert('Quote submission is coming soon! This feature will be available in the next update.')}
+                                            >
+                                                📝 Send Quote
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
 
@@ -147,7 +164,7 @@ const RequestDetailsPage = () => {
                                         </div>
                                         <div>
                                             <p className="rd-label">Budget</p>
-                                            <p className="rd-value">{request.budget}</p>
+                                            <p className="rd-value">{formatBudget(request.budget)}</p>
                                         </div>
                                     </div>
                                     <div className="rd-info-item">
@@ -188,33 +205,35 @@ const RequestDetailsPage = () => {
                             </div>
                         </div>
 
-                        {/* Quotes Section */}
-                        <div className="rd-card rd-quotes-card">
-                            <div className="rd-quotes-header">
-                                <h3>📜 Quotes Received</h3>
-                                <span className="rd-quotes-count">{request.quotesCount}</span>
-                            </div>
-                            
-                            <div className="rd-quotes-body">
-                                <div className="rd-quotes-empty">
-                                    <div className="rd-empty-icon-wrapper">
-                                        <span className="rd-empty-emoji">⏳</span>
-                                        <span className="rd-search-badge">🔍</span>
-                                    </div>
-                                    <h4>Awaiting Quotes</h4>
-                                    <p>We've sent your request to verified professionals in {request.locationArea}. Hang tight! Professionals usually respond with quotes within 24 hours.</p>
-                                    
-                                    <div className="rd-tip-box">
-                                        <span className="rd-tip-emoji">💡</span>
-                                        <div>
-                                            <p className="rd-tip-title">Tip for faster responses:</p>
-                                            <p className="rd-tip-text">Adding more photos of the problem area can help professionals give you a more accurate quote faster.</p>
-                                            <button className="rd-link-btn">Add More Photos</button>
+                        {/* Quotes Section (Seeker Only) */}
+                        {!isWorker && (
+                            <div className="rd-card rd-quotes-card">
+                                <div className="rd-quotes-header">
+                                    <h3>📜 Quotes Received</h3>
+                                    <span className="rd-quotes-count">{request.quotesCount}</span>
+                                </div>
+                                
+                                <div className="rd-quotes-body">
+                                    <div className="rd-quotes-empty">
+                                        <div className="rd-empty-icon-wrapper">
+                                            <span className="rd-empty-emoji">⏳</span>
+                                            <span className="rd-search-badge">🔍</span>
+                                        </div>
+                                        <h4>Awaiting Quotes</h4>
+                                        <p>We've sent your request to verified professionals in {request.locationArea}. Hang tight! Professionals usually respond with quotes within 24 hours.</p>
+                                        
+                                        <div className="rd-tip-box">
+                                            <span className="rd-tip-emoji">💡</span>
+                                            <div>
+                                                <p className="rd-tip-title">Tip for faster responses:</p>
+                                                <p className="rd-tip-text">Adding more photos of the problem area can help professionals give you a more accurate quote faster.</p>
+                                                <button className="rd-link-btn">Add More Photos</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* Sidebar Column */}
@@ -251,11 +270,13 @@ const RequestDetailsPage = () => {
                             </div>
                         </div>
 
-                        <div className="rd-help-card">
-                            <h3>Need Help?</h3>
-                            <p>Our support team is available 24/7 to assist with your request.</p>
-                            <button className="rd-support-btn">Contact Support</button>
-                        </div>
+                        {!isWorker && (
+                            <div className="rd-help-card">
+                                <h3>Need Help?</h3>
+                                <p>Our support team is available 24/7 to assist with your request.</p>
+                                <button className="rd-support-btn">Contact Support</button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </main>
