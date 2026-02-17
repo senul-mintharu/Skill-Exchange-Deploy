@@ -30,5 +30,7 @@ public class RequestCreateRequest {
     @Size(max = 100, message = "Location area must not exceed 100 characters")
     private String locationArea;
 
+    private Double budget;
+
     private UrgencyLevel urgency; // Optional, defaults to MEDIUM in service layer
 }

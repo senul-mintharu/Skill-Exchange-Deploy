@@ -41,6 +41,7 @@ public class ServiceRequestService {
                 .description(request.getDescription())
                 .category(request.getCategory())
                 .locationArea(request.getLocationArea())
+                .budget(request.getBudget())
                 .urgency(request.getUrgency() != null ? request.getUrgency() : UrgencyLevel.MEDIUM)
                 .status(RequestStatus.OPEN)
                 .seeker(seeker)
@@ -108,12 +109,37 @@ public class ServiceRequestService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public RequestResponse updateRequest(Long requestId, RequestCreateRequest requestData) {
+        ServiceRequest existingRequest = serviceRequestRepository.findById(requestId)
+                .orElseThrow(() -> new NotFoundException("Service request not found"));
+
+        // Update fields
+        existingRequest.setCategory(requestData.getCategory());
+        existingRequest.setLocationArea(requestData.getLocationArea());
+        existingRequest.setDescription(requestData.getDescription());
+        existingRequest.setUrgency(requestData.getUrgency());
+        existingRequest.setBudget(requestData.getBudget());
+
+        ServiceRequest savedRequest = serviceRequestRepository.save(existingRequest);
+        return mapToResponse(savedRequest);
+    }
+
+    @Transactional
+    public void deleteRequest(Long requestId) {
+        if (!serviceRequestRepository.existsById(requestId)) {
+            throw new NotFoundException("Service request not found");
+        }
+        serviceRequestRepository.deleteById(requestId);
+    }
+
     private RequestResponse mapToResponse(ServiceRequest request) {
         return RequestResponse.builder()
                 .id(request.getId())
                 .description(request.getDescription())
                 .category(request.getCategory())
                 .locationArea(request.getLocationArea())
+                .budget(request.getBudget())
                 .urgency(request.getUrgency())
                 .status(request.getStatus())
                 .createdAt(request.getCreatedAt())

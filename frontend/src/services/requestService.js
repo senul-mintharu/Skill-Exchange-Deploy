@@ -60,3 +60,24 @@ export const searchRequests = async (filters) => {
     const response = await apiClient.get(`/requests/search?${params.toString()}`);
     return response.data.data;
 };
+
+/**
+ * Update an existing service request
+ * @param {number} id - Request ID
+ * @param {Object} updateData - Data to update
+ * @returns {Promise<Object>} Updated request
+ */
+export const updateRequest = async (id, updateData) => {
+    const response = await apiClient.put(`/requests/${id}?seekerId=${DEFAULT_SEEKER_ID}`, updateData);
+    return response.data.data;
+};
+
+/**
+ * Delete (or cancel) a service request
+ * @param {number} id - Request ID
+ * @returns {Promise<boolean>} True if successful
+ */
+export const deleteRequest = async (id) => {
+    await apiClient.delete(`/requests/${id}?seekerId=${DEFAULT_SEEKER_ID}`);
+    return true;
+};

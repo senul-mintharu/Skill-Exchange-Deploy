@@ -25,6 +25,7 @@ public class RequestResponse {
     private String description;
     private ServiceCategory category;
     private String locationArea;
+    private Double budget;
     private UrgencyLevel urgency;
     private RequestStatus status;
     private LocalDateTime createdAt;

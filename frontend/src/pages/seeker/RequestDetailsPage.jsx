@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '../../components/common/Navbar';
-import { getRequestById } from '../../services/requestService';
+import { getRequestById, deleteRequest } from '../../services/requestService';
 import './RequestDetailsPage.css';
 
 const RequestDetailsPage = () => {
     const { requestId } = useParams();
+    const navigate = useNavigate();
     
     const [request, setRequest] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -106,11 +107,26 @@ const RequestDetailsPage = () => {
                                         <p className="rd-category">{request.category}</p>
                                     </div>
                                     <div className="rd-actions">
-                                        <button className="rd-btn rd-btn-secondary">
+                                        <button 
+                                            className="rd-btn rd-btn-secondary"
+                                            onClick={() => navigate('/create-request', { state: { requestToEdit: request } })}
+                                        >
                                             ✏️ Edit
                                         </button>
-                                        <button className="rd-btn rd-btn-danger">
-                                            Cancel
+                                        <button 
+                                            className="rd-btn rd-btn-danger"
+                                            onClick={async () => {
+                                                if (window.confirm('Are you sure you want to delete this request? This action cannot be undone.')) {
+                                                    try {
+                                                        await deleteRequest(request.id);
+                                                        navigate('/my-requests');
+                                                    } catch (err) {
+                                                        alert('Failed to delete request');
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            🗑️ Delete
                                         </button>
                                     </div>
                                 </div>

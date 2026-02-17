@@ -44,6 +44,9 @@ public class ServiceRequest {
     @Column(length = 20)
     private UrgencyLevel urgency;
 
+    @Column
+    private Double budget;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private RequestStatus status;

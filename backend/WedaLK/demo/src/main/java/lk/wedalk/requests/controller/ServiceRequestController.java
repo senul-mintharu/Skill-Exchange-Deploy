@@ -63,4 +63,18 @@ public class ServiceRequestController {
         List<RequestResponse> requests = serviceRequestService.searchRequests(locationArea, category);
         return ResponseEntity.ok(ApiResponse.success(requests, "Search completed successfully"));
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<RequestResponse>> updateRequest(
+            @PathVariable Long id,
+            @Valid @RequestBody RequestCreateRequest request) {
+        RequestResponse response = serviceRequestService.updateRequest(id, request);
+        return ResponseEntity.ok(ApiResponse.success(response, "Service request updated successfully"));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteRequest(@PathVariable Long id) {
+        serviceRequestService.deleteRequest(id);
+        return ResponseEntity.ok(ApiResponse.success(null, "Service request deleted successfully"));
+    }
 }
