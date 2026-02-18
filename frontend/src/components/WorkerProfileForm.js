@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaUserCircle, FaMapMarkerAlt, FaTools, FaMoneyBillWave, FaSave, FaSpinner } from 'react-icons/fa';
+import { FaUserCircle, FaMapMarkerAlt, FaTools, FaMoneyBillWave, FaSave, FaSpinner, FaIdCard } from 'react-icons/fa';
 import '../styles/WorkerProfile.css'; // Import Vanilla CSS
 
 const WorkerProfileForm = () => {
@@ -10,8 +10,8 @@ const WorkerProfileForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Quick hack: User ID 1 for demo since no auth
-  const [userId, setUserId] = useState(1);
+  // State for User ID (manual entry)
+  const [userId, setUserId] = useState('');
 
   const [formData, setFormData] = useState({
     bio: '',
@@ -74,7 +74,7 @@ const WorkerProfileForm = () => {
       }
       navigate(id ? `/profile/${id}` : '/'); // Redirect to profile view or home
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save profile. Ensure User ID exists (try 1).');
+      setError(err.response?.data?.message || 'Failed to save profile. Ensure User ID exists (try 1, 2...).');
       console.error(err);
     } finally {
       setLoading(false);
@@ -104,11 +104,31 @@ const WorkerProfileForm = () => {
 
             {!id && (
               <div className="wp-note">
-                <p>Note: Using default <strong>User ID 1</strong> for demonstration purposes.</p>
+                <p>Enter the <strong>User ID</strong> you want to create a profile for (e.g., 1, 2, 3).</p>
               </div>
             )}
 
             <form onSubmit={handleSubmit}>
+
+              {/* User ID Section (Only show if creating new profile or if needed) */}
+              {!id && (
+                <div className="wp-form-group">
+                  <label className="wp-label">
+                    <FaIdCard className="wp-label-icon" /> User ID
+                  </label>
+                  <input
+                    type="number"
+                    name="userId"
+                    value={userId}
+                    onChange={(e) => setUserId(e.target.value)}
+                    className="wp-input"
+                    placeholder="Enter User ID (e.g. 1)"
+                    required
+                    min="1"
+                  />
+                </div>
+              )}
+
               {/* Bio Section */}
               <div className="wp-form-group">
                 <label className="wp-label">

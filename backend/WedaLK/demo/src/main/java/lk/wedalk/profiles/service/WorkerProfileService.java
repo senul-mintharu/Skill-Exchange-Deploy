@@ -21,10 +21,11 @@ public class WorkerProfileService {
     @Transactional
     public WorkerProfileResponse createProfile(Long userId, WorkerProfileCreateRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(
+                        () -> new lk.wedalk.common.exceptions.NotFoundException("User not found with id: " + userId));
 
         if (workerProfileRepository.findByUserId(userId).isPresent()) {
-            throw new RuntimeException("Profile already exists for this user");
+            throw new lk.wedalk.common.exceptions.BadRequestException("Profile already exists for this user");
         }
 
         WorkerProfile profile = WorkerProfile.builder()
@@ -42,20 +43,20 @@ public class WorkerProfileService {
 
     public WorkerProfileResponse getProfile(Long id) {
         WorkerProfile profile = workerProfileRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Profile not found"));
+                .orElseThrow(() -> new lk.wedalk.common.exceptions.NotFoundException("Profile not found"));
         return mapToResponse(profile);
     }
 
     public WorkerProfileResponse getProfileByUserId(Long userId) {
         WorkerProfile profile = workerProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Profile not found for user"));
+                .orElseThrow(() -> new lk.wedalk.common.exceptions.NotFoundException("Profile not found for user"));
         return mapToResponse(profile);
     }
 
     @Transactional
     public WorkerProfileResponse updateProfile(Long id, WorkerProfileUpdateRequest request) {
         WorkerProfile profile = workerProfileRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Profile not found"));
+                .orElseThrow(() -> new lk.wedalk.common.exceptions.NotFoundException("Profile not found"));
 
         if (request.getBio() != null)
             profile.setBio(request.getBio());
