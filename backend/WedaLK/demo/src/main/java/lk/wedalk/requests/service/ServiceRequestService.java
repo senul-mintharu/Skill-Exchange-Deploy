@@ -38,6 +38,7 @@ public class ServiceRequestService {
 
         // Create service request
         ServiceRequest serviceRequest = ServiceRequest.builder()
+                .title(request.getTitle())
                 .description(request.getDescription())
                 .category(request.getCategory())
                 .locationArea(request.getLocationArea())
@@ -115,6 +116,7 @@ public class ServiceRequestService {
                 .orElseThrow(() -> new NotFoundException("Service request not found"));
 
         // Update fields
+        existingRequest.setTitle(requestData.getTitle());
         existingRequest.setCategory(requestData.getCategory());
         existingRequest.setLocationArea(requestData.getLocationArea());
         existingRequest.setDescription(requestData.getDescription());
@@ -136,6 +138,7 @@ public class ServiceRequestService {
     private RequestResponse mapToResponse(ServiceRequest request) {
         return RequestResponse.builder()
                 .id(request.getId())
+                .title(request.getTitle())
                 .description(request.getDescription())
                 .category(request.getCategory())
                 .locationArea(request.getLocationArea())

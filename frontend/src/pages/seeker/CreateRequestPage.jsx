@@ -24,11 +24,12 @@ const CreateRequestPage = () => {
     const [success, setSuccess] = useState(false);
 
     const [formData, setFormData] = useState({
+        title: requestToEdit?.title || '',
         category: requestToEdit?.category || '',
         locationArea: requestToEdit?.locationArea || '',
         description: requestToEdit?.description || '',
-        urgency: requestToEdit?.urgency || 'MEDIUM', // Changed from 'Standard' to 'MEDIUM' to match existing options
-        budget: requestToEdit?.budget || '' // Added budget field
+        urgency: requestToEdit?.urgency || 'MEDIUM',
+        budget: requestToEdit?.budget || ''
     });
 
     const [errors, setErrors] = useState({});
@@ -74,6 +75,11 @@ const CreateRequestPage = () => {
         const newErrors = {};
 
         if (step === 1) {
+            if (!formData.title?.trim()) {
+                newErrors.title = 'Title is required';
+            } else if (formData.title.trim().length > 150) {
+                newErrors.title = 'Title must not exceed 150 characters';
+            }
             if (!formData.category) newErrors.category = 'Please select a category';
             if (!formData.locationArea?.trim()) newErrors.locationArea = 'Location is required';
         }
@@ -108,11 +114,10 @@ const CreateRequestPage = () => {
 
     const handleSubmit = async () => {
         // Final validation before submission
-        if (!formData.description || !formData.locationArea || !formData.category || !formData.urgency) {
+        if (!formData.title || !formData.description || !formData.locationArea || !formData.category || !formData.urgency) {
             setError('Please fill in all required details before submitting.');
             return;
         }
-        // Assuming budget is also required for submission, add validation here if not part of a step
         if (!formData.budget) {
             setError('Please provide a budget for your request.');
             return;
@@ -122,26 +127,25 @@ const CreateRequestPage = () => {
         setLoading(true);
 
         try {
+            const payload = {
+                title: formData.title,
+                category: formData.category,
+                locationArea: formData.locationArea,
+                description: formData.description,
+                urgency: formData.urgency,
+                budget: formData.budget
+            };
+
             if (isEditMode) {
-                await updateRequest(requestToEdit.id, {
-                    category: formData.category,
-                    locationArea: formData.locationArea, // Use locationArea as per original formData
-                    description: formData.description,
-                    urgency: formData.urgency,
-                    budget: formData.budget
-                });
+                await updateRequest(requestToEdit.id, payload);
+
                 setSuccess(true);
                 setTimeout(() => {
                     navigate(`/my-requests/${requestToEdit.id}`);
                 }, 2000);
             } else {
-                await createRequest({
-                    category: formData.category,
-                    locationArea: formData.locationArea, // Use locationArea as per original formData
-                    description: formData.description,
-                    urgency: formData.urgency,
-                    budget: formData.budget
-                });
+                await createRequest(payload);
+
                 setSuccess(true);
                 setTimeout(() => {
                     navigate('/my-requests');
@@ -163,7 +167,31 @@ const CreateRequestPage = () => {
         <div className="step-content">
             <div className="step-header">
                 <h1>What do you need help with?</h1>
-                <p>Select a category to get started.</p>
+                <p>Give your request a title and select a category.</p>
+            </div>
+
+            <div className="form-section">
+                <div className="label-row">
+                    <label className="section-label" htmlFor="title">
+                        Request Title
+                    </label>
+                    <span className="char-count">
+                        {formData.title.length} / 150
+                    </span>
+                </div>
+                <div className="title-input-wrapper">
+                    <span className="input-icon">✏️</span>
+                    <input
+                        type="text"
+                        id="title"
+                        value={formData.title}
+                        onChange={(e) => handleChange('title', e.target.value)}
+                        placeholder="E.g., Fix leaking kitchen tap"
+                        className={`title-input ${errors.title ? 'error' : ''}`}
+                        maxLength={150}
+                    />
+                </div>
+                {errors.title && <span className="error-message">{errors.title}</span>}
             </div>
 
             <div className="form-section">
@@ -291,6 +319,7 @@ const CreateRequestPage = () => {
                 </div>
                 {errors.budget && <span className="error-message">{errors.budget}</span>}
             </div>
+
         </div>
     );
 
@@ -315,6 +344,15 @@ const CreateRequestPage = () => {
             )}
 
             <div className="review-sections">
+                <div className="review-card">
+                    <div className="review-icon">✏️</div>
+                    <div className="review-content">
+                        <h3>Title</h3>
+                        <p>{formData.title}</p>
+                    </div>
+                    <button onClick={() => setCurrentStep(1)} className="edit-btn">Edit</button>
+                </div>
+
                 <div className="review-card">
                     <div className="review-icon">🔧</div>
                     <div className="review-content">

@@ -30,6 +30,9 @@ public class ServiceRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(length = 150)
+    private String title;
+
     @Column(nullable = false, length = 2000)
     private String description;
 

@@ -19,6 +19,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RequestCreateRequest {
 
+    @NotBlank(message = "Title is required")
+    @Size(max = 150, message = "Title must not exceed 150 characters")
+    private String title;
+
     @NotBlank(message = "Description is required")
     @Size(max = 2000, message = "Description must not exceed 2000 characters")
     private String description;

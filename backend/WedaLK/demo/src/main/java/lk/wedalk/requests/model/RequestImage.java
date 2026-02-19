@@ -1,18 +1,16 @@
 package lk.wedalk.requests.model;
 
 /**
- * RequestImage.java — Service Request Image Entity (Optional)
+ * RequestImage.java — Service Request Image Entity (Stub)
  *
- * This file should contain:
- * - @Entity, @Table(name = "request_images") annotations
- * - Fields:
- * - Long id — @Id, @GeneratedValue
- * - ServiceRequest request — @ManyToOne, parent request
- * - String imageUrl — URL or file path of the uploaded image
- * - LocalDateTime uploadedAt
- * - Lombok: @Data, @NoArgsConstructor, @AllArgsConstructor
+ * Placeholder for future implementation.
+ * Will allow seekers to attach photos to their service requests.
  *
- * Purpose:
- * Allows seekers to attach photos to their service requests
- * (e.g., a photo of the broken pipe, the wall that needs painting).
+ * Planned fields:
+ * - id (Long, PK)
+ * - serviceRequest (ManyToOne -> ServiceRequest)
+ * - imageUrl (String — relative path or DB-stored binary)
+ * - originalFileName (String)
+ * - fileSize (Long)
+ * - uploadedAt (LocalDateTime)
  */

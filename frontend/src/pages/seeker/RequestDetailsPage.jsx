@@ -31,7 +31,6 @@ const RequestDetailsPage = () => {
                     urgency: data.urgency || 'Standard',
                     budget: data.budget,
                     verification: 'Standard Request',
-                    photos: data.photos || [], // Assuming backend might return photos later
                     timeline: [
                         { status: "Request Posted", date: new Date(data.createdAt).toLocaleDateString(), active: true, completed: true },
                         { status: "Receiving Quotes", date: "In Progress", active: true, completed: false },
@@ -191,17 +190,6 @@ const RequestDetailsPage = () => {
                                     <h3>Description</h3>
                                     <p className="rd-description">{request.description}</p>
                                 </div>
-
-                                <div className="rd-photos-section">
-                                    <h4>Attached Photos</h4>
-                                    <div className="rd-photos-grid">
-                                        {request.photos.map((photo, index) => (
-                                            <div key={index} className="rd-photo-wrapper">
-                                                <img src={photo.src} alt={photo.alt} className="rd-photo" />
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
@@ -226,8 +214,7 @@ const RequestDetailsPage = () => {
                                             <span className="rd-tip-emoji">💡</span>
                                             <div>
                                                 <p className="rd-tip-title">Tip for faster responses:</p>
-                                                <p className="rd-tip-text">Adding more photos of the problem area can help professionals give you a more accurate quote faster.</p>
-                                                <button className="rd-link-btn">Add More Photos</button>
+                                                <p className="rd-tip-text">Adding a detailed description with specific measurements and conditions can help professionals give you a more accurate quote faster.</p>
                                             </div>
                                         </div>
                                     </div>

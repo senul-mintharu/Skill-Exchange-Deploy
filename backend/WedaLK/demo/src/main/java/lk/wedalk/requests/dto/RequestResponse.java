@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 public class RequestResponse {
 
     private Long id;
+    private String title;
     private String description;
     private ServiceCategory category;
     private String locationArea;
