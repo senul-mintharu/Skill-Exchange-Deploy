@@ -34,13 +34,12 @@ git push
 **Best for teams (Code Review).**
 1. Go to GitHub.
 2. Click "Compare & pull request".
-3. Complete the PR checklist:
+3. Before merging, run these checks locally:
    - `./mvnw test` from `backend/WedaLK/demo`
    - `npm run lint` from `frontend`
    - `npm test -- --watchAll=false` from `frontend`
-4. Ensure GitHub Actions quality gate passes.
-5. Review changes.
-6. Click "Merge Pull Request".
+4. Review changes.
+5. Click "Merge Pull Request".
 
 ## 5. Option B: Merge via Terminal (Manual)
 **Use this if you are a solo admin or don't need code reviews.**
