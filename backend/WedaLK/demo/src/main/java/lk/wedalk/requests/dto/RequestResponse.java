@@ -1,30 +1,38 @@
 package lk.wedalk.requests.dto;
 
+import java.time.LocalDateTime;
+import lk.wedalk.common.enums.RequestStatus;
+import lk.wedalk.common.enums.ServiceCategory;
+import lk.wedalk.common.enums.UrgencyLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 /**
  * RequestResponse.java — Service Request Response DTO
  *
- * This file should contain:
- * - Fields:
- * - Long id
- * - String seekerName — from User entity
- * - Long seekerId
- * - String title
- * - String description
- * - String category
- * - String district
- * - String address
- * - double budgetMin
- * - double budgetMax
- * - RequestStatus status
- * - String assignedWorkerName — nullable
- * - Long assignedWorkerId — nullable
- * - LocalDate preferredDate
- * - int quoteCount — number of quotes received
- * - List<String> imageUrls — from RequestImage entities
- * - LocalDateTime createdAt
- * - Lombok: @Data, @Builder, @NoArgsConstructor, @AllArgsConstructor
- * - Static method: fromEntity(ServiceRequest request)
- *
- * Purpose:
- * Returned when fetching service request details.
+ * <p>Returned when fetching service request details.
  */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class RequestResponse {
+
+    private Long id;
+    private String title;
+    private String description;
+    private ServiceCategory category;
+    private String locationArea;
+    private Double budget;
+    private UrgencyLevel urgency;
+    private RequestStatus status;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
+  // Seeker information
+  private Long seekerId;
+  private String seekerName;
+  private String seekerPhone;
+}

@@ -1,15 +1,27 @@
 package lk.wedalk.auth.dto;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 /**
  * LoginRequest.java — Login Request DTO
  *
- * This file should contain:
- * - Fields:
- * - String email — user's email address
- * - String password — user's password (plain text, hashed on server)
- * - Validation annotations: @NotBlank, @Email
- * - Lombok annotations: @Data, @NoArgsConstructor, @AllArgsConstructor
- *
- * Purpose:
- * Data Transfer Object for the POST /api/auth/login endpoint.
+ * <p>Contains email and password for user authentication.
  */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class LoginRequest {
+
+  @NotBlank(message = "Email is required")
+  @Email(message = "Email must be valid")
+  private String email;
+
+  @NotBlank(message = "Password is required")
+  @Size(min = 6, message = "Password must be at least 6 characters")
+  private String password;
+}

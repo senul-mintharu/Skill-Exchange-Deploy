@@ -19,6 +19,10 @@ You may also see any lint errors in the console.
 Launches the test runner in the interactive watch mode.\
 See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
+### `npm run lint`
+
+Runs ESLint across `src` to enforce consistent code quality.
+
 ### `npm run build`
 
 Builds the app for production to the `build` folder.\
@@ -44,6 +48,28 @@ You don't have to ever use `eject`. The curated feature set is suitable for smal
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
+
+## Quality Gate Notes
+
+Before opening a PR, run:
+
+```bash
+npm run lint
+npm test -- --watchAll=false
+```
+
+Optional Prettier setup:
+
+```bash
+npm install --save-dev prettier
+```
+
+Then add scripts if you want formatting commands:
+
+```json
+"format": "prettier --write \"src/**/*.{js,jsx,css}\"",
+"format:check": "prettier --check \"src/**/*.{js,jsx,css}\""
+```
 
 ### Code Splitting
 

@@ -39,16 +39,13 @@ CREATE TABLE worker_profiles (
 CREATE TABLE service_requests (
     id SERIAL PRIMARY KEY,
     seeker_id INTEGER NOT NULL REFERENCES users(id),
-    title VARCHAR(255) NOT NULL,
+    title VARCHAR(150),              -- Short heading/subject for the request
     description TEXT NOT NULL,
-    category VARCHAR(100) NOT NULL, -- 'Plumbing', 'Electrical', etc.
+    category VARCHAR(100) NOT NULL, -- 'PLUMBING', 'ELECTRICAL', etc.
     location_area VARCHAR(100) NOT NULL,
-    address TEXT,
-    budget_min DECIMAL(10, 2),
-    budget_max DECIMAL(10, 2),
-    preferred_date DATE,
-    status VARCHAR(50) DEFAULT 'OPEN', -- 'OPEN', 'ASSIGNED', 'COMPLETED', 'CANCELLED'
-    assigned_worker_id INTEGER REFERENCES users(id), -- Nullable until assigned
+    urgency VARCHAR(20),            -- 'LOW', 'MEDIUM', 'HIGH', 'URGENT'
+    budget DECIMAL(12, 2),          -- Optional budget in LKR
+    status VARCHAR(50) DEFAULT 'OPEN', -- 'OPEN', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'NOT_COMPLETED', 'CANCELLED'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -61,5 +58,5 @@ INSERT INTO users (email, password, full_name, role, district) VALUES
 INSERT INTO worker_profiles (user_id, bio, skills, service_areas, hourly_rate) VALUES
 (2, 'Experienced electrician with 5 years of field work.', 'Electrical,Wiring,Repair', 'Colombo,Gampaha', 1500.00);
 
-INSERT INTO service_requests (seeker_id, title, description, category, location_area, budget_min, budget_max) VALUES
-(1, 'Fix leaking tap', 'Kitchen tap is leaking heavily.', 'Plumbing', 'Colombo 03', 2000.00, 5000.00);
+INSERT INTO service_requests (seeker_id, title, description, category, location_area, urgency) VALUES
+(1, 'Fix leaking kitchen tap', 'Kitchen tap is leaking heavily. Need urgent repair.', 'PLUMBING', 'Colombo 03', 'HIGH');

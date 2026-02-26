@@ -113,6 +113,19 @@ p  { font-size: 1rem; line-height: 1.7; color: var(--gray); }
   padding: var(--container-padding);
 }
 
+.page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #1A3638 0%, #2c666d 100%);
+}
+
+.navbar-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
 .section {
   padding: var(--section-padding);
 }

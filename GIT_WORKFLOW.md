@@ -30,18 +30,43 @@ git push -u origin feature/worker-profiles
 git push
 ```
 
-## 4. Merge (Pull Request)
-**Do not merge manually on your laptop!**
+## 4. Option A: Merge via GitHub (Recommended)
+**Best for teams (Code Review).**
 1. Go to GitHub.
-2. You will see a "Compare & pull request" button. Click it.
-3. Review the changes.
-4. **Ask a team member to approve it.** (Code Review).
-5. Click "Merge".
+2. Click "Compare & pull request".
+3. Before merging, run these checks locally:
+   - `./mvnw test` from `backend/WedaLK/demo`
+   - `npm run lint` from `frontend`
+   - `npm test -- --watchAll=false` from `frontend`
+4. Review changes.
+5. Click "Merge Pull Request".
 
-## 5. Sync & Continue
-Once your branch is merged, delete it locally and start the next one.
+## 5. Option B: Merge via Terminal (Manual)
+**Use this if you are a solo admin or don't need code reviews.**
+
+1. Switch to main and update it:
+   ```bash
+   git checkout main
+   git pull origin main
+   ```
+
+2. Merge your feature branch into main:
+   ```bash
+   git merge feature/worker-profiles
+   ```
+   *(Replace `feature/worker-profiles` with your actual branch name)*
+
+3. Push the updated main to GitHub:
+   ```bash
+   git push origin main
+   ```
+
+## 6. Cleanup
+After merging (via Option A or B), delete the old branch:
 ```bash
-git checkout main
-git pull origin main
+# Delete local branch
 git branch -d feature/worker-profiles
+
+# Option: Delete remote branch
+git push origin --delete feature/worker-profiles
 ```

@@ -115,7 +115,7 @@ const LandingPage = () => {
                         across Sri Lanka. Get quotes, compare prices, and hire with confidence.
                     </p>
                     <div className="hero__actions">
-                        <Link to="/register" className="btn btn-lg btn-accent">
+                        <Link to="/create-request" className="btn btn-lg btn-accent">
                             Post a Request <Icons.ArrowRight />
                         </Link>
                         <Link to="/register" className="btn btn-lg btn-white">
@@ -247,7 +247,7 @@ const LandingPage = () => {
                                 with reliable local taskers. Sign up free today.
                             </p>
                             <div className="cta__actions">
-                                <Link to="/register" className="btn btn-lg btn-accent">
+                                <Link to="/create-request" className="btn btn-lg btn-accent">
                                     Post a Request <Icons.ArrowRight />
                                 </Link>
                                 <Link to="/register" className="btn btn-lg btn-secondary" style={{ borderColor: 'rgba(255,255,255,0.4)', color: 'var(--white)' }}>
