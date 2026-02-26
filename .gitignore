@@ -1,0 +1,24 @@
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Java (Spring Boot)
+**/target/
+**/.mvn/wrapper/maven-wrapper.jar
+
+# Node.js
+**/node_modules/
+**/build/
+**/dist/
+**/coverage/
+.env*
+!.env.example
+npm-debug.log*
+
+# Docs
+# Allow everything in docs except temporary system files
+!docs/
+docs/.DS_Store
