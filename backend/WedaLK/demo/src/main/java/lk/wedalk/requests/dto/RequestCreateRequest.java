@@ -19,9 +19,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RequestCreateRequest {
 
-  @NotBlank(message = "Description is required")
-  @Size(max = 2000, message = "Description must not exceed 2000 characters")
-  private String description;
+    @NotBlank(message = "Title is required")
+    @Size(max = 150, message = "Title must not exceed 150 characters")
+    private String title;
+
+    @NotBlank(message = "Description is required")
+    @Size(max = 2000, message = "Description must not exceed 2000 characters")
+    private String description;
 
   @NotNull(message = "Category is required")
   private ServiceCategory category;
@@ -30,5 +34,7 @@ public class RequestCreateRequest {
   @Size(max = 100, message = "Location area must not exceed 100 characters")
   private String locationArea;
 
-  private UrgencyLevel urgency; // Optional, defaults to MEDIUM in service layer
+    private Double budget;
+
+    private UrgencyLevel urgency; // Optional, defaults to MEDIUM in service layer
 }

@@ -1,7 +1,7 @@
 package lk.wedalk.requests.model;
 
 /**
- * RequestImage.java — Service Request Image Entity (Optional)
+ * RequestImage.java — Service Request Image Entity (Stub)
  *
  * <p>This file should contain: - @Entity, @Table(name = "request_images") annotations - Fields: -
  * Long id — @Id, @GeneratedValue - ServiceRequest request — @ManyToOne, parent request - String

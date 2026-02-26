@@ -29,8 +29,11 @@ public class ServiceRequest {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(nullable = false, length = 2000)
-  private String description;
+    @Column(length = 150)
+    private String title;
+
+    @Column(nullable = false, length = 2000)
+    private String description;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 50)
@@ -43,9 +46,12 @@ public class ServiceRequest {
   @Column(length = 20)
   private UrgencyLevel urgency;
 
-  @Enumerated(EnumType.STRING)
-  @Column(nullable = false, length = 20)
-  private RequestStatus status;
+    @Column
+    private Double budget;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private RequestStatus status;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "seeker_id", nullable = false)
