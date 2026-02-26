@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { createRequest, updateRequest } from '../../services/requestService';
 import './CreateRequestPage.css';
-import Navbar from '../../components/common/Navbar';
 
 /**
  * Multi-Step Request Creation Wizard
@@ -425,7 +424,6 @@ const CreateRequestPage = () => {
 
     return (
         <div className="page-wrapper">
-            <Navbar variant="portal" />
 
             <div className="create-request-wizard">
                 <div className="wizard-container">

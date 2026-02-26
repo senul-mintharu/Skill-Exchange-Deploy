@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMyRequests } from '../../services/requestService';
 import './MyRequestsPage.css';
-import Navbar from '../../components/common/Navbar';
 
 /**
  * MyRequestsPage.jsx — Seeker's Requests List Page
@@ -87,7 +86,6 @@ const MyRequestsPage = () => {
 
     return (
         <div className="page-wrapper">
-            <Navbar variant="portal" />
 
             {/* Header */}
             <header className="page-header">

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import Navbar from '../../components/common/Navbar';
 import { browseRequests } from '../../services/requestService';
 import { CATEGORIES, getCategoryIcon, formatCategoryLabel, formatBudget } from '../../utils/constants';
 import './BrowseRequestsPage.css';
@@ -186,7 +185,6 @@ const BrowseRequestsPage = () => {
 
     return (
         <div className="page-wrapper">
-            <Navbar variant="portal" />
 
             <main className="browse-requests-container">
                 <div className="br-header">

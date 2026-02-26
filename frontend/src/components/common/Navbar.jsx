@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import './Navbar.css';
 
 const Navbar = ({ variant = 'landing' }) => {
@@ -62,9 +62,9 @@ const Navbar = ({ variant = 'landing' }) => {
                             </>
                         ) : (
                             <>
-                                <Link to="/" className={`navbar__link ${isActive('/')}`}>Dashboard</Link>
-                                <Link to="/browse-requests" className={`navbar__link ${isActive('/browse-requests')}`}>Find Work</Link>
-                                <Link to="/my-requests" className={`navbar__link ${isActive('/my-requests')}`}>My Requests</Link>
+                                <NavLink to="/" end className={({isActive}) => `navbar__link ${isActive ? 'active' : ''}`}>Dashboard</NavLink>
+                                <NavLink to="/browse-requests" className={({isActive}) => `navbar__link ${isActive ? 'active' : ''}`}>Find Work</NavLink>
+                                <NavLink to="/my-requests" className={({isActive}) => `navbar__link ${isActive ? 'active' : ''}`}>My Requests</NavLink>
                                 <Link to="#" className="navbar__link">Messages</Link>
                                 <div className="navbar__portal-actions">
                                     <button className="navbar__icon-btn">
@@ -108,9 +108,9 @@ const Navbar = ({ variant = 'landing' }) => {
                         </>
                     ) : (
                         <>
-                            <li><Link to="/" className="navbar__drawer-link" onClick={closeMobile}>Dashboard</Link></li>
-                            <li><Link to="/browse-requests" className="navbar__drawer-link" onClick={closeMobile}>Find Work</Link></li>
-                            <li><Link to="/my-requests" className="navbar__drawer-link" onClick={closeMobile}>My Requests</Link></li>
+                            <li><NavLink to="/" end className={({isActive}) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>Dashboard</NavLink></li>
+                            <li><NavLink to="/browse-requests" className={({isActive}) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>Find Work</NavLink></li>
+                            <li><NavLink to="/my-requests" className={({isActive}) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>My Requests</NavLink></li>
                             <li><Link to="#" className="navbar__drawer-link" onClick={closeMobile}>Messages</Link></li>
                         </>
                     )}

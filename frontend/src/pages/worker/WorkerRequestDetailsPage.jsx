@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import Navbar from '../../components/common/Navbar';
 import { getRequestById } from '../../services/requestService';
 import { getCategoryIcon, formatCategoryLabel, formatBudget } from '../../utils/constants';
 import './WorkerRequestDetailsPage.css';
@@ -70,7 +69,6 @@ const WorkerRequestDetailsPage = () => {
     if (loading) {
         return (
             <div className="page-wrapper">
-                <Navbar variant="portal" />
                 <main className="wrd-container">
                     <div className="wrd-breadcrumb">
                         <div className="wrd-skeleton-line w-200" />
@@ -138,7 +136,6 @@ const WorkerRequestDetailsPage = () => {
     if (error || !request) {
         return (
             <div className="page-wrapper">
-                <Navbar variant="portal" />
                 <div className="wrd-error-state">
                     <div className="wrd-error-card">
                         <span className="material-icons wrd-error-icon">
@@ -169,7 +166,6 @@ const WorkerRequestDetailsPage = () => {
 
     return (
         <div className="page-wrapper">
-            <Navbar variant="portal" />
 
             <main className="wrd-container">
                 {/* Breadcrumb */}

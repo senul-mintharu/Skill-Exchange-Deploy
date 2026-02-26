@@ -1,11 +1,14 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Navbar from '../components/common/Navbar';
 
 const MainLayout = () => {
+    const location = useLocation();
+    const isLanding = location.pathname === '/';
+
     return (
         <div className="main-layout">
-            <Navbar />
+            <Navbar variant={isLanding ? 'landing' : 'portal'} />
             <main className="content">
                 <Outlet />
             </main>

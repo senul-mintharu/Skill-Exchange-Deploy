@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
-import Navbar from '../../components/common/Navbar';
+import PageHeader from '../../components/common/PageHeader';
+import Breadcrumb from '../../components/common/Breadcrumb';
 import { getRequestById, deleteRequest } from '../../services/requestService';
 import { formatBudget } from '../../utils/constants';
 import './RequestDetailsPage.css';
@@ -59,7 +60,6 @@ const RequestDetailsPage = () => {
     if (loading) {
         return (
             <div className="page-wrapper">
-                <Navbar variant="portal" />
                 <div className="rd-loading">
                     <div className="rd-spinner"></div>
                     <p>Loading details...</p>
@@ -71,7 +71,6 @@ const RequestDetailsPage = () => {
     if (error || !request) {
         return (
             <div className="page-wrapper">
-                <Navbar variant="portal" />
                 <div className="rd-error">
                     <h3>Something went wrong</h3>
                     <p>{error || 'Request not found'}</p>
@@ -85,9 +84,11 @@ const RequestDetailsPage = () => {
 
     return (
         <div className="page-wrapper">
-            <Navbar variant="portal" />
             
             <main className="rd-container">
+                <Breadcrumb />
+                <PageHeader title={`Request: ${request.title || request.category}`} />
+
                 <div className="rd-breadcrumb">
                     <Link to={isWorker ? '/browse-requests' : '/my-requests'} className="rd-back-link">
                         <span className="material-icons">arrow_back</span> {isWorker ? 'Back to Browse Requests' : 'Back to My Requests'}

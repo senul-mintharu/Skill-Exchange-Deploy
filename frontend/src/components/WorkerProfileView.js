@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, Link } from 'react-router-dom';
 import { FaMapMarkerAlt, FaUserEdit, FaTools, FaQuoteLeft, FaEnvelope, FaPhone, FaCalendarCheck } from 'react-icons/fa';
+import PageHeader from './common/PageHeader';
+import Breadcrumb from './common/Breadcrumb';
 import '../styles/WorkerProfile.css'; // Import Vanilla CSS
 
 const WorkerProfileView = () => {
@@ -48,6 +50,8 @@ const WorkerProfileView = () => {
 
     return (
         <div className="wp-container">
+            <Breadcrumb />
+            <PageHeader title={`Worker: ${profile.fullName}`} />
             <div className="wp-wrapper wp-view-container">
                 <div className="wp-card">
                     {/* Header Section */}

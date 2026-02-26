@@ -28,12 +28,12 @@ function App() {
           <Route path="/create-profile" element={<WorkerProfileForm />} />
           <Route path="/edit-profile/:id" element={<WorkerProfileForm />} />
           <Route path="/profile/:id" element={<WorkerProfileView />} />
+          <Route path="/create-request" element={<CreateRequestPage />} />
+          <Route path="/my-requests" element={<MyRequestsPage />} />
+          <Route path="/my-requests/:requestId" element={<RequestDetailsPage />} />
+          <Route path="/requests/:requestId" element={<WorkerRequestDetailsPage />} />
+          <Route path="/browse-requests" element={<BrowseRequestsPage />} />
         </Route>
-        <Route path="/create-request" element={<CreateRequestPage />} />
-        <Route path="/my-requests" element={<MyRequestsPage />} />
-        <Route path="/my-requests/:requestId" element={<RequestDetailsPage />} />
-        <Route path="/requests/:requestId" element={<WorkerRequestDetailsPage />} />
-        <Route path="/browse-requests" element={<BrowseRequestsPage />} />
       </Routes>
     </BrowserRouter>
   );
