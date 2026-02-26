@@ -20,14 +20,16 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RequestResponse {
 
-  private Long id;
-  private String description;
-  private ServiceCategory category;
-  private String locationArea;
-  private UrgencyLevel urgency;
-  private RequestStatus status;
-  private LocalDateTime createdAt;
-  private LocalDateTime updatedAt;
+    private Long id;
+    private String title;
+    private String description;
+    private ServiceCategory category;
+    private String locationArea;
+    private Double budget;
+    private UrgencyLevel urgency;
+    private RequestStatus status;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
   // Seeker information
   private Long seekerId;

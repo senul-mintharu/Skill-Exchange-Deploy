@@ -29,11 +29,29 @@ export const getMyRequests = async () => {
 };
 
 /**
- * Get all open requests (for workers to browse)
+ * Get all open requests (for workers to browse) - unpaginated
  * @returns {Promise<Array>} List of open requests
  */
 export const getOpenRequests = async () => {
     const response = await apiClient.get('/requests/open');
+    return response.data.data;
+};
+
+/**
+ * Browse open requests with pagination, keyword search, filters, and server-side sort
+ * @param {Object} params - { keyword, category, locationArea, page, size, sortBy }
+ * @returns {Promise<Object>} Paged response { content, page, size, totalElements, totalPages, last }
+ */
+export const browseRequests = async (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.keyword) query.append('keyword', params.keyword);
+    if (params.category) query.append('category', params.category);
+    if (params.locationArea) query.append('locationArea', params.locationArea);
+    if (params.page !== undefined) query.append('page', params.page);
+    if (params.size) query.append('size', params.size);
+    if (params.sortBy) query.append('sortBy', params.sortBy);
+
+    const response = await apiClient.get(`/requests/browse?${query.toString()}`);
     return response.data.data;
 };
 
@@ -59,4 +77,25 @@ export const searchRequests = async (filters) => {
     
     const response = await apiClient.get(`/requests/search?${params.toString()}`);
     return response.data.data;
+};
+
+/**
+ * Update an existing service request
+ * @param {number} id - Request ID
+ * @param {Object} updateData - Data to update
+ * @returns {Promise<Object>} Updated request
+ */
+export const updateRequest = async (id, updateData) => {
+    const response = await apiClient.put(`/requests/${id}?seekerId=${DEFAULT_SEEKER_ID}`, updateData);
+    return response.data.data;
+};
+
+/**
+ * Delete (or cancel) a service request
+ * @param {number} id - Request ID
+ * @returns {Promise<boolean>} True if successful
+ */
+export const deleteRequest = async (id) => {
+    await apiClient.delete(`/requests/${id}?seekerId=${DEFAULT_SEEKER_ID}`);
+    return true;
 };

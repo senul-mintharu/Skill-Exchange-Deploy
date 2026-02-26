@@ -183,7 +183,7 @@ const MyRequestsPage = () => {
                                                     <span className="category-icon">
                                                         <span className="category-emoji">{getCategoryEmoji(request.category)}</span>
                                                     </span>
-                                                    <h3>{formatCategory(request.category)}</h3>
+                                                    <h3>{request.title || formatCategory(request.category)}</h3>
                                                 </div>
                                                 <span className={getStatusClass(request.status)}>
                                                     {formatStatus(request.status)}
