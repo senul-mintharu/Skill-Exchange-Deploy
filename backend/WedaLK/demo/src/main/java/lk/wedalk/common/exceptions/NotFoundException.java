@@ -1,18 +1,15 @@
 package lk.wedalk.common.exceptions;
 
-/**
- * NotFoundException.java — Resource Not Found Exception
- *
- * <p>Thrown when a requested resource (user, request, quote, etc.) does not exist. Should be caught
- * by a @ControllerAdvice global exception handler and return HTTP 404.
- */
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ResponseStatus(HttpStatus.NOT_FOUND)
 public class NotFoundException extends RuntimeException {
+    public NotFoundException(String message) {
+        super(message);
+    }
 
-  public NotFoundException(String message) {
-    super(message);
-  }
-
-  public NotFoundException(String entityName, String field, Object value) {
-    super(String.format("%s not found with %s: %s", entityName, field, value));
-  }
+    public NotFoundException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

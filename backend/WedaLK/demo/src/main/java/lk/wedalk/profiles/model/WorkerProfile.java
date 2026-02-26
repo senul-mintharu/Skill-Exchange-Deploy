@@ -1,17 +1,55 @@
 package lk.wedalk.profiles.model;
 
-/**
- * WorkerProfile.java — Worker Profile JPA Entity
- *
- * <p>This file should contain: - @Entity, @Table(name = "worker_profiles") annotations - Fields: -
- * Long id — @Id, @GeneratedValue - User user — @OneToOne, the worker this profile belongs to -
- * String bio — short description / about me - List<String> skills — @ElementCollection, list of
- * skills (e.g., "Plumbing", "Electrical") - String district — primary service area - List<String>
- * serviceAreas — @ElementCollection, districts the worker covers - double hourlyRate — optional,
- * worker's hourly rate - double averageRating — computed from reviews (cached) - int
- * totalJobsCompleted — counter of completed jobs - VerificationStatus verificationStatus — NONE,
- * PENDING, APPROVED, REJECTED - LocalDateTime createdAt - LocalDateTime updatedAt -
- * Lombok: @Data, @Builder, @NoArgsConstructor, @AllArgsConstructor
- *
- * <p>Relationships: - @OneToOne with User - @OneToMany with PortfolioImage (optional)
- */
+import jakarta.persistence.*;
+import lk.wedalk.users.model.User;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Entity
+@Table(name = "worker_profiles")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class WorkerProfile {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @Column(columnDefinition = "TEXT")
+    private String bio;
+
+    @ElementCollection(fetch = FetchType.EAGER) // EAGER for simplicity in demo
+    @CollectionTable(name = "worker_skills", joinColumns = @JoinColumn(name = "worker_id"))
+    @Column(name = "skill")
+    private List<String> skills;
+
+    private String district;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "worker_service_areas", joinColumns = @JoinColumn(name = "worker_id"))
+    @Column(name = "area")
+    private List<String> serviceAreas;
+
+    private double hourlyRate;
+
+    private String availability;
+
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
+}

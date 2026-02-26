@@ -1,0 +1,13 @@
+{
+    "userId": 1,
+    "bio": "Test Bio",
+    "skills": [
+        "Java"
+    ],
+    "district": "Colombo",
+    "serviceAreas": [
+        "Colombo 1"
+    ],
+    "hourlyRate": 15.0,
+    "availability": "Full Time"
+}

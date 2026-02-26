@@ -10,6 +10,10 @@ import RequestDetailsPage from './pages/seeker/RequestDetailsPage';
 import BrowseRequestsPage from './pages/worker/BrowseRequestsPage';
 import WorkerRequestDetailsPage from './pages/worker/WorkerRequestDetailsPage';
 
+import WorkerProfileForm from './components/WorkerProfileForm';
+
+import WorkerProfileView from './components/WorkerProfileView';
+
 /**
  * App.js — Main Application Component (Simplified)
  * 
@@ -21,6 +25,9 @@ function App() {
       <Routes>
         <Route element={<MainLayout />}>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/create-profile" element={<WorkerProfileForm />} />
+          <Route path="/edit-profile/:id" element={<WorkerProfileForm />} />
+          <Route path="/profile/:id" element={<WorkerProfileView />} />
         </Route>
         <Route path="/create-request" element={<CreateRequestPage />} />
         <Route path="/my-requests" element={<MyRequestsPage />} />

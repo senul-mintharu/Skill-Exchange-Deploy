@@ -1,15 +1,15 @@
 package lk.wedalk.common.exceptions;
 
-/**
- * BadRequestException.java — Bad Request Exception
- *
- * <p>Thrown when the client sends invalid data (e.g., missing required fields, invalid status
- * transitions, duplicate submissions). Should be caught by a @ControllerAdvice global exception
- * handler and return HTTP 400.
- */
-public class BadRequestException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
-  public BadRequestException(String message) {
-    super(message);
-  }
+@ResponseStatus(HttpStatus.BAD_REQUEST)
+public class BadRequestException extends RuntimeException {
+    public BadRequestException(String message) {
+        super(message);
+    }
+
+    public BadRequestException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
