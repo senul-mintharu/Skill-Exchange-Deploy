@@ -7,7 +7,9 @@ import lombok.NoArgsConstructor;
 /**
  * ApiResponse.java — Standard API Response Wrapper
  *
- * <p>Provides a consistent JSON response format across all endpoints. Example: { "success": true,
+ * <p>
+ * Provides a consistent JSON response format across all endpoints. Example: {
+ * "success": true,
  * "message": "OK", "data": { ... } }
  */
 @Data
@@ -25,5 +27,9 @@ public class ApiResponse<T> {
 
   public static <T> ApiResponse<T> error(String message) {
     return new ApiResponse<>(false, message, null);
+  }
+
+  public static <T> ApiResponse<T> error(String message, T data) {
+    return new ApiResponse<>(false, message, data);
   }
 }

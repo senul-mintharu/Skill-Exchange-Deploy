@@ -526,3 +526,134 @@
     transform: translateY(-2px);
     box-shadow: var(--shadow-glow);
 }
+/* Appended classes from inline styles in WorkerProfilePage.jsx */
+
+.wp-spinner-lg {
+    border: 4px solid #e5e7eb;
+    border-top: 4px solid var(--primary);
+    border-radius: 50%;
+    width: 3rem;
+    height: 3rem;
+}
+
+.wp-center-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.wp-error-card {
+    background-color: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    padding: 2rem;
+    text-align: center;
+    max-width: 400px;
+}
+
+.wp-error-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.wp-error-card h3 {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.wp-error-card p {
+    color: var(--gray);
+    margin-bottom: 1.5rem;
+}
+
+.wp-btn-auto {
+    text-decoration: none;
+    display: inline-block;
+    width: auto;
+    padding: 0.5rem 1.5rem;
+}
+
+.wp-flex-center {
+    display: flex;
+    align-items: center;
+}
+
+.wp-icon-mr {
+    margin-right: 0.5rem;
+}
+
+.wp-col-span-1 {
+    grid-column: span 1;
+}
+
+.wp-section-mb {
+    margin-bottom: 2rem;
+}
+
+.wp-icon-quote {
+    margin-right: 0.75rem;
+    color: #60a5fa;
+}
+
+.wp-icon-tools {
+    margin-right: 0.75rem;
+    color: var(--primary);
+}
+
+.wp-rate-card-mb {
+    margin-bottom: 1.5rem;
+}
+
+.wp-currency-symbol {
+    font-size: 1.25rem;
+    margin-right: 0.25rem;
+    vertical-align: top;
+}
+
+.wp-availability-card {
+    margin-bottom: 2rem;
+    border-left-color: var(--success);
+}
+
+.wp-availability-title {
+    color: var(--success);
+}
+
+.wp-availability-amount {
+    font-size: 1.5rem;
+    color: var(--dark);
+}
+
+.wp-icon-marker {
+    margin-right: 0.5rem;
+    color: #6366f1;
+}
+
+.wp-service-area-box {
+    background-color: #f9fafb;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    border: 1px solid #f3f4f6;
+}
+
+.wp-contact-placeholder {
+    background-color: var(--dark);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    color: var(--white);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.wp-contact-placeholder h4 {
+    font-weight: bold;
+    font-size: 1.125rem;
+    margin-bottom: 0.5rem;
+    font-family: 'Outfit', sans-serif;
+}
+
+.wp-contact-placeholder p {
+    color: #9ca3af;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+}

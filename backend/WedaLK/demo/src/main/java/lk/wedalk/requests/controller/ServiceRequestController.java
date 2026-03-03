@@ -16,7 +16,9 @@ import org.springframework.web.bind.annotation.*;
 /**
  * ServiceRequestController.java — Service Request REST Controller
  *
- * <p>Exposes service request CRUD and search APIs. Authentication is disabled - all endpoints are
+ * <p>
+ * Exposes service request CRUD and search APIs. Authentication is disabled -
+ * all endpoints are
  * publicly accessible.
  */
 @RestController
@@ -50,44 +52,44 @@ public class ServiceRequestController {
     return ResponseEntity.ok(ApiResponse.success(requests, "Open requests retrieved successfully"));
   }
 
-    @GetMapping("/browse")
-    public ResponseEntity<ApiResponse<PagedResponse<RequestResponse>>> browseRequests(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) ServiceCategory category,
-            @RequestParam(required = false) String locationArea,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "9") int size,
-            @RequestParam(defaultValue = "newest") String sortBy) {
-        PagedResponse<RequestResponse> response = serviceRequestService.browseOpenRequests(
-                keyword, category, locationArea, page, size, sortBy);
-        return ResponseEntity.ok(ApiResponse.success(response, "Browse results retrieved successfully"));
-    }
+  @GetMapping("/browse")
+  public ResponseEntity<ApiResponse<PagedResponse<RequestResponse>>> browseRequests(
+      @RequestParam(required = false) String keyword,
+      @RequestParam(required = false) ServiceCategory category,
+      @RequestParam(required = false) String locationArea,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "9") int size,
+      @RequestParam(defaultValue = "newest") String sortBy) {
+    PagedResponse<RequestResponse> response = serviceRequestService.browseOpenRequests(
+        keyword, category, locationArea, page, size, sortBy);
+    return ResponseEntity.ok(ApiResponse.success(response, "Browse results retrieved successfully"));
+  }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<RequestResponse>> getRequestById(@PathVariable Long id) {
-        RequestResponse request = serviceRequestService.getRequestById(id);
-        return ResponseEntity.ok(ApiResponse.success(request, "Request retrieved successfully"));
-    }
+  @GetMapping("/{id}")
+  public ResponseEntity<ApiResponse<RequestResponse>> getRequestById(@PathVariable Long id) {
+    RequestResponse request = serviceRequestService.getRequestById(id);
+    return ResponseEntity.ok(ApiResponse.success(request, "Request retrieved successfully"));
+  }
 
-    @GetMapping("/search")
-    public ResponseEntity<ApiResponse<List<RequestResponse>>> searchRequests(
-            @RequestParam(required = false) String locationArea,
-            @RequestParam(required = false) ServiceCategory category) {
-        List<RequestResponse> requests = serviceRequestService.searchRequests(locationArea, category);
-        return ResponseEntity.ok(ApiResponse.success(requests, "Search completed successfully"));
-    }
+  @GetMapping("/search")
+  public ResponseEntity<ApiResponse<List<RequestResponse>>> searchRequests(
+      @RequestParam(required = false) String locationArea,
+      @RequestParam(required = false) ServiceCategory category) {
+    List<RequestResponse> requests = serviceRequestService.searchRequests(locationArea, category);
+    return ResponseEntity.ok(ApiResponse.success(requests, "Search completed successfully"));
+  }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<RequestResponse>> updateRequest(
-            @PathVariable Long id,
-            @Valid @RequestBody RequestCreateRequest request) {
-        RequestResponse response = serviceRequestService.updateRequest(id, request);
-        return ResponseEntity.ok(ApiResponse.success(response, "Service request updated successfully"));
-    }
+  @PutMapping("/{id}")
+  public ResponseEntity<ApiResponse<RequestResponse>> updateRequest(
+      @PathVariable Long id,
+      @Valid @RequestBody RequestCreateRequest request) {
+    RequestResponse response = serviceRequestService.updateRequest(id, request);
+    return ResponseEntity.ok(ApiResponse.success(response, "Service request updated successfully"));
+  }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteRequest(@PathVariable Long id) {
-        serviceRequestService.deleteRequest(id);
-        return ResponseEntity.ok(ApiResponse.success(null, "Service request deleted successfully"));
-    }
+  @DeleteMapping("/{id}")
+  public ResponseEntity<ApiResponse<Void>> deleteRequest(@PathVariable Long id) {
+    serviceRequestService.deleteRequest(id);
+    return ResponseEntity.ok(ApiResponse.success(null, "Service request deleted successfully"));
+  }
 }

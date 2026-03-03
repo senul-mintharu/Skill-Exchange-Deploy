@@ -118,7 +118,7 @@ const LandingPage = () => {
                         <Link to="/create-request" className="btn btn-lg btn-accent">
                             Post a Request <Icons.ArrowRight />
                         </Link>
-                        <Link to="/register" className="btn btn-lg btn-white">
+                        <Link to="/create-profile" className="btn btn-lg btn-white">
                             Find Work
                         </Link>
                     </div>
@@ -218,7 +218,7 @@ const LandingPage = () => {
                                 <li>✓ Secure payments after every job</li>
                                 <li>✓ Build your reputation with reviews</li>
                             </ul>
-                            <Link to="/register" className="btn btn-lg btn-accent">
+                            <Link to="/create-profile" className="btn btn-lg btn-accent">
                                 Sign Up as Tasker <Icons.ArrowRight />
                             </Link>
                         </div>
@@ -250,7 +250,7 @@ const LandingPage = () => {
                                 <Link to="/create-request" className="btn btn-lg btn-accent">
                                     Post a Request <Icons.ArrowRight />
                                 </Link>
-                                <Link to="/register" className="btn btn-lg btn-secondary" style={{ borderColor: 'rgba(255,255,255,0.4)', color: 'var(--white)' }}>
+                                <Link to="/create-profile" className="btn btn-lg btn-secondary" style={{ borderColor: 'rgba(255,255,255,0.4)', color: 'var(--white)' }}>
                                     Join as Tasker
                                 </Link>
                             </div>

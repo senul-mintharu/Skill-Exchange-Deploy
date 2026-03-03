@@ -56,7 +56,7 @@ const Navbar = ({ variant = 'landing' }) => {
                                 <a href="#how-it-works" className="navbar__link">How It Works</a>
                                 <a href="#services" className="navbar__link">Services</a>
                                 <Link to="/login" className="navbar__link">Sign up / Log in</Link>
-                                <Link to="/register" className="btn btn-sm btn-secondary navbar__btn-tasker">
+                                <Link to="/create-profile" className="btn btn-sm btn-secondary navbar__btn-tasker">
                                     Become a Tasker
                                 </Link>
                             </>
@@ -117,7 +117,7 @@ const Navbar = ({ variant = 'landing' }) => {
                 </ul>
                 <div className="navbar__drawer-actions">
                     {!isPortal ? (
-                        <Link to="/register" className="btn btn-primary" onClick={closeMobile} style={{ width: '100%' }}>
+                        <Link to="/create-profile" className="btn btn-primary" onClick={closeMobile} style={{ width: '100%' }}>
                             Become a Tasker
                         </Link>
                     ) : (

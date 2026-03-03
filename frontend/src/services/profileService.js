@@ -1,19 +1,49 @@
 /**
  * profileService.js — Worker Profile API Service
  *
- * This file should contain:
- * - Import apiClient from './apiClient'
- * - Functions:
- *     - createProfile(profileData) → POST /profiles
- *     - getProfileById(id) → GET /profiles/{id}
- *     - getProfileByUserId(userId) → GET /profiles/user/{userId}
- *     - updateProfile(id, profileData) → PUT /profiles/{id}
- *     - searchWorkers(district, skill) → GET /profiles/search
- *     - getVerifiedWorkers() → GET /profiles/verified
- *
- * Purpose:
- *   Centralizes all worker profile API calls.
- *   Used by worker profile pages and seeker search.
- *
- * Export: { createProfile, getProfileById, updateProfile, searchWorkers, ... }
+ * Centralizes all worker profile API calls.
+ * Used by worker profile pages and seeker search.
  */
+
+import apiClient from './apiClient';
+
+/**
+ * Create a new worker profile
+ * @param {Object} profileData - { bio, skills[], district, serviceAreas[], hourlyRate, availability }
+ * @returns {Promise<Object>} Created profile response
+ */
+export const createProfile = async (profileData) => {
+    const response = await apiClient.post('/profiles', profileData);
+    return response.data;
+};
+
+/**
+ * Get a worker profile by profile ID
+ * @param {number} id - Profile ID
+ * @returns {Promise<Object>} Profile details
+ */
+export const getProfileById = async (id) => {
+    const response = await apiClient.get(`/profiles/${id}`);
+    return response.data;
+};
+
+/**
+ * Get a worker profile by user ID
+ * @param {number} userId - User ID
+ * @returns {Promise<Object>} Profile details
+ */
+export const getProfileByUserId = async (userId) => {
+    const response = await apiClient.get(`/profiles/user/${userId}`);
+    return response.data;
+};
+
+/**
+ * Update an existing worker profile
+ * @param {number} id - Profile ID
+ * @param {Object} profileData - { bio, skills[], district, serviceAreas[], hourlyRate, availability }
+ * @returns {Promise<Object>} Updated profile response
+ */
+export const updateProfile = async (id, profileData) => {
+    const response = await apiClient.put(`/profiles/${id}`, profileData);
+    return response.data;
+};

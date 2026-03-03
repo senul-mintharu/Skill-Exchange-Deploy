@@ -4,15 +4,19 @@ import './App.css';
 
 import MainLayout from './layouts/MainLayout';
 import LandingPage from './pages/public/LandingPage';
+
+import PublicWorkerProfilePage from './pages/public/PublicWorkerProfilePage'; // Added proper import
+
 import CreateRequestPage from './pages/seeker/CreateRequestPage';
 import MyRequestsPage from './pages/seeker/MyRequestsPage';
 import RequestDetailsPage from './pages/seeker/RequestDetailsPage';
 import BrowseRequestsPage from './pages/worker/BrowseRequestsPage';
 import WorkerRequestDetailsPage from './pages/worker/WorkerRequestDetailsPage';
 
-import WorkerProfileForm from './components/WorkerProfileForm';
 
-import WorkerProfileView from './components/WorkerProfileView';
+import EditWorkerProfilePage from './pages/worker/EditWorkerProfilePage';
+
+import WorkerProfilePage from './pages/worker/WorkerProfilePage';
 
 /**
  * App.js — Main Application Component (Simplified)
@@ -25,14 +29,10 @@ function App() {
       <Routes>
         <Route element={<MainLayout />}>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/create-profile" element={<WorkerProfileForm />} />
-          <Route path="/edit-profile/:id" element={<WorkerProfileForm />} />
-          <Route path="/profile/:id" element={<WorkerProfileView />} />
-          <Route path="/create-request" element={<CreateRequestPage />} />
-          <Route path="/my-requests" element={<MyRequestsPage />} />
-          <Route path="/my-requests/:requestId" element={<RequestDetailsPage />} />
-          <Route path="/requests/:requestId" element={<WorkerRequestDetailsPage />} />
-          <Route path="/browse-requests" element={<BrowseRequestsPage />} />
+          <Route path="/create-profile" element={<EditWorkerProfilePage />} />
+          <Route path="/edit-profile/:id" element={<EditWorkerProfilePage />} />
+          <Route path="/profile/:id" element={<WorkerProfilePage />} />
+          <Route path="/workers/:id" element={<PublicWorkerProfilePage />} />
         </Route>
       </Routes>
     </BrowserRouter>

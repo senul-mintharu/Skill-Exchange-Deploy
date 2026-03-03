@@ -8,7 +8,8 @@ import lombok.NoArgsConstructor;
 /**
  * AuthResponse.java — Authentication Response DTO
  *
- * <p>Contains JWT token and user information after successful authentication.
+ * <p>
+ * Contains JWT token and user information after successful authentication.
  */
 @Data
 @Builder
@@ -17,6 +18,7 @@ import lombok.NoArgsConstructor;
 public class AuthResponse {
 
   private String token;
+  @Builder.Default
   private String type = "Bearer";
   private Long userId;
   private String email;
