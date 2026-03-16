@@ -180,7 +180,7 @@ public class ServiceRequestService {
         .updatedAt(request.getUpdatedAt())
         .seekerId(request.getSeeker().getId())
         .seekerName(request.getSeeker().getFullName())
-        .seekerPhone(request.getSeeker().getPhone())
+        .seekerPhone(request.getSeeker().getPhoneNumber())
         .build();
   }
 }

@@ -1,13 +1,32 @@
 package lk.wedalk.quotes.repository;
 
+import lk.wedalk.quotes.model.Quotation;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
 /**
- * QuotationRepository.java — Quotation Data Access Layer
- *
- * <p>This file should contain: - Interface extending JpaRepository<Quotation, Long> - Custom query
- * methods: - List<Quotation> findByRequestId(Long requestId) - List<Quotation> findByWorkerId(Long
- * workerId) - Optional<Quotation> findByRequestIdAndWorkerId(Long requestId, Long workerId) -
- * List<Quotation> findByRequestIdAndStatus(Long requestId, QuoteStatus status) - boolean
- * existsByRequestIdAndWorkerId(Long requestId, Long workerId)
- *
- * <p>Purpose: Data access for quotations — supports lookup by request, worker, and status.
+ * QuotationRepository — Data Access Layer for Quotation entities.
  */
+@Repository
+public interface QuotationRepository extends JpaRepository<Quotation, Long> {
+
+    /**
+     * Fetch all quotes submitted for a specific service request.
+     * Used by the seeker's "Compare Quotes" view (Story 3).
+     */
+    List<Quotation> findByRequestIdOrderByPriceAsc(Long requestId);
+
+    /**
+     * Fetch all quotes submitted by a specific worker.
+     * Used by the worker's "My Quotes" view (Story 2).
+     */
+    List<Quotation> findByWorkerIdOrderByCreatedAtDesc(Long workerId);
+
+    /**
+     * Check if a worker has already submitted a quote for a given request.
+     * Used to enforce the one-quote-per-worker constraint (AC4).
+     */
+    boolean existsByRequestIdAndWorkerId(Long requestId, Long workerId);
+}
