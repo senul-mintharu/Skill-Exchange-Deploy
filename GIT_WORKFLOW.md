@@ -7,6 +7,14 @@
 git checkout main
 git pull origin main
 
+# If you're branching using Jira/SCRUM IDs, sync and locate the remote branch first:
+git fetch --all
+git branch -a | findstr SCRUM-xx
+
+# Create a local branch tracking the Jira-named remote branch
+# Example:
+git checkout -b feature/SCRUM-63-worker-submit-quotation origin/feature/SCRUM-63-worker-submit-quotation
+
 # Create your feature branch
 # Naming: feature/<your-feature-name>
 # Example: feature/worker-profiles
