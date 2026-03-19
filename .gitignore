@@ -22,3 +22,6 @@ npm-debug.log*
 # Allow everything in docs except temporary system files
 !docs/
 docs/.DS_Store
+
+.env
+.cursor
