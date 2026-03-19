@@ -13,6 +13,7 @@ import RequestDetailsPage from './pages/seeker/RequestDetailsPage';
 import BrowseRequestsPage from './pages/worker/BrowseRequestsPage';
 import WorkerRequestDetailsPage from './pages/worker/WorkerRequestDetailsPage';
 import SubmitQuotePage from './pages/worker/SubmitQuotePage';
+import MyQuotationsPage from './pages/worker/MyQuotationsPage';
 
 
 import EditWorkerProfilePage from './pages/worker/EditWorkerProfilePage';
@@ -42,6 +43,9 @@ function App() {
 
           {/* Sprint 2: Worker - Submit Quotation */}
           <Route path="/requests/:requestId/quote" element={<SubmitQuotePage />} />
+
+          {/* SCRUM-64: Worker - View & Withdraw Quotations */}
+          <Route path="/my-quotations" element={<MyQuotationsPage />} />
 
           {/* SCRUM-19, 20, 21: Worker Profile */}
           <Route path="/create-profile" element={<EditWorkerProfilePage />} />
