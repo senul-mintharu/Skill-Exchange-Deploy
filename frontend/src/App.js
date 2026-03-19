@@ -10,6 +10,7 @@ import PublicWorkerProfilePage from './pages/public/PublicWorkerProfilePage'; //
 import CreateRequestPage from './pages/seeker/CreateRequestPage';
 import MyRequestsPage from './pages/seeker/MyRequestsPage';
 import RequestDetailsPage from './pages/seeker/RequestDetailsPage';
+import CompareQuotesPage from './pages/seeker/CompareQuotesPage';
 import BrowseRequestsPage from './pages/worker/BrowseRequestsPage';
 import WorkerRequestDetailsPage from './pages/worker/WorkerRequestDetailsPage';
 import SubmitQuotePage from './pages/worker/SubmitQuotePage';
@@ -36,6 +37,7 @@ function App() {
           <Route path="/create-request" element={<CreateRequestPage />} />
           <Route path="/my-requests" element={<MyRequestsPage />} />
           <Route path="/my-requests/:requestId" element={<RequestDetailsPage />} />
+          <Route path="/my-requests/:requestId/quotations" element={<CompareQuotesPage />} />
 
           {/* SCRUM-14 & 15: Worker - Browse & View Request Details */}
           <Route path="/browse-requests" element={<BrowseRequestsPage />} />
