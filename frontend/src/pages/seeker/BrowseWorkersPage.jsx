@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { getAllProfiles } from '../../services/profileService';
+import { CATEGORIES } from '../../utils/constants';
 import './BrowseWorkersPage.css';
 
 /**
  * BrowseWorkersPage.jsx — Browse Available Service Providers (Seeker)
  *
  * SCRUM-71: Allows service seekers to browse all registered skilled workers.
- * Features: Modern card design, skill search, location filter, loading skeletons, empty state.
+ * SCRUM-72: Added skill dropdown filter for filtering workers by skill category.
+ * Features: Modern card design, skill filter dropdown, location filter, loading skeletons, empty state.
  */
 const BrowseWorkersPage = () => {
     const [workers, setWorkers] = useState([]);
@@ -15,10 +17,10 @@ const BrowseWorkersPage = () => {
     const [error, setError] = useState('');
 
     // Client-side filters
-    const [skillSearch, setSkillSearch] = useState('');
+    const [selectedSkill, setSelectedSkill] = useState('');
     const [locationSearch, setLocationSearch] = useState('');
 
-    const hasActiveFilters = !!(skillSearch || locationSearch);
+    const hasActiveFilters = !!(selectedSkill || locationSearch);
 
     const fetchWorkers = useCallback(async () => {
         setLoading(true);
@@ -40,11 +42,12 @@ const BrowseWorkersPage = () => {
 
     // Client-side filtering
     const filteredWorkers = workers.filter(worker => {
-        const matchesSkill = !skillSearch.trim() ||
+        // SCRUM-72: Filter by selected skill category
+        const selectedCategory = CATEGORIES.find(c => c.value === selectedSkill);
+        const matchesSkill = !selectedSkill ||
             (worker.skills && worker.skills.some(skill =>
-                skill.toLowerCase().includes(skillSearch.toLowerCase())
-            )) ||
-            (worker.fullName && worker.fullName.toLowerCase().includes(skillSearch.toLowerCase()));
+                skill.toLowerCase().includes(selectedCategory?.label.toLowerCase() || '')
+            ));
 
         const matchesLocation = !locationSearch.trim() ||
             (worker.district && worker.district.toLowerCase().includes(locationSearch.toLowerCase())) ||
@@ -56,7 +59,7 @@ const BrowseWorkersPage = () => {
     });
 
     const handleClearFilters = () => {
-        setSkillSearch('');
+        setSelectedSkill('');
         setLocationSearch('');
     };
 
@@ -127,14 +130,19 @@ const BrowseWorkersPage = () => {
                 <div className="bw-search-container">
                     <div className="bw-search-box">
                         <div className="bw-search-input-wrapper">
-                            <span className="material-icons bw-search-icon">search</span>
-                            <input
-                                type="text"
-                                placeholder="Search by skill or name..."
-                                value={skillSearch}
-                                onChange={(e) => setSkillSearch(e.target.value)}
-                                className="bw-search-input"
-                            />
+                            <span className="material-icons bw-search-icon">handyman</span>
+                            <select
+                                value={selectedSkill}
+                                onChange={(e) => setSelectedSkill(e.target.value)}
+                                className="bw-skill-select"
+                            >
+                                <option value="">All Skills</option>
+                                {CATEGORIES.map(cat => (
+                                    <option key={cat.value} value={cat.value}>
+                                        {cat.icon} {cat.label}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                         <div className="bw-search-divider"></div>
                         <div className="bw-search-input-wrapper">
@@ -182,12 +190,18 @@ const BrowseWorkersPage = () => {
                             <span className="material-icons">person_search</span>
                         </div>
                         <h3 className="bw-state-title">
-                            {hasActiveFilters ? 'No matches found' : 'No workers available'}
+                            {selectedSkill
+                                ? 'No workers found for this skill'
+                                : hasActiveFilters
+                                    ? 'No matches found'
+                                    : 'No workers available'}
                         </h3>
                         <p className="bw-state-text">
-                            {hasActiveFilters
-                                ? 'Try adjusting your search filters to find more workers.'
-                                : 'Be the first to join our platform or check back later!'}
+                            {selectedSkill
+                                ? `No workers have "${CATEGORIES.find(c => c.value === selectedSkill)?.label}" listed in their skills.`
+                                : hasActiveFilters
+                                    ? 'Try adjusting your search filters to find more workers.'
+                                    : 'Be the first to join our platform or check back later!'}
                         </p>
                         {hasActiveFilters && (
                             <button className="bw-btn bw-btn-primary" onClick={handleClearFilters}>
