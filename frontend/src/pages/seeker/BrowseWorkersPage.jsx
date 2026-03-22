@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { getAllProfiles } from '../../services/profileService';
-import { CATEGORIES } from '../../utils/constants';
+import { CATEGORIES, DISTRICTS } from '../../utils/constants';
 import './BrowseWorkersPage.css';
 
 /**
@@ -9,6 +9,7 @@ import './BrowseWorkersPage.css';
  *
  * SCRUM-71: Allows service seekers to browse all registered skilled workers.
  * SCRUM-72: Added skill dropdown filter for filtering workers by skill category.
+ * SCRUM-73: Added service area dropdown filter for filtering workers by location.
  * Features: Modern card design, skill filter dropdown, location filter, loading skeletons, empty state.
  */
 const BrowseWorkersPage = () => {
@@ -18,9 +19,9 @@ const BrowseWorkersPage = () => {
 
     // Client-side filters
     const [selectedSkill, setSelectedSkill] = useState('');
-    const [locationSearch, setLocationSearch] = useState('');
+    const [selectedLocation, setSelectedLocation] = useState('');
 
-    const hasActiveFilters = !!(selectedSkill || locationSearch);
+    const hasActiveFilters = !!(selectedSkill || selectedLocation);
 
     const fetchWorkers = useCallback(async () => {
         setLoading(true);
@@ -49,10 +50,11 @@ const BrowseWorkersPage = () => {
                 skill.toLowerCase().includes(selectedCategory?.label.toLowerCase() || '')
             ));
 
-        const matchesLocation = !locationSearch.trim() ||
-            (worker.district && worker.district.toLowerCase().includes(locationSearch.toLowerCase())) ||
+        // SCRUM-73: Filter by selected service area (district)
+        const matchesLocation = !selectedLocation ||
+            (worker.district && worker.district === selectedLocation) ||
             (worker.serviceAreas && worker.serviceAreas.some(area =>
-                area.toLowerCase().includes(locationSearch.toLowerCase())
+                area.includes(selectedLocation)
             ));
 
         return matchesSkill && matchesLocation;
@@ -60,7 +62,7 @@ const BrowseWorkersPage = () => {
 
     const handleClearFilters = () => {
         setSelectedSkill('');
-        setLocationSearch('');
+        setSelectedLocation('');
     };
 
     // Generate avatar colors based on name
@@ -147,13 +149,18 @@ const BrowseWorkersPage = () => {
                         <div className="bw-search-divider"></div>
                         <div className="bw-search-input-wrapper">
                             <span className="material-icons bw-search-icon">location_on</span>
-                            <input
-                                type="text"
-                                placeholder="Filter by location..."
-                                value={locationSearch}
-                                onChange={(e) => setLocationSearch(e.target.value)}
-                                className="bw-search-input"
-                            />
+                            <select
+                                value={selectedLocation}
+                                onChange={(e) => setSelectedLocation(e.target.value)}
+                                className="bw-location-select"
+                            >
+                                <option value="">All Locations</option>
+                                {DISTRICTS.map(district => (
+                                    <option key={district} value={district}>
+                                        {district}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                         {hasActiveFilters && (
                             <button onClick={handleClearFilters} className="bw-clear-btn">
@@ -190,17 +197,17 @@ const BrowseWorkersPage = () => {
                             <span className="material-icons">person_search</span>
                         </div>
                         <h3 className="bw-state-title">
-                            {selectedSkill
-                                ? 'No workers found for this skill'
-                                : hasActiveFilters
-                                    ? 'No matches found'
+                            {selectedLocation
+                                ? 'No workers found in this area'
+                                : selectedSkill
+                                    ? 'No workers found for this skill'
                                     : 'No workers available'}
                         </h3>
                         <p className="bw-state-text">
-                            {selectedSkill
-                                ? `No workers have "${CATEGORIES.find(c => c.value === selectedSkill)?.label}" listed in their skills.`
-                                : hasActiveFilters
-                                    ? 'Try adjusting your search filters to find more workers.'
+                            {selectedLocation
+                                ? `No workers are currently serving in ${selectedLocation}. Try selecting a different area or check back later.`
+                                : selectedSkill
+                                    ? `No workers have "${CATEGORIES.find(c => c.value === selectedSkill)?.label}" listed in their skills.`
                                     : 'Be the first to join our platform or check back later!'}
                         </p>
                         {hasActiveFilters && (
