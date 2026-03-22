@@ -259,12 +259,6 @@
     gap: 1.5rem;
 }
 
-.bw-card-link {
-    text-decoration: none;
-    color: inherit;
-    display: block;
-}
-
 /* ========================================
    Worker Card
    ======================================== */
@@ -318,6 +312,7 @@
     position: relative;
     flex-shrink: 0;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
 }
 
 .bw-avatar-text {
@@ -325,6 +320,12 @@
     font-weight: 700;
     color: #ffffff;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.bw-avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .bw-avatar-badge {
@@ -359,6 +360,16 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.bw-card-name-link {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.bw-card-name-link:hover {
+    color: #2C666E;
 }
 
 .bw-card-role {
@@ -500,6 +511,7 @@
     font-weight: 600;
     color: #2C666E;
     transition: all 0.2s ease;
+    text-decoration: none;
 }
 
 .bw-view-profile .material-icons {

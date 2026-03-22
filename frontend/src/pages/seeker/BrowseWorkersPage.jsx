@@ -228,12 +228,7 @@ const BrowseWorkersPage = () => {
 
                         <div className="bw-grid">
                             {filteredWorkers.map(worker => (
-                                <Link
-                                    key={worker.id}
-                                    to={`/workers/${worker.id}`}
-                                    className="bw-card-link"
-                                >
-                                    <div className="bw-card">
+                                <div key={worker.id} className="bw-card">
                                         <div className="bw-card-accent"></div>
 
                                         {/* Card Header */}
@@ -242,15 +237,27 @@ const BrowseWorkersPage = () => {
                                                 className="bw-avatar"
                                                 style={{ background: getAvatarGradient(worker.fullName) }}
                                             >
-                                                <span className="bw-avatar-text">
-                                                    {worker.fullName ? worker.fullName.charAt(0).toUpperCase() : 'W'}
-                                                </span>
+                                                {worker.profilePictureUrl ? (
+                                                    <img
+                                                        src={worker.profilePictureUrl}
+                                                        alt={`${worker.fullName || 'Worker'} avatar`}
+                                                        className="bw-avatar-image"
+                                                    />
+                                                ) : (
+                                                    <span className="bw-avatar-text">
+                                                        {worker.fullName ? worker.fullName.charAt(0).toUpperCase() : 'W'}
+                                                    </span>
+                                                )}
                                                 <div className="bw-avatar-badge">
                                                     <span className="material-icons">verified</span>
                                                 </div>
                                             </div>
                                             <div className="bw-card-info">
-                                                <h3 className="bw-card-name">{worker.fullName || 'Worker'}</h3>
+                                                <h3 className="bw-card-name">
+                                                    <Link to={`/workers/${worker.id}`} className="bw-card-name-link">
+                                                        {worker.fullName || 'Worker'}
+                                                    </Link>
+                                                </h3>
                                                 <div className="bw-card-role">
                                                     <span className="material-icons">handyman</span>
                                                     {worker.skills && worker.skills.length > 0
@@ -302,13 +309,12 @@ const BrowseWorkersPage = () => {
                                                     <span className="bw-rate-negotiable">Contact for rates</span>
                                                 )}
                                             </div>
-                                            <div className="bw-view-profile">
+                                            <Link to={`/workers/${worker.id}`} className="bw-view-profile">
                                                 View Profile
                                                 <span className="material-icons">arrow_forward</span>
-                                            </div>
+                                            </Link>
                                         </div>
                                     </div>
-                                </Link>
                             ))}
                         </div>
                     </>

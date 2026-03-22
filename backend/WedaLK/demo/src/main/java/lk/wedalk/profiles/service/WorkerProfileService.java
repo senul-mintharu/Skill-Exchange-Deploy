@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,10 +26,15 @@ public class WorkerProfileService {
     public WorkerProfileResponse createProfile(WorkerProfileCreateRequest request) {
         // Automatically generate a User for the profile (Sprint 1 simplification)
         String uniqueSuffix = String.valueOf(System.currentTimeMillis());
+        String fullName = Optional.ofNullable(request.getFullName())
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .orElse("Worker_" + uniqueSuffix);
         User newUser = User.builder()
-                .fullName("Worker_" + uniqueSuffix)
+                .fullName(fullName)
                 .email("worker_" + uniqueSuffix + "@test.com")
                 .password("password")
+                .phone(request.getContactNumber())
                 .role(lk.wedalk.users.model.Role.WORKER)
                 .build();
         User user = userRepository.save(newUser);
@@ -36,6 +42,7 @@ public class WorkerProfileService {
         WorkerProfile profile = WorkerProfile.builder()
                 .user(user)
                 .bio(request.getBio())
+                .profilePictureUrl(request.getProfilePictureUrl())
                 .skills(request.getSkills())
                 .district(request.getDistrict())
                 .serviceAreas(request.getServiceAreas())
@@ -71,8 +78,14 @@ public class WorkerProfileService {
         WorkerProfile profile = workerProfileRepository.findById(id)
                 .orElseThrow(() -> new lk.wedalk.common.exceptions.NotFoundException("Profile not found"));
 
+        if (request.getFullName() != null)
+            profile.getUser().setFullName(request.getFullName());
+        if (request.getContactNumber() != null)
+            profile.getUser().setPhone(request.getContactNumber());
         if (request.getBio() != null)
             profile.setBio(request.getBio());
+        if (request.getProfilePictureUrl() != null)
+            profile.setProfilePictureUrl(request.getProfilePictureUrl());
         if (request.getSkills() != null)
             profile.setSkills(request.getSkills());
         if (request.getDistrict() != null)
@@ -88,18 +101,14 @@ public class WorkerProfileService {
         return mapToResponse(savedProfile);
     }
 
-    // Mapping helper
     private WorkerProfileResponse mapToResponse(WorkerProfile profile) {
-        // Assuming WorkerProfileResponse has a builder or adequate constructor
-        // I need to check WorkerProfileResponse definition, but for now assuming it has
-        // fields matching.
-        // I will update WorkerProfileResponse in the next step to ensure it has these
-        // fields.
         return new WorkerProfileResponse(
                 profile.getId(),
                 profile.getUser().getId(), // returning userId
                 profile.getUser().getFullName(),
+                profile.getUser().getPhone(),
                 profile.getBio(),
+                profile.getProfilePictureUrl(),
                 profile.getSkills(),
                 profile.getDistrict(),
                 profile.getServiceAreas(),

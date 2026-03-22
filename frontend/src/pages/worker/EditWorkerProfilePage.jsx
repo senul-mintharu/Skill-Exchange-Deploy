@@ -25,7 +25,7 @@ const EditWorkerProfilePage = () => {
         serviceAreas: [], // Array of service area strings
         hourlyRate: '',
         availability: '',
-        photo: null
+        profilePictureUrl: ''
     });
 
     const [skillInput, setSkillInput] = useState('');
@@ -46,7 +46,7 @@ const EditWorkerProfilePage = () => {
                 serviceAreas: data.serviceAreas || [],
                 hourlyRate: data.hourlyRate || '',
                 availability: data.availability || '',
-                photo: null
+                profilePictureUrl: data.profilePictureUrl || ''
             });
         } catch (err) {
             setError('Failed to fetch profile');
@@ -112,9 +112,18 @@ const EditWorkerProfilePage = () => {
 
     const handlePhotoChange = (e) => {
         const file = e.target.files[0];
-        if (file) {
-            setFormData(prev => ({ ...prev, photo: file }));
-        }
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            if (typeof reader.result === 'string') {
+                setFormData(prev => ({ ...prev, profilePictureUrl: reader.result }));
+            }
+        };
+        reader.onerror = () => {
+            setError('Failed to process the selected photo. Please try a different image.');
+        };
+        reader.readAsDataURL(file);
     };
 
     const handleSubmit = async (e) => {
@@ -140,7 +149,9 @@ const EditWorkerProfilePage = () => {
 
         const payload = {
             fullName: formData.fullName,
+            contactNumber: formData.contactNumber,
             bio: formData.bio,
+            profilePictureUrl: formData.profilePictureUrl || null,
             skills: allSkills,
             district: formData.district,
             serviceAreas: formData.serviceAreas,
@@ -204,9 +215,9 @@ const EditWorkerProfilePage = () => {
                     <div className="ewp-section ewp-photo-section">
                         <div className="ewp-photo-upload">
                             <div className="ewp-avatar-circle">
-                                {formData.photo ? (
+                                {formData.profilePictureUrl ? (
                                     <img
-                                        src={URL.createObjectURL(formData.photo)}
+                                        src={formData.profilePictureUrl}
                                         alt="Profile"
                                         className="ewp-avatar-img"
                                     />
@@ -227,7 +238,7 @@ const EditWorkerProfilePage = () => {
                             <div className="ewp-photo-info">
                                 <h3 className="ewp-photo-title">Professional Photo</h3>
                                 <p className="ewp-photo-subtitle">
-                                    Upload a clear photo of yourself to build trust with customers
+                                    Upload a clear photo of yourself so seekers can recognize you on your public profile
                                 </p>
                             </div>
                         </div>
