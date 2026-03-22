@@ -168,6 +168,34 @@
     font-size: 0.95rem;
 }
 
+/* SCRUM-73: Location Filter Dropdown */
+.bw-location-select {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 1rem;
+    color: #1e293b;
+    background: transparent;
+    cursor: pointer;
+    padding: 0.25rem 0;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0 center;
+    padding-right: 1.5rem;
+}
+
+.bw-location-select:focus {
+    outline: none;
+}
+
+.bw-location-select option {
+    padding: 0.5rem;
+    font-size: 0.95rem;
+}
+
 .bw-search-divider {
     width: 1px;
     height: 32px;
@@ -715,6 +743,10 @@
     }
 
     .bw-skill-select {
+        font-size: 0.9rem;
+    }
+
+    .bw-location-select {
         font-size: 0.9rem;
     }
 
