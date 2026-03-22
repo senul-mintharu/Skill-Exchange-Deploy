@@ -23,6 +23,7 @@ CREATE TABLE worker_profiles (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
     bio TEXT,
+    profile_picture_url TEXT,
     skills TEXT,                    -- Comma-separated or JSON array of skills
     service_areas TEXT,             -- Comma-separated districts
     hourly_rate DECIMAL(10, 2),

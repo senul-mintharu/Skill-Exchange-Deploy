@@ -1,20 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { getProfileById } from '../../services/profileService';
 import '../worker/WorkerProfile.css';
 
 /**
- * PublicWorkerProfilePage.jsx — Public Worker Profile View (Modern Redesign)
- *
- * Features:
- * - Dark gradient page background
- * - Centered white card with modern sections
- * - Stats row, expertise tags, services grid
- * - Service areas with map placeholder
- * - Portfolio section
- * - Responsive design
+ * PublicWorkerProfilePage.jsx — Public Worker Profile View
  */
 const PublicWorkerProfilePage = () => {
+    const navigate = useNavigate();
     const { id } = useParams();
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -37,19 +30,25 @@ const PublicWorkerProfilePage = () => {
         fetchProfile();
     }, [fetchProfile]);
 
-    // Get first name for "About" section
+    const handleBack = () => {
+        if (window.history.length > 1) {
+            navigate(-1);
+            return;
+        }
+
+        navigate('/browse-workers');
+    };
+
     const getFirstName = (fullName) => {
         if (!fullName) return 'Worker';
         return fullName.split(' ')[0];
     };
 
-    // Get primary skill for verified badge
     const getPrimarySkill = (skills) => {
         if (!skills || skills.length === 0) return 'Professional';
         return skills[0];
     };
 
-    // Generate service cards from skills
     const getServiceCards = (skills) => {
         const serviceMap = {
             'Plumbing': { icon: 'plumbing', title: 'Plumbing Services', desc: 'Pipe repairs, installations, and maintenance' },
@@ -84,11 +83,9 @@ const PublicWorkerProfilePage = () => {
         });
     };
 
-    // Skeleton Loading Component
     const SkeletonLoader = () => (
         <div className="wpp-page">
             <div className="wpp-card">
-                {/* Header Skeleton */}
                 <div className="wpp-header">
                     <div className="wpp-skeleton wpp-skeleton-avatar"></div>
                     <div className="wpp-header-content">
@@ -102,14 +99,12 @@ const PublicWorkerProfilePage = () => {
                     </div>
                 </div>
 
-                {/* Stats Skeleton */}
                 <div className="wpp-stats">
                     {[1, 2, 3, 4].map(i => (
                         <div key={i} className="wpp-skeleton wpp-skeleton-stat"></div>
                     ))}
                 </div>
 
-                {/* Skills Skeleton */}
                 <div className="wpp-section">
                     <div className="wpp-skeleton wpp-skeleton-name" style={{ marginBottom: '16px' }}></div>
                     <div className="wpp-skills">
@@ -119,13 +114,11 @@ const PublicWorkerProfilePage = () => {
                     </div>
                 </div>
 
-                {/* About Skeleton */}
                 <div className="wpp-section">
                     <div className="wpp-skeleton wpp-skeleton-name" style={{ marginBottom: '16px' }}></div>
                     <div className="wpp-skeleton wpp-skeleton-bio"></div>
                 </div>
 
-                {/* Services Skeleton */}
                 <div className="wpp-section">
                     <div className="wpp-skeleton wpp-skeleton-name" style={{ marginBottom: '16px' }}></div>
                     <div className="wpp-services-grid">
@@ -164,11 +157,18 @@ const PublicWorkerProfilePage = () => {
     return (
         <div className="wpp-page">
             <div className="wpp-card">
-                {/* Profile Header */}
                 <div className="wpp-header">
                     <div className="wpp-avatar-container">
                         <div className="wpp-avatar">
-                            {profile.fullName ? profile.fullName.charAt(0).toUpperCase() : 'W'}
+                            {profile.profilePictureUrl ? (
+                                <img
+                                    src={profile.profilePictureUrl}
+                                    alt={`${profile.fullName || 'Worker'} profile`}
+                                    className="wpp-avatar-photo"
+                                />
+                            ) : (
+                                profile.fullName ? profile.fullName.charAt(0).toUpperCase() : 'W'
+                            )}
                         </div>
                         <div className="wpp-avatar-badge">
                             <span className="material-icons">verified</span>
@@ -191,23 +191,22 @@ const PublicWorkerProfilePage = () => {
                             </div>
                         )}
                         <div className="wpp-header-actions">
-                            <button className="wpp-btn-primary">
+                            <button type="button" className="wpp-btn-primary">
                                 Invite to Job
                             </button>
-                            <button className="wpp-btn-secondary">
-                                Message
+                            <button type="button" className="wpp-btn-secondary" onClick={handleBack}>
+                                Back
                             </button>
-                            <button className="wpp-btn-icon">
+                            <button type="button" className="wpp-btn-icon">
                                 <span className="material-icons">share</span>
                             </button>
-                            <button className="wpp-btn-icon">
+                            <button type="button" className="wpp-btn-icon">
                                 <span className="material-icons">more_horiz</span>
                             </button>
                         </div>
                     </div>
                 </div>
 
-                {/* Stats Row */}
                 <div className="wpp-stats">
                     <div className="wpp-stat-card">
                         <span className="material-icons wpp-stat-icon rating">star</span>
@@ -231,7 +230,6 @@ const PublicWorkerProfilePage = () => {
                     </div>
                 </div>
 
-                {/* Expertise Section */}
                 {profile.skills && profile.skills.length > 0 && (
                     <div className="wpp-section">
                         <h2 className="wpp-section-title">Expertise</h2>
@@ -243,7 +241,6 @@ const PublicWorkerProfilePage = () => {
                     </div>
                 )}
 
-                {/* About Section */}
                 {profile.bio && (
                     <div className="wpp-section">
                         <h2 className="wpp-section-title">About {getFirstName(profile.fullName)}</h2>
@@ -251,7 +248,6 @@ const PublicWorkerProfilePage = () => {
                     </div>
                 )}
 
-                {/* Services Offered */}
                 <div className="wpp-section">
                     <h2 className="wpp-section-title">Services Offered</h2>
                     <div className="wpp-services-grid">
@@ -269,7 +265,6 @@ const PublicWorkerProfilePage = () => {
                     </div>
                 </div>
 
-                {/* Service Areas */}
                 <div className="wpp-section">
                     <h2 className="wpp-section-title">Service Areas</h2>
                     <div className="wpp-location-info">
@@ -294,11 +289,10 @@ const PublicWorkerProfilePage = () => {
                     </div>
                 </div>
 
-                {/* Portfolio Section */}
                 <div className="wpp-section">
                     <div className="wpp-section-header">
                         <h2 className="wpp-section-title">Portfolio & Past Work</h2>
-                        <button className="wpp-view-all">View All</button>
+                        <button type="button" className="wpp-view-all">View All</button>
                     </div>
                     <div className="wpp-portfolio-grid">
                         <div className="wpp-portfolio-item">

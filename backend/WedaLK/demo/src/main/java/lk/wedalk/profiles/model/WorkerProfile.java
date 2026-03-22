@@ -31,6 +31,9 @@ public class WorkerProfile {
     @Column(columnDefinition = "TEXT")
     private String bio;
 
+    @Column(columnDefinition = "TEXT")
+    private String profilePictureUrl;
+
     @ElementCollection(fetch = FetchType.EAGER) // EAGER for simplicity in demo
     @CollectionTable(name = "worker_skills", joinColumns = @JoinColumn(name = "worker_id"))
     @Column(name = "skill")
