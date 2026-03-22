@@ -9,8 +9,10 @@ jest.mock(
     Route: ({ element }) => element ?? null,
     Outlet: () => null,
     Link: ({ children }) => <>{children}</>,
+    NavLink: ({ children }) => <>{children}</>,
     useNavigate: () => jest.fn(),
     useParams: () => ({}),
+    useLocation: () => ({ pathname: '/' }),
   }),
   { virtual: true }
 );

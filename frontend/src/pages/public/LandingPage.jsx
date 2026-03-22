@@ -118,7 +118,7 @@ const LandingPage = () => {
                         <Link to="/create-request" className="btn btn-lg btn-accent">
                             Post a Request <Icons.ArrowRight />
                         </Link>
-                        <Link to="/create-profile" className="btn btn-lg btn-white">
+                        <Link to="/browse-requests" className="btn btn-lg btn-white">
                             Find Work
                         </Link>
                     </div>

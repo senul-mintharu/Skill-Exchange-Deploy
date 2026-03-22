@@ -15,6 +15,8 @@ const segmentLabels = {
     'seeker': 'Seeker',
     'worker': 'Worker',
     'my-requests': 'My Requests',
+    'my-quotations': 'My Quotations',
+    'quotations': 'Quotations',
     'browse-requests': 'Browse Requests',
     'create-request': 'Create Request',
     'profile': 'Profile',

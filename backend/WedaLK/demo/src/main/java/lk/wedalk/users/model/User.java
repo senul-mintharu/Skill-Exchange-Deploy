@@ -30,7 +30,8 @@ public class User {
 
     private String password; // hashed
 
-    private String phone;
+    @Column(name = "phone_number")
+    private String phoneNumber;
 
     private String district;
 

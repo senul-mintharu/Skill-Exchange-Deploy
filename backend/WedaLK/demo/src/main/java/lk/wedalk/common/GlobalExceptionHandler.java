@@ -5,6 +5,7 @@ import lk.wedalk.common.exceptions.NotFoundException;
 import lk.wedalk.common.exceptions.UnauthorizedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -33,5 +34,20 @@ public class GlobalExceptionHandler {
         public ResponseEntity<ApiResponse<Void>> handleUnauthorized(UnauthorizedException ex) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                                 .body(ApiResponse.error(ex.getMessage()));
+        }
+
+        /**
+         * Handles Bean Validation (@Valid) failures from controller request bodies.
+         * Returns the first field-level validation message so the frontend gets
+         * a clear, actionable error via the standard ApiResponse wrapper.
+         */
+        @ExceptionHandler(MethodArgumentNotValidException.class)
+        public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException ex) {
+                String message = ex.getBindingResult().getFieldErrors().stream()
+                                .findFirst()
+                                .map(fe -> fe.getDefaultMessage())
+                                .orElse("Validation failed");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                .body(ApiResponse.error(message));
         }
 }

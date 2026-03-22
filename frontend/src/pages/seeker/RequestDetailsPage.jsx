@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
 import Breadcrumb from '../../components/common/Breadcrumb';
 import { getRequestById, deleteRequest } from '../../services/requestService';
+import { getQuotesByRequest } from '../../services/quoteService';
 import { formatBudget } from '../../utils/constants';
 import './RequestDetailsPage.css';
 
@@ -15,6 +16,27 @@ const RequestDetailsPage = () => {
     const [request, setRequest] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+
+    // Quotes (Seeker view)
+    const [quotes, setQuotes] = useState([]);
+    const [quotesLoading, setQuotesLoading] = useState(false);
+    const [quotesError, setQuotesError] = useState('');
+
+    const fetchQuotes = async () => {
+        if (!requestId || isWorker) return;
+        setQuotesLoading(true);
+        setQuotesError('');
+        try {
+            const data = await getQuotesByRequest(Number(requestId));
+            setQuotes(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error('Error fetching quotations:', err);
+            setQuotesError(err.response?.data?.message || 'Failed to load quotations. Please try again.');
+            setQuotes([]);
+        } finally {
+            setQuotesLoading(false);
+        }
+    };
 
     useEffect(() => {
         const fetchRequestDetails = async () => {
@@ -56,6 +78,11 @@ const RequestDetailsPage = () => {
             fetchRequestDetails();
         }
     }, [requestId]);
+
+    useEffect(() => {
+        fetchQuotes();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [requestId, isWorker]);
 
     if (loading) {
         return (
@@ -203,26 +230,80 @@ const RequestDetailsPage = () => {
                             <div className="rd-card rd-quotes-card">
                                 <div className="rd-quotes-header">
                                     <h3>📜 Quotes Received</h3>
-                                    <span className="rd-quotes-count">{request.quotesCount}</span>
+                                    <span className="rd-quotes-count">
+                                        {quotesLoading ? '…' : quotes.length}
+                                    </span>
                                 </div>
                                 
                                 <div className="rd-quotes-body">
-                                    <div className="rd-quotes-empty">
-                                        <div className="rd-empty-icon-wrapper">
-                                            <span className="rd-empty-emoji">⏳</span>
-                                            <span className="rd-search-badge">🔍</span>
+                                    {quotesLoading && (
+                                        <div className="rd-quotes-loading">
+                                            <div className="rd-spinner" />
+                                            <p>Loading quotations…</p>
                                         </div>
-                                        <h4>Awaiting Quotes</h4>
-                                        <p>We've sent your request to verified professionals in {request.locationArea}. Hang tight! Professionals usually respond with quotes within 24 hours.</p>
-                                        
-                                        <div className="rd-tip-box">
-                                            <span className="rd-tip-emoji">💡</span>
+                                    )}
+
+                                    {!quotesLoading && quotesError && (
+                                        <div className="rd-quotes-error" role="alert">
+                                            <span className="material-icons">error_outline</span>
                                             <div>
-                                                <p className="rd-tip-title">Tip for faster responses:</p>
-                                                <p className="rd-tip-text">Adding a detailed description with specific measurements and conditions can help professionals give you a more accurate quote faster.</p>
+                                                <h4>Couldn’t load quotations</h4>
+                                                <p>{quotesError}</p>
+                                                <button
+                                                    className="rd-btn rd-btn-secondary"
+                                                    type="button"
+                                                    onClick={fetchQuotes}
+                                                >
+                                                    Try Again
+                                                </button>
                                             </div>
                                         </div>
-                                    </div>
+                                    )}
+
+                                    {!quotesLoading && !quotesError && quotes.length === 0 && (
+                                        <div className="rd-quotes-empty">
+                                            <div className="rd-empty-icon-wrapper">
+                                                <span className="rd-empty-emoji">⏳</span>
+                                                <span className="rd-search-badge">🔍</span>
+                                            </div>
+                                            <h4>No quotations received yet</h4>
+                                            <p>Workers haven’t submitted quotations for this request yet. Please check back soon.</p>
+                                        </div>
+                                    )}
+
+                                    {!quotesLoading && !quotesError && quotes.length > 0 && (
+                                        <div className="rd-quotes-list">
+                                            <table className="rd-quotes-table" aria-label="Quotations received">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Worker</th>
+                                                        <th>Price</th>
+                                                        <th>ETA</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {quotes.map((q) => (
+                                                        <tr key={q.id}>
+                                                            <td data-label="Worker">
+                                                                <Link to={`/workers/${q.workerId}`} className="rd-worker-link">
+                                                                    <span className="rd-worker-avatar" aria-hidden="true">
+                                                                        {(q.workerName || 'W').charAt(0).toUpperCase()}
+                                                                    </span>
+                                                                    <span className="rd-worker-name">{q.workerName || `Worker #${q.workerId}`}</span>
+                                                                </Link>
+                                                            </td>
+                                                            <td data-label="Price" className="rd-quote-price">
+                                                                LKR {Number(q.price).toLocaleString()}
+                                                            </td>
+                                                            <td data-label="ETA" className="rd-quote-eta">
+                                                                {q.estimatedDays} {q.estimatedDays === 1 ? 'day' : 'days'}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}

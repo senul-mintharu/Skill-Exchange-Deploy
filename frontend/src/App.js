@@ -11,8 +11,11 @@ import CreateRequestPage from './pages/seeker/CreateRequestPage';
 import MyRequestsPage from './pages/seeker/MyRequestsPage';
 import RequestDetailsPage from './pages/seeker/RequestDetailsPage';
 import BrowseWorkersPage from './pages/seeker/BrowseWorkersPage';
+import CompareQuotesPage from './pages/seeker/CompareQuotesPage';
 import BrowseRequestsPage from './pages/worker/BrowseRequestsPage';
 import WorkerRequestDetailsPage from './pages/worker/WorkerRequestDetailsPage';
+import SubmitQuotePage from './pages/worker/SubmitQuotePage';
+import MyQuotationsPage from './pages/worker/MyQuotationsPage';
 
 
 import EditWorkerProfilePage from './pages/worker/EditWorkerProfilePage';
@@ -35,6 +38,7 @@ function App() {
           <Route path="/create-request" element={<CreateRequestPage />} />
           <Route path="/my-requests" element={<MyRequestsPage />} />
           <Route path="/my-requests/:requestId" element={<RequestDetailsPage />} />
+          <Route path="/my-requests/:requestId/quotations" element={<CompareQuotesPage />} />
 
           {/* SCRUM-14 & 15: Worker - Browse & View Request Details */}
           <Route path="/browse-requests" element={<BrowseRequestsPage />} />
@@ -42,6 +46,11 @@ function App() {
 
           {/* SCRUM-71: Seeker - Browse Workers / Explore Service Providers */}
           <Route path="/browse-workers" element={<BrowseWorkersPage />} />
+          {/* Sprint 2: Worker - Submit Quotation */}
+          <Route path="/requests/:requestId/quote" element={<SubmitQuotePage />} />
+
+          {/* SCRUM-64: Worker - View & Withdraw Quotations */}
+          <Route path="/my-quotations" element={<MyQuotationsPage />} />
 
           {/* SCRUM-19, 20, 21: Worker Profile */}
           <Route path="/create-profile" element={<EditWorkerProfilePage />} />

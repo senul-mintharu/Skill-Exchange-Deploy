@@ -65,6 +65,7 @@ const Navbar = ({ variant = 'landing' }) => {
                                 <NavLink to="/" end className={({isActive}) => `navbar__link ${isActive ? 'active' : ''}`}>Dashboard</NavLink>
                                 <NavLink to="/browse-requests" className={({isActive}) => `navbar__link ${isActive ? 'active' : ''}`}>Find Work</NavLink>
                                 <NavLink to="/browse-workers" className={({isActive}) => `navbar__link ${isActive ? 'active' : ''}`}>Browse Workers</NavLink>
+                                <NavLink to="/my-quotations" className={({isActive}) => `navbar__link ${isActive ? 'active' : ''}`}>My Quotations</NavLink>
                                 <NavLink to="/my-requests" className={({isActive}) => `navbar__link ${isActive ? 'active' : ''}`}>My Requests</NavLink>
                                 <Link to="#" className="navbar__link">Messages</Link>
                                 <div className="navbar__portal-actions">
@@ -112,6 +113,7 @@ const Navbar = ({ variant = 'landing' }) => {
                             <li><NavLink to="/" end className={({isActive}) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>Dashboard</NavLink></li>
                             <li><NavLink to="/browse-requests" className={({isActive}) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>Find Work</NavLink></li>
                             <li><NavLink to="/browse-workers" className={({isActive}) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>Browse Workers</NavLink></li>
+                            <li><NavLink to="/my-quotations" className={({isActive}) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>My Quotations</NavLink></li>
                             <li><NavLink to="/my-requests" className={({isActive}) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>My Requests</NavLink></li>
                             <li><Link to="#" className="navbar__drawer-link" onClick={closeMobile}>Messages</Link></li>
                         </>
