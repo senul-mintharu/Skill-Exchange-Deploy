@@ -14,7 +14,9 @@ import lombok.NoArgsConstructor;
 /**
  * ServiceRequest.java — Service Request JPA Entity
  *
- * <p>Represents a service request posted by a seeker. Workers can browse open requests and submit
+ * <p>
+ * Represents a service request posted by a seeker. Workers can browse open
+ * requests and submit
  * quotations.
  */
 @Entity
@@ -29,11 +31,11 @@ public class ServiceRequest {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-    @Column(length = 150)
-    private String title;
+  @Column(length = 150)
+  private String title;
 
-    @Column(nullable = false, length = 2000)
-    private String description;
+  @Column(nullable = false, length = 2000)
+  private String description;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 50)
@@ -46,16 +48,20 @@ public class ServiceRequest {
   @Column(length = 20)
   private UrgencyLevel urgency;
 
-    @Column
-    private Double budget;
+  @Column
+  private Double budget;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private RequestStatus status;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
+  private RequestStatus status;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "seeker_id", nullable = false)
   private User seeker;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "assigned_worker_id")
+  private User assignedWorker;
 
   @Column(nullable = false, updatable = false)
   private LocalDateTime createdAt;

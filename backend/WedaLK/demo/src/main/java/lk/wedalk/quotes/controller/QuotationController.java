@@ -87,6 +87,15 @@ public class QuotationController {
         return ResponseEntity.ok(ApiResponse.success(quotes, "Quotes retrieved successfully"));
     }
 
+    @PostMapping("/{quoteId}/accept")
+    public ResponseEntity<ApiResponse<QuoteResponse>> acceptQuotePost(
+            @PathVariable Long quoteId,
+            @RequestParam(defaultValue = "1") Long seekerId) {
+
+        QuoteResponse response = quotationService.acceptQuote(quoteId, seekerId);
+        return ResponseEntity.ok(ApiResponse.success(response, "Quote accepted successfully"));
+    }
+
     @PatchMapping("/{quoteId}/accept")
     public ResponseEntity<ApiResponse<QuoteResponse>> acceptQuote(
             @PathVariable Long quoteId,

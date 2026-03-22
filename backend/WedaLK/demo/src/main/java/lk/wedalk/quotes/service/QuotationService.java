@@ -157,8 +157,9 @@ public class QuotationService {
     /**
      * Seeker accepts a specific quote:
      * - Accepted quote → ACCEPTED
-     * - All other PENDING quotes for same request → REJECTED
+     * - All other quotes for same request → NOT_ACCEPTED
      * - Service request status → ASSIGNED
+     * - Assign accepted worker to the service request
      */
     @Transactional
     public QuoteResponse acceptQuote(Long quoteId, Long seekerId) {
@@ -172,22 +173,26 @@ public class QuotationService {
         if (serviceRequest.getStatus() != RequestStatus.OPEN) {
             throw new BadRequestException("This request is no longer accepting quote decisions.");
         }
+        if (quotation.getStatus() != QuoteStatus.PENDING) {
+            throw new BadRequestException("Only PENDING quotations can be accepted.");
+        }
 
         // Accept this quote
         quotation.setStatus(QuoteStatus.ACCEPTED);
         quotationRepository.save(quotation);
 
-        // Reject all other pending quotes for the same request
+        // Mark all other quotes as NOT_ACCEPTED
         List<Quotation> otherQuotes = quotationRepository
                 .findByRequestIdOrderByPriceAsc(serviceRequest.getId());
         for (Quotation q : otherQuotes) {
-            if (!q.getId().equals(quoteId) && q.getStatus() == QuoteStatus.PENDING) {
-                q.setStatus(QuoteStatus.REJECTED);
+            if (!q.getId().equals(quoteId) && q.getStatus() != QuoteStatus.NOT_ACCEPTED) {
+                q.setStatus(QuoteStatus.NOT_ACCEPTED);
                 quotationRepository.save(q);
             }
         }
 
-        // Update the request status to ASSIGNED
+        // Update the request assignment and status
+        serviceRequest.setAssignedWorker(quotation.getWorker());
         serviceRequest.setStatus(RequestStatus.ASSIGNED);
         serviceRequestRepository.save(serviceRequest);
 
@@ -208,7 +213,7 @@ public class QuotationService {
             throw new BadRequestException("Only PENDING quotes can be rejected.");
         }
 
-        quotation.setStatus(QuoteStatus.REJECTED);
+        quotation.setStatus(QuoteStatus.NOT_ACCEPTED);
         return mapToResponse(quotationRepository.save(quotation));
     }
 

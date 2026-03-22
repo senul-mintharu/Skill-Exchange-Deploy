@@ -14,6 +14,8 @@ const statusMeta = (status) => {
             return { label: 'ACCEPTED', tone: 'accepted', icon: 'check_circle' };
         case 'REJECTED':
             return { label: 'REJECTED', tone: 'rejected', icon: 'cancel' };
+        case 'NOT_ACCEPTED':
+            return { label: 'NOT ACCEPTED', tone: 'rejected', icon: 'cancel' };
         case 'WITHDRAWN':
             return { label: 'WITHDRAWN', tone: 'withdrawn', icon: 'undo' };
         default:
@@ -36,7 +38,7 @@ const MyQuotationsPage = () => {
             const s = String(q.status || '').toUpperCase();
             if (s === 'PENDING') c.pending += 1;
             else if (s === 'ACCEPTED') c.accepted += 1;
-            else if (s === 'REJECTED') c.rejected += 1;
+            else if (s === 'REJECTED' || s === 'NOT_ACCEPTED') c.rejected += 1;
             else if (s === 'WITHDRAWN') c.withdrawn += 1;
         }
         return c;

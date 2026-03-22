@@ -62,7 +62,7 @@ export const getQuotesByRequest = async (requestId) => {
  * @returns {Promise<Object>} Updated QuoteResponse
  */
 export const acceptQuote = async (quoteId, seekerId = 1) => {
-    const response = await apiClient.patch(`/quotes/${quoteId}/accept?seekerId=${seekerId}`);
+    const response = await apiClient.post(`/quotes/${quoteId}/accept?seekerId=${seekerId}`);
     return response.data.data;
 };
 
