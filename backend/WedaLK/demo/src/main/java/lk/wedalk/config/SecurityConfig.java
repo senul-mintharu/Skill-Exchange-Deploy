@@ -47,7 +47,8 @@ public class SecurityConfig {
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/api/auth/**", "/api/health").permitAll()
-            .requestMatchers(HttpMethod.POST, "/api/quotes/**").hasRole("WORKER")
+            .requestMatchers(HttpMethod.POST, "/api/quotes").hasRole("WORKER")
+            .requestMatchers(HttpMethod.POST, "/api/quotes/*/accept").hasRole("SEEKER")
             .requestMatchers(HttpMethod.DELETE, "/api/quotes/**").hasRole("WORKER")
             .requestMatchers(HttpMethod.GET, "/api/quotes/my").hasRole("WORKER")
             .requestMatchers(HttpMethod.PATCH, "/api/quotes/*/accept", "/api/quotes/*/reject").hasRole("SEEKER")
