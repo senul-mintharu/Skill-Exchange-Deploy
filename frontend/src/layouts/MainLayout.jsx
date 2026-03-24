@@ -4,7 +4,7 @@ import Navbar from '../components/common/Navbar';
 
 const MainLayout = () => {
     const location = useLocation();
-    const isLanding = location.pathname === '/';
+    const isLanding = ['/', '/login', '/register'].includes(location.pathname);
 
     return (
         <div className="main-layout">

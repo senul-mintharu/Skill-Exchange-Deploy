@@ -34,7 +34,7 @@ public class WorkerProfileService {
                 .fullName(fullName)
                 .email("worker_" + uniqueSuffix + "@test.com")
                 .password("password")
-                .phone(request.getContactNumber())
+                .phoneNumber(request.getContactNumber())
                 .role(lk.wedalk.users.model.Role.WORKER)
                 .build();
         User user = userRepository.save(newUser);
@@ -81,7 +81,7 @@ public class WorkerProfileService {
         if (request.getFullName() != null)
             profile.getUser().setFullName(request.getFullName());
         if (request.getContactNumber() != null)
-            profile.getUser().setPhone(request.getContactNumber());
+            profile.getUser().setPhoneNumber(request.getContactNumber());
         if (request.getBio() != null)
             profile.setBio(request.getBio());
         if (request.getProfilePictureUrl() != null)
@@ -106,7 +106,7 @@ public class WorkerProfileService {
                 profile.getId(),
                 profile.getUser().getId(), // returning userId
                 profile.getUser().getFullName(),
-                profile.getUser().getPhone(),
+                profile.getUser().getPhoneNumber(),
                 profile.getBio(),
                 profile.getProfilePictureUrl(),
                 profile.getSkills(),

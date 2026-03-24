@@ -4,6 +4,10 @@ import './App.css';
 
 import MainLayout from './layouts/MainLayout';
 import LandingPage from './pages/public/LandingPage';
+import NotFound from './pages/public/NotFound';
+import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
+import ProtectedRoute from './components/common/ProtectedRoute';
 
 import PublicWorkerProfilePage from './pages/public/PublicWorkerProfilePage'; // Added proper import
 
@@ -21,11 +25,11 @@ import MyQuotationsPage from './pages/worker/MyQuotationsPage';
 import EditWorkerProfilePage from './pages/worker/EditWorkerProfilePage';
 
 import WorkerProfilePage from './pages/worker/WorkerProfilePage';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AccountProfilePage from './pages/account/AccountProfilePage';
 
 /**
- * App.js — Main Application Component (Simplified)
- * 
- * No authentication - all routes are public
+ * App.js — Main Application Component with RBAC route guards
  */
 function App() {
   return (
@@ -33,30 +37,44 @@ function App() {
       <Routes>
         <Route element={<MainLayout />}>
           <Route path="/" element={<LandingPage />} />
-
-          {/* SCRUM-13: Seeker - Create & Manage Requests */}
-          <Route path="/create-request" element={<CreateRequestPage />} />
-          <Route path="/my-requests" element={<MyRequestsPage />} />
-          <Route path="/my-requests/:requestId" element={<RequestDetailsPage />} />
-          <Route path="/my-requests/:requestId/quotations" element={<CompareQuotesPage />} />
-
-          {/* SCRUM-14 & 15: Worker - Browse & View Request Details */}
-          <Route path="/browse-requests" element={<BrowseRequestsPage />} />
-          <Route path="/requests/:requestId" element={<WorkerRequestDetailsPage />} />
-
-          {/* SCRUM-71: Seeker - Browse Workers / Explore Service Providers */}
-          <Route path="/browse-workers" element={<BrowseWorkersPage />} />
-          {/* Sprint 2: Worker - Submit Quotation */}
-          <Route path="/requests/:requestId/quote" element={<SubmitQuotePage />} />
-
-          {/* SCRUM-64: Worker - View & Withdraw Quotations */}
-          <Route path="/my-quotations" element={<MyQuotationsPage />} />
-
-          {/* SCRUM-19, 20, 21: Worker Profile */}
-          <Route path="/create-profile" element={<EditWorkerProfilePage />} />
-          <Route path="/edit-profile/:id" element={<EditWorkerProfilePage />} />
-          <Route path="/profile/:id" element={<WorkerProfilePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/workers/:id" element={<PublicWorkerProfilePage />} />
+
+          {/* SEEKER routes */}
+          <Route element={<ProtectedRoute allowedRoles={['SEEKER']} />}>
+            <Route path="/seeker/dashboard" element={<MyRequestsPage />} />
+            <Route path="/seeker/create-request" element={<CreateRequestPage />} />
+            <Route path="/seeker/my-requests" element={<MyRequestsPage />} />
+            <Route path="/seeker/requests/:requestId" element={<RequestDetailsPage />} />
+            <Route path="/seeker/compare-quotes/:requestId" element={<CompareQuotesPage />} />
+            <Route path="/seeker/browse-workers" element={<BrowseWorkersPage />} />
+          </Route>
+
+          {/* WORKER routes */}
+          <Route element={<ProtectedRoute allowedRoles={['WORKER']} />}>
+            <Route path="/worker/dashboard" element={<BrowseRequestsPage />} />
+            <Route path="/worker/browse" element={<BrowseRequestsPage />} />
+            <Route path="/worker/requests/:requestId" element={<WorkerRequestDetailsPage />} />
+            <Route path="/worker/submit-quote/:requestId" element={<SubmitQuotePage />} />
+            <Route path="/worker/my-quotations" element={<MyQuotationsPage />} />
+            <Route path="/worker/create-profile" element={<EditWorkerProfilePage />} />
+            <Route path="/worker/edit-profile/:id" element={<EditWorkerProfilePage />} />
+            <Route path="/worker/profile/:id" element={<WorkerProfilePage />} />
+          </Route>
+
+          {/* ADMIN routes */}
+          <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          </Route>
+
+          {/* Any authenticated user */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/account/profile" element={<AccountProfilePage />} />
+            <Route path="/account/profile/edit" element={<AccountProfilePage />} />
+          </Route>
+
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </BrowserRouter>

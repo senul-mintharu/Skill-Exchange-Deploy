@@ -1,15 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
+import { getCurrentUser } from '../../services/authService';
 import './Navbar.css';
 
 const Navbar = ({ variant = 'landing' }) => {
     const [scrolled, setScrolled] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
-    const location = useLocation();
-
-    const isActive = (path) => {
-        return location.pathname === path ? 'active' : '';
-    };
+    const user = getCurrentUser();
+    const role = user?.role;
+    const displayName = user?.fullName || user?.email || 'User';
+    const avatarText = (displayName || 'U')
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase())
+        .join('') || 'U';
+    const dashboardPath =
+        role === 'SEEKER' ? '/seeker/dashboard' :
+        role === 'WORKER' ? '/worker/dashboard' :
+        role === 'ADMIN' ? '/admin/dashboard' : '/';
 
     useEffect(() => {
         const handleScroll = () => {
@@ -56,23 +65,28 @@ const Navbar = ({ variant = 'landing' }) => {
                                 <a href="#how-it-works" className="navbar__link">How It Works</a>
                                 <a href="#services" className="navbar__link">Services</a>
                                 <Link to="/login" className="navbar__link">Sign up / Log in</Link>
-                                <Link to="/create-profile" className="btn btn-sm btn-secondary navbar__btn-tasker">
+                                <Link to="/worker/create-profile" className="btn btn-sm btn-secondary navbar__btn-tasker">
                                     Become a Tasker
                                 </Link>
                             </>
                         ) : (
                             <>
-                                <NavLink to="/" end className={({isActive}) => `navbar__link ${isActive ? 'active' : ''}`}>Dashboard</NavLink>
-                                <NavLink to="/browse-requests" className={({isActive}) => `navbar__link ${isActive ? 'active' : ''}`}>Find Work</NavLink>
-                                <NavLink to="/browse-workers" className={({isActive}) => `navbar__link ${isActive ? 'active' : ''}`}>Browse Workers</NavLink>
-                                <NavLink to="/my-quotations" className={({isActive}) => `navbar__link ${isActive ? 'active' : ''}`}>My Quotations</NavLink>
-                                <NavLink to="/my-requests" className={({isActive}) => `navbar__link ${isActive ? 'active' : ''}`}>My Requests</NavLink>
-                                <Link to="#" className="navbar__link">Messages</Link>
-                                <div className="navbar__portal-actions">
-                                    <button className="navbar__icon-btn">
+                                <NavLink to={dashboardPath} end className={({isActive}) => `navbar__link ${isActive ? 'active' : ''}`}>Dashboard</NavLink>
+                                {role === 'WORKER' && <NavLink to="/worker/browse" className={({isActive}) => `navbar__link ${isActive ? 'active' : ''}`}>Find Work</NavLink>}
+                                {role === 'SEEKER' && <NavLink to="/seeker/browse-workers" className={({isActive}) => `navbar__link ${isActive ? 'active' : ''}`}>Browse Workers</NavLink>}
+                                {role === 'WORKER' && <NavLink to="/worker/my-quotations" className={({isActive}) => `navbar__link ${isActive ? 'active' : ''}`}>My Quotations</NavLink>}
+                                {role === 'SEEKER' && <NavLink to="/seeker/my-requests" className={({isActive}) => `navbar__link ${isActive ? 'active' : ''}`}>My Requests</NavLink>}
+                                <div className="navbar__portal-actions" style={{ position: 'relative' }}>
+                                    <button type="button" className="navbar__icon-btn">
                                         <span className="navbar__emoji">🔔</span>
                                     </button>
-                                    <div className="navbar__avatar">U</div>
+                                    <Link
+                                        to="/account/profile"
+                                        className="navbar__avatar"
+                                        title={displayName}
+                                    >
+                                        {avatarText}
+                                    </Link>
                                 </div>
                             </>
                         )}
@@ -110,24 +124,23 @@ const Navbar = ({ variant = 'landing' }) => {
                         </>
                     ) : (
                         <>
-                            <li><NavLink to="/" end className={({isActive}) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>Dashboard</NavLink></li>
-                            <li><NavLink to="/browse-requests" className={({isActive}) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>Find Work</NavLink></li>
-                            <li><NavLink to="/browse-workers" className={({isActive}) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>Browse Workers</NavLink></li>
-                            <li><NavLink to="/my-quotations" className={({isActive}) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>My Quotations</NavLink></li>
-                            <li><NavLink to="/my-requests" className={({isActive}) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>My Requests</NavLink></li>
-                            <li><Link to="#" className="navbar__drawer-link" onClick={closeMobile}>Messages</Link></li>
+                            <li><NavLink to={dashboardPath} end className={({isActive}) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>Dashboard</NavLink></li>
+                            {role === 'WORKER' && <li><NavLink to="/worker/browse" className={({isActive}) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>Find Work</NavLink></li>}
+                            {role === 'SEEKER' && <li><NavLink to="/seeker/browse-workers" className={({isActive}) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>Browse Workers</NavLink></li>}
+                            {role === 'WORKER' && <li><NavLink to="/worker/my-quotations" className={({isActive}) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>My Quotations</NavLink></li>}
+                            {role === 'SEEKER' && <li><NavLink to="/seeker/my-requests" className={({isActive}) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>My Requests</NavLink></li>}
                         </>
                     )}
                 </ul>
                 <div className="navbar__drawer-actions">
                     {!isPortal ? (
-                        <Link to="/create-profile" className="btn btn-primary" onClick={closeMobile} style={{ width: '100%' }}>
+                        <Link to="/worker/create-profile" className="btn btn-primary" onClick={closeMobile} style={{ width: '100%' }}>
                             Become a Tasker
                         </Link>
                     ) : (
                         <div className="navbar__drawer-profile">
-                            <div className="navbar__avatar">U</div>
-                            <span className="navbar__username">User</span>
+                            <div className="navbar__avatar">{avatarText}</div>
+                            <span className="navbar__username">{displayName}</span>
                         </div>
                     )}
                 </div>

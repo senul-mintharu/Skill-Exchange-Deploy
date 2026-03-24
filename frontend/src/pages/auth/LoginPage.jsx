@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { login } from '../../services/authService';
+import { getDefaultRouteForRole, login } from '../../services/authService';
 import './LoginPage.css';
 
 /**
@@ -42,17 +42,7 @@ const LoginPage = () => {
 
         try {
             const response = await login(formData.email, formData.password);
-            
-            // Redirect based on role
-            if (response.role === 'SEEKER') {
-                navigate('/seeker/my-requests');
-            } else if (response.role === 'WORKER') {
-                navigate('/worker/dashboard');
-            } else if (response.role === 'ADMIN') {
-                navigate('/admin/dashboard');
-            } else {
-                navigate('/');
-            }
+            navigate(getDefaultRouteForRole(response.role));
         } catch (err) {
             console.error('Login error:', err);
             setError(

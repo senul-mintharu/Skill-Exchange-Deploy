@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { isAuthenticated, getCurrentUser } from '../../services/authService';
+import { getCurrentUser, getDefaultRouteForRole, isAuthenticated } from '../../services/authService';
 
 /**
  * ProtectedRoute.jsx — Route Guard Component
@@ -22,8 +22,8 @@ const ProtectedRoute = ({ allowedRoles = [] }) => {
         const hasRequiredRole = allowedRoles.includes(user.role);
         
         if (!hasRequiredRole) {
-            // Wrong role - redirect to home or unauthorized page
-            return <Navigate to="/" replace />;
+            // Wrong role - redirect to user's own dashboard
+            return <Navigate to={getDefaultRouteForRole(user.role)} replace />;
         }
     }
 
