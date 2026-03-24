@@ -175,7 +175,7 @@ const MyQuotationsPage = () => {
                             <p>
                                 When you submit quotations to service requests, they’ll show up here so you can track their status.
                             </p>
-                            <Link to="/browse-requests" className="mq-btn mq-btn-primary">
+                            <Link to="/worker/browse" className="mq-btn mq-btn-primary">
                                 <span className="material-icons">search</span>
                                 Find Work
                             </Link>
@@ -233,7 +233,7 @@ const MyQuotationsPage = () => {
                                     </div>
 
                                     <div className="mq-actions">
-                                        <Link className="mq-btn mq-btn-ghost" to={`/requests/${q.requestId}`}>
+                                        <Link className="mq-btn mq-btn-ghost" to={`/worker/requests/${q.requestId}`}>
                                             <span className="material-icons">visibility</span>
                                             View Request
                                         </Link>

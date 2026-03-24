@@ -25,6 +25,9 @@ import WorkerProfilePage from './pages/worker/WorkerProfilePage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AccountProfilePage from './pages/account/AccountProfilePage';
 
+/**
+ * App.js — Main Application Component with RBAC route guards
+ */
 function App() {
   return (
     <BrowserRouter>
@@ -60,8 +63,10 @@ function App() {
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
           </Route>
 
+          {/* Any authenticated user */}
           <Route element={<ProtectedRoute />}>
             <Route path="/account/profile" element={<AccountProfilePage />} />
+            <Route path="/account/profile/edit" element={<AccountProfilePage />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

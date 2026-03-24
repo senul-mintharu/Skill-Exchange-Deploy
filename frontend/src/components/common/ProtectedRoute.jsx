@@ -26,6 +26,7 @@ const ProtectedRoute = ({ allowedRoles = [] }) => {
         const hasRequiredRole = allowedRoles.includes(user.role);
         
         if (!hasRequiredRole) {
+            // Wrong role - redirect to user's own dashboard
             return <Navigate to={getDefaultRouteForRole(user.role)} replace />;
         }
     }

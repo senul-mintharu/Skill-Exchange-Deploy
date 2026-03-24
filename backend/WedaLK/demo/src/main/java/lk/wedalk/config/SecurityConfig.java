@@ -22,6 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 /**
  * SecurityConfig — JWT + RBAC
+ * SecurityConfig.java — JWT + RBAC Security Configuration
  */
 @Configuration
 @EnableWebSecurity

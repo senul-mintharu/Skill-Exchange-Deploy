@@ -1,6 +1,6 @@
 .login-page {
     min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg,#1E4A50 0%,#2C666E 30%,#3A8A94 60%,#2C666E 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -69,6 +69,15 @@
     border-radius: 8px;
     font-size: 1rem;
     transition: all 0.2s;
+}
+
+.form-group select {
+    padding: 0.75rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.2s;
+    background-color: white;
 }
 
 .form-group input:focus {
