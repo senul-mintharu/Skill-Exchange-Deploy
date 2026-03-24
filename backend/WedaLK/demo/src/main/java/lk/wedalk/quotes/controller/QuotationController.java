@@ -2,12 +2,16 @@ package lk.wedalk.quotes.controller;
 
 import jakarta.validation.Valid;
 import lk.wedalk.common.ApiResponse;
+import lk.wedalk.common.exceptions.NotFoundException;
 import lk.wedalk.quotes.dto.QuoteCreateRequest;
 import lk.wedalk.quotes.dto.QuoteResponse;
 import lk.wedalk.quotes.service.QuotationService;
+import lk.wedalk.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,7 +33,7 @@ import java.util.List;
  * PATCH /api/quotes/{quoteId}/accept — seeker accepts a quote
  * PATCH /api/quotes/{quoteId}/reject — seeker rejects a quote
  *
- * Note: workerId / seekerId are passed as query params until JWT auth is wired.
+ * Seeker actions (accept/reject/list for request) use the authenticated user from JWT.
  */
 @RestController
 @RequestMapping("/api/quotes")
@@ -38,6 +42,16 @@ import java.util.List;
 public class QuotationController {
 
     private final QuotationService quotationService;
+    private final UserRepository userRepository;
+
+    private Long requireCurrentUserId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String email = auth.getName();
+        return userRepository
+                .findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("Authenticated user not found"))
+                .getId();
+    }
 
     // =========================================================================
     // Story 1 — Submit a Quotation
@@ -83,33 +97,34 @@ public class QuotationController {
     public ResponseEntity<ApiResponse<List<QuoteResponse>>> getQuotesByRequest(
             @PathVariable Long requestId) {
 
-        List<QuoteResponse> quotes = quotationService.getQuotesByRequest(requestId);
+        Long seekerId = requireCurrentUserId();
+        List<QuoteResponse> quotes = quotationService.getQuotesByRequest(requestId, seekerId);
         return ResponseEntity.ok(ApiResponse.success(quotes, "Quotes retrieved successfully"));
     }
 
     @PostMapping("/{quoteId}/accept")
     public ResponseEntity<ApiResponse<QuoteResponse>> acceptQuotePost(
-            @PathVariable Long quoteId,
-            @RequestParam(defaultValue = "1") Long seekerId) {
+            @PathVariable Long quoteId) {
 
+        Long seekerId = requireCurrentUserId();
         QuoteResponse response = quotationService.acceptQuote(quoteId, seekerId);
         return ResponseEntity.ok(ApiResponse.success(response, "Quote accepted successfully"));
     }
 
     @PatchMapping("/{quoteId}/accept")
     public ResponseEntity<ApiResponse<QuoteResponse>> acceptQuote(
-            @PathVariable Long quoteId,
-            @RequestParam(defaultValue = "1") Long seekerId) {
+            @PathVariable Long quoteId) {
 
+        Long seekerId = requireCurrentUserId();
         QuoteResponse response = quotationService.acceptQuote(quoteId, seekerId);
         return ResponseEntity.ok(ApiResponse.success(response, "Quote accepted successfully"));
     }
 
     @PatchMapping("/{quoteId}/reject")
     public ResponseEntity<ApiResponse<QuoteResponse>> rejectQuote(
-            @PathVariable Long quoteId,
-            @RequestParam(defaultValue = "1") Long seekerId) {
+            @PathVariable Long quoteId) {
 
+        Long seekerId = requireCurrentUserId();
         QuoteResponse response = quotationService.rejectQuote(quoteId, seekerId);
         return ResponseEntity.ok(ApiResponse.success(response, "Quote rejected"));
     }

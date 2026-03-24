@@ -61,8 +61,8 @@ export const getQuotesByRequest = async (requestId) => {
  * @param {number} seekerId
  * @returns {Promise<Object>} Updated QuoteResponse
  */
-export const acceptQuote = async (quoteId, seekerId = 1) => {
-    const response = await apiClient.post(`/quotes/${quoteId}/accept?seekerId=${seekerId}`);
+export const acceptQuote = async (quoteId) => {
+    const response = await apiClient.post(`/quotes/${quoteId}/accept`);
     return response.data.data;
 };
 
@@ -72,7 +72,7 @@ export const acceptQuote = async (quoteId, seekerId = 1) => {
  * @param {number} seekerId
  * @returns {Promise<Object>} Updated QuoteResponse
  */
-export const rejectQuote = async (quoteId, seekerId = 1) => {
-    const response = await apiClient.patch(`/quotes/${quoteId}/reject?seekerId=${seekerId}`);
+export const rejectQuote = async (quoteId) => {
+    const response = await apiClient.patch(`/quotes/${quoteId}/reject`);
     return response.data.data;
 };

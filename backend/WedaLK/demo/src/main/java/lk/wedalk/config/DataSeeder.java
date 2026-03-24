@@ -6,19 +6,20 @@ import lk.wedalk.users.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 public class DataSeeder {
 
     @Bean
-    CommandLineRunner initDatabase(UserRepository userRepository) {
+    CommandLineRunner initDatabase(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         return args -> {
             if (userRepository.findByEmail("worker1@test.com").isEmpty()) {
                 // User 1
                 User user1 = User.builder()
                         .fullName("Test Worker One")
                         .email("worker1@test.com")
-                        .password("password")
+                        .password(passwordEncoder.encode("password"))
                         .district("Colombo")
                         .role(Role.WORKER)
                         .build();
@@ -31,7 +32,7 @@ public class DataSeeder {
                 User user2 = User.builder()
                         .fullName("Test Worker Two")
                         .email("worker2@test.com")
-                        .password("password")
+                        .password(passwordEncoder.encode("password"))
                         .district("Gampaha")
                         .role(Role.WORKER)
                         .build();
@@ -44,7 +45,7 @@ public class DataSeeder {
                 User user3 = User.builder()
                         .fullName("Test Worker Three")
                         .email("worker3@test.com")
-                        .password("password")
+                        .password(passwordEncoder.encode("password"))
                         .district("Kandy")
                         .role(Role.WORKER)
                         .build();
