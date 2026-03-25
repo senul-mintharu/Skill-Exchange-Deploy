@@ -8,6 +8,7 @@ import apiClient from './apiClient';
 
 // Default seeker ID for development (no auth)
 const DEFAULT_SEEKER_ID = 1;
+const DEFAULT_WORKER_ID = 2;
 
 /**
  * Create a new service request
@@ -62,6 +63,16 @@ export const browseRequests = async (params = {}) => {
  */
 export const getRequestById = async (id) => {
     const response = await apiClient.get(`/requests/${id}`);
+    return response.data.data;
+};
+
+/**
+ * Get assigned jobs for the current worker
+ * @param {number} workerId - Worker ID
+ * @returns {Promise<Array>} List of assigned jobs
+ */
+export const getMyAssignedJobs = async (workerId = DEFAULT_WORKER_ID) => {
+    const response = await apiClient.get(`/requests/worker/${workerId}`);
     return response.data.data;
 };
 

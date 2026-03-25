@@ -15,6 +15,7 @@ import BrowseRequestsPage from './pages/worker/BrowseRequestsPage';
 import WorkerRequestDetailsPage from './pages/worker/WorkerRequestDetailsPage';
 import SubmitQuotePage from './pages/worker/SubmitQuotePage';
 import MyQuotationsPage from './pages/worker/MyQuotationsPage';
+import MyJobsPage from './pages/worker/MyJobsPage';
 
 
 import EditWorkerProfilePage from './pages/worker/EditWorkerProfilePage';
@@ -48,6 +49,9 @@ function App() {
 
           {/* SCRUM-64: Worker - View & Withdraw Quotations */}
           <Route path="/my-quotations" element={<MyQuotationsPage />} />
+
+          {/* SCRUM-69: Worker - View Assigned Jobs */}
+          <Route path="/my-jobs" element={<MyJobsPage />} />
 
           {/* SCRUM-19, 20, 21: Worker Profile */}
           <Route path="/create-profile" element={<EditWorkerProfilePage />} />
