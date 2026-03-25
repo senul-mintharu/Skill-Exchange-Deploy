@@ -12,7 +12,8 @@ import lombok.NoArgsConstructor;
 /**
  * RequestResponse.java — Service Request Response DTO
  *
- * <p>Returned when fetching service request details.
+ * <p>
+ * Returned when fetching service request details.
  */
 @Data
 @Builder
@@ -20,19 +21,24 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RequestResponse {
 
-    private Long id;
-    private String title;
-    private String description;
-    private ServiceCategory category;
-    private String locationArea;
-    private Double budget;
-    private UrgencyLevel urgency;
-    private RequestStatus status;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+  private Long id;
+  private String title;
+  private String description;
+  private ServiceCategory category;
+  private String locationArea;
+  private Double budget;
+  private UrgencyLevel urgency;
+  private RequestStatus status;
+  private LocalDateTime createdAt;
+  private LocalDateTime updatedAt;
 
   // Seeker information
   private Long seekerId;
   private String seekerName;
   private String seekerPhone;
+
+  // Assigned worker information (SCRUM-68)
+  private Long assignedWorkerId;
+  private String assignedWorkerName;
+  private Long assignedWorkerProfileId;
 }
