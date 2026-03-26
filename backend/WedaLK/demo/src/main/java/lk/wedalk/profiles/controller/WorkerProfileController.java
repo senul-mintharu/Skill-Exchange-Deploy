@@ -1,12 +1,15 @@
 package lk.wedalk.profiles.controller;
 
 import jakarta.validation.Valid;
+import lk.wedalk.common.ApiResponse;
 import lk.wedalk.profiles.dto.WorkerProfileCreateRequest;
 import lk.wedalk.profiles.dto.WorkerProfileResponse;
 import lk.wedalk.profiles.service.WorkerProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/profiles")
@@ -15,6 +18,12 @@ import org.springframework.web.bind.annotation.*;
 public class WorkerProfileController {
 
     private final WorkerProfileService workerProfileService;
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<WorkerProfileResponse>>> getAllProfiles() {
+        List<WorkerProfileResponse> profiles = workerProfileService.getAllProfiles();
+        return ResponseEntity.ok(ApiResponse.success(profiles, "Worker profiles retrieved successfully"));
+    }
 
     @PostMapping
     public ResponseEntity<WorkerProfileResponse> createProfile(@Valid @RequestBody WorkerProfileCreateRequest request) {

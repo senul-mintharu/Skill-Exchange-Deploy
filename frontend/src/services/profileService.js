@@ -8,6 +8,15 @@
 import apiClient from './apiClient';
 
 /**
+ * Get all worker profiles
+ * @returns {Promise<Object>} API response with list of profiles
+ */
+export const getAllProfiles = async () => {
+    const response = await apiClient.get('/profiles');
+    return response.data;
+};
+
+/**
  * Create a new worker profile
  * @param {Object} profileData - { bio, skills[], district, serviceAreas[], hourlyRate, availability }
  * @returns {Promise<Object>} Created profile response

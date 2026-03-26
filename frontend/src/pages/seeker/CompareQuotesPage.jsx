@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Breadcrumb from '../../components/common/Breadcrumb';
 import PageHeader from '../../components/common/PageHeader';
-import { getQuotesByRequest } from '../../services/quoteService';
+import { acceptQuote, getQuotesByRequest } from '../../services/quoteService';
 import './CompareQuotesPage.css';
 
 const CompareQuotesPage = () => {
@@ -10,6 +10,9 @@ const CompareQuotesPage = () => {
     const [quotes, setQuotes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [actionError, setActionError] = useState('');
+    const [confirmingQuote, setConfirmingQuote] = useState(null);
+    const [acceptingId, setAcceptingId] = useState(null);
 
     const sorted = useMemo(() => {
         const list = Array.isArray(quotes) ? [...quotes] : [];
@@ -25,21 +28,39 @@ const CompareQuotesPage = () => {
         return list;
     }, [quotes]);
 
+    const loadQuotes = async () => {
+        setLoading(true);
+        setError('');
+        try {
+            const data = await getQuotesByRequest(Number(requestId));
+            setQuotes(Array.isArray(data) ? data : []);
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to load quotations. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const load = async () => {
-            setLoading(true);
-            setError('');
-            try {
-                const data = await getQuotesByRequest(Number(requestId));
-                setQuotes(Array.isArray(data) ? data : []);
-            } catch (err) {
-                setError(err.response?.data?.message || 'Failed to load quotations. Please try again.');
-            } finally {
-                setLoading(false);
-            }
-        };
-        if (requestId) load();
+        if (requestId) loadQuotes();
     }, [requestId]);
+
+    const handleConfirmAccept = async () => {
+        if (!confirmingQuote?.id) return;
+        setActionError('');
+        setAcceptingId(confirmingQuote.id);
+        try {
+            await acceptQuote(confirmingQuote.id);
+            setConfirmingQuote(null);
+            await loadQuotes();
+        } catch (err) {
+            setActionError(err.response?.data?.message || 'Failed to accept quotation. Please try again.');
+        } finally {
+            setAcceptingId(null);
+        }
+    };
+
+    const formatQuoteStatus = (status) => String(status || '').replaceAll('_', ' ');
 
     const hasQuotes = sorted.length > 0;
 
@@ -73,6 +94,16 @@ const CompareQuotesPage = () => {
                     </div>
                 )}
 
+                {!loading && !error && actionError && (
+                    <div className="cq-banner" role="alert">
+                        <span className="material-icons">error_outline</span>
+                        <div>
+                            <h3>Couldn’t accept quotation</h3>
+                            <p>{actionError}</p>
+                        </div>
+                    </div>
+                )}
+
                 {/* Empty state (AC3) */}
                 {!loading && !error && !hasQuotes && (
                     <div className="cq-empty">
@@ -96,6 +127,8 @@ const CompareQuotesPage = () => {
                                         <th>Worker</th>
                                         <th>Price</th>
                                         <th>ETA</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -115,6 +148,24 @@ const CompareQuotesPage = () => {
                                             <td data-label="ETA" className="cq-eta">
                                                 {q.estimatedDays} {q.estimatedDays === 1 ? 'day' : 'days'}
                                             </td>
+                                            <td data-label="Status">
+                                                <span className={`cq-status cq-status-${String(q.status || '').toLowerCase().replace('_', '-')}`}>
+                                                    {formatQuoteStatus(q.status)}
+                                                </span>
+                                            </td>
+                                            <td data-label="Action">
+                                                <button
+                                                    type="button"
+                                                    className="cq-accept-btn"
+                                                    disabled={q.status === 'ACCEPTED' || acceptingId === q.id}
+                                                    onClick={() => {
+                                                        setActionError('');
+                                                        setConfirmingQuote(q);
+                                                    }}
+                                                >
+                                                    {acceptingId === q.id ? 'Accepting...' : q.status === 'ACCEPTED' ? 'Accepted' : 'Accept'}
+                                                </button>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -124,6 +175,36 @@ const CompareQuotesPage = () => {
                             Tip: quotations are sorted by lowest price first (then fastest ETA).
                         </p>
                     </>
+                )}
+
+                {confirmingQuote && (
+                    <div className="cq-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="accept-quote-title">
+                        <div className="cq-modal">
+                            <h3 id="accept-quote-title">Accept this quotation?</h3>
+                            <p>
+                                You are about to accept <strong>{confirmingQuote.workerName || `Worker #${confirmingQuote.workerId}`}</strong>'s
+                                quotation for <strong>LKR {Number(confirmingQuote.price).toLocaleString()}</strong>. This will close all other quotations.
+                            </p>
+                            <div className="cq-modal-actions">
+                                <button
+                                    type="button"
+                                    className="cq-btn-secondary"
+                                    disabled={acceptingId === confirmingQuote.id}
+                                    onClick={() => setConfirmingQuote(null)}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    className="cq-btn-primary"
+                                    disabled={acceptingId === confirmingQuote.id}
+                                    onClick={handleConfirmAccept}
+                                >
+                                    {acceptingId === confirmingQuote.id ? 'Accepting...' : 'Confirm Accept'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </main>
         </div>

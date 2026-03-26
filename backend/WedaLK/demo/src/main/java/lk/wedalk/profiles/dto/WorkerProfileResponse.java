@@ -15,7 +15,9 @@ public class WorkerProfileResponse {
     private Long id;
     private Long userId;
     private String fullName;
+    private String contactNumber;
     private String bio;
+    private String profilePictureUrl;
     private List<String> skills;
     private String district;
     private List<String> serviceAreas;

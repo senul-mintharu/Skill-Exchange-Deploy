@@ -13,7 +13,13 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class WorkerProfileUpdateRequest {
+    private String fullName;
+
+    private String contactNumber;
+
     private String bio;
+
+    private String profilePictureUrl;
 
     @NotEmpty(message = "Skills cannot be empty")
     private List<String> skills;

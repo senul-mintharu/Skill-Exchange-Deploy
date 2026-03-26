@@ -1,20 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { FaMapMarkerAlt, FaUserEdit, FaTools, FaQuoteLeft, FaEnvelope, FaPhone, FaCalendarCheck } from 'react-icons/fa';
 import { getProfileById } from '../../services/profileService';
-import './WorkerProfile.css'; // Import Vanilla CSS
+import './WorkerProfile.css';
 
+/**
+ * WorkerProfilePage.jsx — Worker Profile View (Modern Redesign)
+ *
+ * Features:
+ * - Dark gradient page background
+ * - Centered white card with modern sections
+ * - Stats row, expertise tags, services grid
+ * - Service areas with map placeholder
+ * - Portfolio section
+ * - Responsive design
+ */
 const WorkerProfilePage = () => {
     const { id } = useParams();
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
-    useEffect(() => {
-        fetchProfile();
-    }, [id]);
-
-    const fetchProfile = async () => {
+    const fetchProfile = useCallback(async () => {
         try {
             setLoading(true);
             const data = await getProfileById(id);
@@ -25,136 +31,282 @@ const WorkerProfilePage = () => {
         } finally {
             setLoading(false);
         }
+    }, [id]);
+
+    useEffect(() => {
+        fetchProfile();
+    }, [fetchProfile]);
+
+    // Get first name for "About" section
+    const getFirstName = (fullName) => {
+        if (!fullName) return 'Worker';
+        return fullName.split(' ')[0];
     };
 
-    if (loading) return (
-        <div className="wp-container">
-            <div className="wp-spinner" style={{ border: '4px solid #e5e7eb', borderTop: '4px solid #2563eb', borderRadius: '50%', width: '3rem', height: '3rem' }}></div>
+    // Get primary skill for verified badge
+    const getPrimarySkill = (skills) => {
+        if (!skills || skills.length === 0) return 'Professional';
+        return skills[0];
+    };
+
+    // Generate service cards from skills
+    const getServiceCards = (skills) => {
+        const serviceMap = {
+            'Plumbing': { icon: 'plumbing', title: 'Plumbing Services', desc: 'Pipe repairs, installations, and maintenance' },
+            'Electrical': { icon: 'bolt', title: 'Electrical Work', desc: 'Wiring, repairs, and installations' },
+            'Carpentry': { icon: 'carpenter', title: 'Carpentry', desc: 'Custom woodwork and furniture repairs' },
+            'Painting': { icon: 'format_paint', title: 'Painting Services', desc: 'Interior and exterior painting' },
+            'AC Repair': { icon: 'ac_unit', title: 'AC Servicing & Repair', desc: 'Installation, maintenance, and repairs' },
+            'Cleaning': { icon: 'cleaning_services', title: 'Cleaning Services', desc: 'Deep cleaning and maintenance' },
+            'Gardening': { icon: 'yard', title: 'Gardening', desc: 'Landscaping and garden maintenance' },
+            'Masonry': { icon: 'construction', title: 'Masonry Work', desc: 'Brick, stone, and concrete work' },
+            'Roofing': { icon: 'roofing', title: 'Roofing Services', desc: 'Roof repairs and installations' },
+            'Appliance Repair': { icon: 'kitchen', title: 'Appliance Repair', desc: 'Home appliance repairs and maintenance' },
+            'CCTV': { icon: 'videocam', title: 'Security Systems', desc: 'CCTV installation and setup' },
+            'default': { icon: 'build', title: 'General Services', desc: 'Professional handyman services' }
+        };
+
+        if (!skills || skills.length === 0) {
+            return [serviceMap.default];
+        }
+
+        return skills.slice(0, 4).map(skill => {
+            const match = Object.keys(serviceMap).find(key =>
+                skill.toLowerCase().includes(key.toLowerCase())
+            );
+            return match ? serviceMap[match] : {
+                icon: 'handyman',
+                title: skill,
+                desc: `Professional ${skill.toLowerCase()} services`
+            };
+        });
+    };
+
+    // Skeleton Loading Component
+    const SkeletonLoader = () => (
+        <div className="wpp-page">
+            <div className="wpp-card">
+                {/* Header Skeleton */}
+                <div className="wpp-header">
+                    <div className="wpp-skeleton wpp-skeleton-avatar"></div>
+                    <div className="wpp-header-content">
+                        <div className="wpp-skeleton wpp-skeleton-name"></div>
+                        <div className="wpp-skeleton wpp-skeleton-badge"></div>
+                        <div className="wpp-skeleton wpp-skeleton-text"></div>
+                        <div className="wpp-header-actions">
+                            <div className="wpp-skeleton wpp-skeleton-button"></div>
+                            <div className="wpp-skeleton wpp-skeleton-button"></div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Stats Skeleton */}
+                <div className="wpp-stats">
+                    {[1, 2, 3, 4].map(i => (
+                        <div key={i} className="wpp-skeleton wpp-skeleton-stat"></div>
+                    ))}
+                </div>
+
+                {/* Skills Skeleton */}
+                <div className="wpp-section">
+                    <div className="wpp-skeleton wpp-skeleton-name" style={{ marginBottom: '16px' }}></div>
+                    <div className="wpp-skills">
+                        {[1, 2, 3, 4].map(i => (
+                            <div key={i} className="wpp-skeleton wpp-skeleton-tag"></div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* About Skeleton */}
+                <div className="wpp-section">
+                    <div className="wpp-skeleton wpp-skeleton-name" style={{ marginBottom: '16px' }}></div>
+                    <div className="wpp-skeleton wpp-skeleton-bio"></div>
+                </div>
+
+                {/* Services Skeleton */}
+                <div className="wpp-section">
+                    <div className="wpp-skeleton wpp-skeleton-name" style={{ marginBottom: '16px' }}></div>
+                    <div className="wpp-services-grid">
+                        {[1, 2, 3, 4].map(i => (
+                            <div key={i} className="wpp-skeleton wpp-skeleton-service"></div>
+                        ))}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 
+    if (loading) return <SkeletonLoader />;
+
     if (error) return (
-        <div className="wp-container">
-            <div className="wp-card" style={{ padding: '2rem', textAlign: 'center', maxWidth: '400px' }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Oops! Something went wrong.</h3>
-                <p style={{ color: '#4b5563', marginBottom: '1.5rem' }}>{error}</p>
-                <Link to="/" className="wp-btn-submit" style={{ textDecoration: 'none', display: 'inline-block', width: 'auto', padding: '0.5rem 1.5rem' }}>Go Home</Link>
+        <div className="wpp-page">
+            <div className="wpp-card">
+                <div className="wpp-error">
+                    <div className="wpp-error-icon">
+                        <span className="material-icons">error_outline</span>
+                    </div>
+                    <h2 className="wpp-error-title">Oops! Something went wrong</h2>
+                    <p className="wpp-error-text">{error}</p>
+                    <Link to="/browse-workers" className="wpp-btn-primary">
+                        Back to Workers
+                    </Link>
+                </div>
             </div>
         </div>
     );
 
     if (!profile) return null;
 
+    const serviceCards = getServiceCards(profile.skills);
+
     return (
-        <div className="wp-container">
-            <div className="wp-wrapper wp-view-container">
-                <div className="wp-card">
-                    {/* Header Section */}
-                    <div className="wp-view-header">
-                        <div className="wp-view-header-content">
-                            <div style={{ display: 'flex', alignItems: 'center' }}>
-                                <div className="wp-profile-avatar">
-                                    {profile.fullName ? profile.fullName.charAt(0) : 'U'}
+        <div className="wpp-page">
+            <div className="wpp-card">
+                {/* Profile Header */}
+                <div className="wpp-header">
+                    <div className="wpp-avatar-container">
+                        <div className="wpp-avatar">
+                            {profile.fullName ? profile.fullName.charAt(0).toUpperCase() : 'W'}
+                        </div>
+                        <div className="wpp-avatar-badge">
+                            <span className="material-icons">verified</span>
+                        </div>
+                    </div>
+                    <div className="wpp-header-content">
+                        <h1 className="wpp-name">{profile.fullName || 'Worker'}</h1>
+                        <div className="wpp-verified-badge">
+                            <span className="material-icons">verified</span>
+                            <span>Verified Skilled {getPrimarySkill(profile.skills)}</span>
+                        </div>
+                        <p className="wpp-member-info">
+                            Member since 2024 • Response time: &lt; 2 hours
+                        </p>
+                        {profile.hourlyRate > 0 && (
+                            <div className="wpp-hourly-rate">
+                                <span className="material-icons">payments</span>
+                                <span className="wpp-rate-amount">Rs. {profile.hourlyRate.toLocaleString()}</span>
+                                <span className="wpp-rate-period">/ hour</span>
+                            </div>
+                        )}
+                        <div className="wpp-header-actions">
+                            <button className="wpp-btn-primary">
+                                Invite to Job
+                            </button>
+                            <button className="wpp-btn-secondary">
+                                Message
+                            </button>
+                            <button className="wpp-btn-icon">
+                                <span className="material-icons">share</span>
+                            </button>
+                            <button className="wpp-btn-icon">
+                                <span className="material-icons">more_horiz</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Stats Row */}
+                <div className="wpp-stats">
+                    <div className="wpp-stat-card">
+                        <span className="material-icons wpp-stat-icon rating">star</span>
+                        <span className="wpp-stat-value">4.9/5</span>
+                        <span className="wpp-stat-label">Rating</span>
+                    </div>
+                    <div className="wpp-stat-card">
+                        <span className="material-icons wpp-stat-icon jobs">work</span>
+                        <span className="wpp-stat-value">186</span>
+                        <span className="wpp-stat-label">Jobs Done</span>
+                    </div>
+                    <div className="wpp-stat-card">
+                        <span className="material-icons wpp-stat-icon experience">emoji_events</span>
+                        <span className="wpp-stat-value">10+</span>
+                        <span className="wpp-stat-label">Years Exp.</span>
+                    </div>
+                    <div className="wpp-stat-card">
+                        <span className="material-icons wpp-stat-icon location">location_on</span>
+                        <span className="wpp-stat-value">{profile.district || 'N/A'}</span>
+                        <span className="wpp-stat-label">Location</span>
+                    </div>
+                </div>
+
+                {/* Expertise Section */}
+                {profile.skills && profile.skills.length > 0 && (
+                    <div className="wpp-section">
+                        <h2 className="wpp-section-title">Expertise</h2>
+                        <div className="wpp-skills">
+                            {profile.skills.map((skill, index) => (
+                                <span key={index} className="wpp-skill-tag">{skill}</span>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* About Section */}
+                {profile.bio && (
+                    <div className="wpp-section">
+                        <h2 className="wpp-section-title">About {getFirstName(profile.fullName)}</h2>
+                        <p className="wpp-about-text">{profile.bio}</p>
+                    </div>
+                )}
+
+                {/* Services Offered */}
+                <div className="wpp-section">
+                    <h2 className="wpp-section-title">Services Offered</h2>
+                    <div className="wpp-services-grid">
+                        {serviceCards.map((service, index) => (
+                            <div key={index} className="wpp-service-card">
+                                <div className="wpp-service-icon">
+                                    <span className="material-icons">{service.icon}</span>
                                 </div>
-                                <div className="wp-profile-info">
-                                    <h1>{profile.fullName}</h1>
-                                    <div className="wp-location-tag">
-                                        <FaMapMarkerAlt style={{ marginRight: '0.5rem' }} />
-                                        <span>{profile.district}</span>
-                                    </div>
+                                <div className="wpp-service-content">
+                                    <h3 className="wpp-service-title">{service.title}</h3>
+                                    <p className="wpp-service-desc">{service.desc}</p>
                                 </div>
                             </div>
-                            <div className="wp-action-btns">
-                                <Link
-                                    to={`/edit-profile/${profile.id}`}
-                                    className="wp-btn-edit"
-                                >
-                                    <FaUserEdit style={{ marginRight: '0.5rem' }} /> Edit Profile
-                                </Link>
-                                <button className="wp-btn-contact">
-                                    <FaEnvelope style={{ marginRight: '0.5rem' }} /> Contact
-                                </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Service Areas */}
+                <div className="wpp-section">
+                    <h2 className="wpp-section-title">Service Areas</h2>
+                    <div className="wpp-location-info">
+                        <span className="material-icons">place</span>
+                        <span>Based in {profile.district || 'Sri Lanka'}, serving the following areas:</span>
+                    </div>
+                    <div className="wpp-map-placeholder">
+                        <div className="wpp-map-overlay">
+                            <div className="wpp-area-tags">
+                                {profile.serviceAreas && profile.serviceAreas.length > 0 ? (
+                                    profile.serviceAreas.map((area, index) => (
+                                        <span key={index} className="wpp-area-tag">{area}</span>
+                                    ))
+                                ) : (
+                                    <>
+                                        <span className="wpp-area-tag">{profile.district || 'Local Area'}</span>
+                                        <span className="wpp-area-tag">Nearby Cities</span>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <div className="wp-view-grid">
-                        {/* Left Column: Details */}
-                        <div style={{ gridColumn: 'span 1' }}>
-                            {/* Bio Section */}
-                            <section style={{ marginBottom: '2rem' }}>
-                                <h3 className="wp-section-title">
-                                    <FaQuoteLeft style={{ marginRight: '0.75rem', color: '#60a5fa' }} /> About Me
-                                </h3>
-                                <div className="wp-bio-box">
-                                    {profile.bio}
-                                </div>
-                            </section>
-
-                            {/* Skills Section */}
-                            <section>
-                                <h3 className="wp-section-title">
-                                    <FaTools style={{ marginRight: '0.75rem', color: '#2563eb' }} /> Professional Skills
-                                </h3>
-                                <div className="wp-tags">
-                                    {(profile.skills || []).map((skill, index) => (
-                                        <span key={index} className="wp-tag">
-                                            {skill}
-                                        </span>
-                                    ))}
-                                </div>
-                            </section>
+                {/* Portfolio Section */}
+                <div className="wpp-section">
+                    <div className="wpp-section-header">
+                        <h2 className="wpp-section-title">Portfolio & Past Work</h2>
+                        <button className="wpp-view-all">View All</button>
+                    </div>
+                    <div className="wpp-portfolio-grid">
+                        <div className="wpp-portfolio-item">
+                            <span className="material-icons">image</span>
                         </div>
-
-                        {/* Right Column: Stats & Service Areas */}
-                        <div>
-                            {/* Hourly Rate Card */}
-                            <div className="wp-rate-card" style={{ marginBottom: '1.5rem' }}>
-                                <h4 className="wp-rate-title">Hourly Rate</h4>
-                                <div className="wp-rate-amount">
-                                    <span style={{ fontSize: '1.25rem', marginRight: '0.25rem', verticalAlign: 'top' }}>LKR</span>
-                                    {profile.hourlyRate}
-                                </div>
-                                <p className="wp-rate-sub">Available for hire</p>
-                            </div>
-
-                            {/* Availability Card */}
-                            <div className="wp-rate-card" style={{ marginBottom: '2rem', borderLeftColor: '#10b981' }}>
-                                <h4 className="wp-rate-title" style={{ color: '#10b981' }}>
-                                    <FaCalendarCheck style={{ marginRight: '0.5rem' }} />
-                                    Availability
-                                </h4>
-                                <div className="wp-rate-amount" style={{ fontSize: '1.5rem', color: '#111827' }}>
-                                    {profile.availability || 'Not Specified'}
-                                </div>
-                            </div>
-
-                            {/* Service Areas */}
-                            <div style={{ marginBottom: '2rem' }}>
-                                <h4 className="wp-section-title">
-                                    <FaMapMarkerAlt style={{ marginRight: '0.5rem', color: '#6366f1' }} /> Service Areas
-                                </h4>
-                                <div style={{ backgroundColor: '#f9fafb', borderRadius: '0.75rem', padding: '1rem', border: '1px solid #f3f4f6' }}>
-                                    <ul className="wp-service-list">
-                                        {(profile.serviceAreas || []).map((area, index) => (
-                                            <li key={index} className="wp-service-item">
-                                                <div className="wp-dot"></div>
-                                                {area}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            </div>
-
-                            {/* Contact Placeholder */}
-                            <div style={{ backgroundColor: '#111827', borderRadius: '0.75rem', padding: '1.5rem', color: 'white', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
-                                <h4 style={{ fontWeight: 'bold', fontSize: '1.125rem', marginBottom: '0.5rem', fontFamily: 'Outfit, sans-serif' }}>Ready to hire?</h4>
-                                <p style={{ color: '#9ca3af', fontSize: '0.875rem', marginBottom: '1rem' }}>Contact this worker to discuss your project requirements.</p>
-                                <button style={{ width: '100%', padding: '0.75rem', backgroundColor: '#2563eb', color: 'white', borderRadius: '0.5rem', fontWeight: '500', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', transition: 'background-color 0.2s' }}>
-                                    <FaPhone style={{ marginRight: '0.5rem' }} /> View Phone Number
-                                </button>
-                            </div>
+                        <div className="wpp-portfolio-item">
+                            <span className="material-icons">image</span>
+                        </div>
+                        <div className="wpp-portfolio-item">
+                            <span className="material-icons">image</span>
                         </div>
                     </div>
                 </div>
@@ -164,4 +316,3 @@ const WorkerProfilePage = () => {
 };
 
 export default WorkerProfilePage;
-

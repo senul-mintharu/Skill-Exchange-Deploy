@@ -4,6 +4,7 @@ import lk.wedalk.common.enums.QuoteStatus;
 import lk.wedalk.common.enums.RequestStatus;
 import lk.wedalk.common.exceptions.BadRequestException;
 import lk.wedalk.common.exceptions.NotFoundException;
+import lk.wedalk.common.exceptions.UnauthorizedException;
 import lk.wedalk.quotes.dto.QuoteCreateRequest;
 import lk.wedalk.quotes.dto.QuoteResponse;
 import lk.wedalk.quotes.model.Quotation;
@@ -142,10 +143,16 @@ public class QuotationService {
      * Used by the seeker's Compare Quotes page.
      */
     @Transactional(readOnly = true)
-    public List<QuoteResponse> getQuotesByRequest(Long requestId) {
-        // Validate request exists
-        if (!serviceRequestRepository.existsById(requestId)) {
-            throw new NotFoundException("Service request #" + requestId + " not found");
+    public List<QuoteResponse> getQuotesByRequest(Long requestId, Long seekerId) {
+        ServiceRequest serviceRequest =
+                serviceRequestRepository
+                        .findById(requestId)
+                        .orElseThrow(
+                                () ->
+                                        new NotFoundException("Service request #" + requestId + " not found"));
+        if (!serviceRequest.getSeeker().getId().equals(seekerId)) {
+            throw new UnauthorizedException(
+                    "You can only view quotations for your own service requests.");
         }
         return quotationRepository
                 .findByRequestIdOrderByPriceAsc(requestId)
@@ -157,8 +164,9 @@ public class QuotationService {
     /**
      * Seeker accepts a specific quote:
      * - Accepted quote → ACCEPTED
-     * - All other PENDING quotes for same request → REJECTED
+     * - All other quotes for same request → NOT_ACCEPTED
      * - Service request status → ASSIGNED
+     * - Assign accepted worker to the service request
      */
     @Transactional
     public QuoteResponse acceptQuote(Long quoteId, Long seekerId) {
@@ -167,27 +175,31 @@ public class QuotationService {
 
         // Only the seeker who owns the request can accept
         if (!serviceRequest.getSeeker().getId().equals(seekerId)) {
-            throw new BadRequestException("You can only accept quotes on your own requests.");
+            throw new UnauthorizedException("You can only accept quotes on your own requests.");
         }
         if (serviceRequest.getStatus() != RequestStatus.OPEN) {
             throw new BadRequestException("This request is no longer accepting quote decisions.");
+        }
+        if (quotation.getStatus() != QuoteStatus.PENDING) {
+            throw new BadRequestException("Only PENDING quotations can be accepted.");
         }
 
         // Accept this quote
         quotation.setStatus(QuoteStatus.ACCEPTED);
         quotationRepository.save(quotation);
 
-        // Reject all other pending quotes for the same request
+        // Mark all other quotes as NOT_ACCEPTED
         List<Quotation> otherQuotes = quotationRepository
                 .findByRequestIdOrderByPriceAsc(serviceRequest.getId());
         for (Quotation q : otherQuotes) {
-            if (!q.getId().equals(quoteId) && q.getStatus() == QuoteStatus.PENDING) {
-                q.setStatus(QuoteStatus.REJECTED);
+            if (!q.getId().equals(quoteId) && q.getStatus() != QuoteStatus.NOT_ACCEPTED) {
+                q.setStatus(QuoteStatus.NOT_ACCEPTED);
                 quotationRepository.save(q);
             }
         }
 
-        // Update the request status to ASSIGNED
+        // Update the request assignment and status
+        serviceRequest.setAssignedWorker(quotation.getWorker());
         serviceRequest.setStatus(RequestStatus.ASSIGNED);
         serviceRequestRepository.save(serviceRequest);
 
@@ -202,13 +214,13 @@ public class QuotationService {
         Quotation quotation = findQuoteOrThrow(quoteId);
 
         if (!quotation.getRequest().getSeeker().getId().equals(seekerId)) {
-            throw new BadRequestException("You can only reject quotes on your own requests.");
+            throw new UnauthorizedException("You can only reject quotes on your own requests.");
         }
         if (quotation.getStatus() != QuoteStatus.PENDING) {
             throw new BadRequestException("Only PENDING quotes can be rejected.");
         }
 
-        quotation.setStatus(QuoteStatus.REJECTED);
+        quotation.setStatus(QuoteStatus.NOT_ACCEPTED);
         return mapToResponse(quotationRepository.save(quotation));
     }
 

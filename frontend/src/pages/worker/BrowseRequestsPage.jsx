@@ -319,7 +319,7 @@ const BrowseRequestsPage = () => {
                                             <span className="br-budget-value">{formatBudget(req.budget)}</span>
                                         </div>
                                         <Link
-                                            to={`/requests/${req.id}`}
+                                            to={`/worker/requests/${req.id}`}
                                             state={{ from: 'browse-requests' }}
                                             className="br-quote-btn"
                                         >

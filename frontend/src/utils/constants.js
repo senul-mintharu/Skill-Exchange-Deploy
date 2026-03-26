@@ -56,6 +56,37 @@ export const CATEGORIES = [
     { value: 'OTHER', label: 'Other', icon: '⋯' }
 ];
 
+export const DISTRICTS = [
+    'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya',
+    'Galle', 'Matara', 'Hambantota', 'Jaffna', 'Kilinochchi', 'Mannar',
+    'Mullaitivu', 'Vavuniya', 'Trincomalee', 'Batticaloa', 'Ampara',
+    'Kurunegala', 'Puttalam', 'Anuradhapura', 'Polonnaruwa', 'Badulla',
+    'Monaragala', 'Ratnapura', 'Kegalle'
+];
+
+export const SERVING_AREAS = {
+    'Colombo': ['Colombo 01', 'Colombo 02', 'Colombo 03', 'Colombo 04', 'Colombo 05', 'Colombo 06', 'Colombo 07', 'Dehiwala', 'Mount Lavinia', 'Moratuwa', 'Nugegoda', 'Maharagama', 'Kotte', 'Battaramulla', 'Rajagiriya'],
+    'Gampaha': ['Negombo', 'Ja-Ela', 'Wattala', 'Kadawatha', 'Kelaniya', 'Ragama', 'Minuwangoda', 'Gampaha Town'],
+    'Kalutara': ['Kalutara', 'Panadura', 'Horana', 'Bandaragama', 'Beruwala'],
+    'Kandy': ['Kandy City', 'Peradeniya', 'Katugastota', 'Kundasale', 'Gampola', 'Nawalapitiya'],
+    'Galle': ['Galle Fort', 'Unawatuna', 'Hikkaduwa', 'Ambalangoda'],
+    'Matara': ['Matara Town', 'Weligama', 'Mirissa', 'Dickwella'],
+    'Kurunegala': ['Kurunegala Town', 'Kuliyapitiya', 'Mawathagama', 'Pannala'],
+    'Anuradhapura': ['Anuradhapura Town', 'Kekirawa', 'Medawachchiya'],
+    'Ratnapura': ['Ratnapura Town', 'Balangoda', 'Embilipitiya'],
+    'Badulla': ['Badulla Town', 'Bandarawela', 'Haputale', 'Ella'],
+    'Gampaha': ['Negombo', 'Ja-Ela', 'Wattala', 'Kadawatha', 'Kelaniya', 'Ragama'],
+    'Hambantota': ['Hambantota Town', 'Tangalle', 'Tissamaharama'],
+    'Jaffna': ['Jaffna Town', 'Chavakachcheri', 'Point Pedro'],
+    'Trincomalee': ['Trincomalee Town', 'Kinniya', 'Mutur'],
+    'Batticaloa': ['Batticaloa Town', 'Kalmunai', 'Eravur'],
+    'Ampara': ['Ampara Town', 'Akkaraipattu', 'Kalmunai'],
+    'Puttalam': ['Puttalam Town', 'Chilaw', 'Wennappuwa'],
+    'Polonnaruwa': ['Polonnaruwa Town', 'Kaduruwela', 'Medirigiriya'],
+    'Monaragala': ['Monaragala Town', 'Wellawaya', 'Bibile'],
+    'Kegalle': ['Kegalle Town', 'Mawanella', 'Warakapola']
+};
+
 export const URGENCY_LEVELS = [
     { value: 'URGENT', label: 'Urgent', weight: 4 },
     { value: 'HIGH', label: 'High', weight: 3 },

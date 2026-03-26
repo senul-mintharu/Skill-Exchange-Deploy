@@ -14,6 +14,8 @@ const statusMeta = (status) => {
             return { label: 'ACCEPTED', tone: 'accepted', icon: 'check_circle' };
         case 'REJECTED':
             return { label: 'REJECTED', tone: 'rejected', icon: 'cancel' };
+        case 'NOT_ACCEPTED':
+            return { label: 'NOT ACCEPTED', tone: 'rejected', icon: 'cancel' };
         case 'WITHDRAWN':
             return { label: 'WITHDRAWN', tone: 'withdrawn', icon: 'undo' };
         default:
@@ -36,7 +38,7 @@ const MyQuotationsPage = () => {
             const s = String(q.status || '').toUpperCase();
             if (s === 'PENDING') c.pending += 1;
             else if (s === 'ACCEPTED') c.accepted += 1;
-            else if (s === 'REJECTED') c.rejected += 1;
+            else if (s === 'REJECTED' || s === 'NOT_ACCEPTED') c.rejected += 1;
             else if (s === 'WITHDRAWN') c.withdrawn += 1;
         }
         return c;
@@ -173,7 +175,7 @@ const MyQuotationsPage = () => {
                             <p>
                                 When you submit quotations to service requests, they’ll show up here so you can track their status.
                             </p>
-                            <Link to="/browse-requests" className="mq-btn mq-btn-primary">
+                            <Link to="/worker/browse" className="mq-btn mq-btn-primary">
                                 <span className="material-icons">search</span>
                                 Find Work
                             </Link>
@@ -231,7 +233,7 @@ const MyQuotationsPage = () => {
                                     </div>
 
                                     <div className="mq-actions">
-                                        <Link className="mq-btn mq-btn-ghost" to={`/requests/${q.requestId}`}>
+                                        <Link className="mq-btn mq-btn-ghost" to={`/worker/requests/${q.requestId}`}>
                                             <span className="material-icons">visibility</span>
                                             View Request
                                         </Link>

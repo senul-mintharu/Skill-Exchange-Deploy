@@ -15,8 +15,14 @@ import java.util.List;
 @Builder
 public class WorkerProfileCreateRequest {
 
+    private String fullName;
+
+    private String contactNumber;
+
     @NotBlank(message = "Bio is required")
     private String bio;
+
+    private String profilePictureUrl;
 
     @NotEmpty(message = "At least one skill is required")
     private List<String> skills;

@@ -1,43 +1,54 @@
-/**
- * authService.js — Authentication Service (DISABLED)
- *
- * Authentication is disabled for development.
- * These are stub functions to prevent errors.
- */
+import apiClient from './apiClient';
+import { clearAuth, getToken, getUser, isLoggedIn, setToken, setUser } from '../utils/storage';
 
-/**
- * Stub login function
- */
+const normalizeAuthPayload = (payload) => ({
+  id: payload.userId,
+  email: payload.email,
+  fullName: payload.fullName,
+  role: payload.role,
+});
+
 export const login = async (email, password) => {
-    console.warn('Authentication is disabled');
-    return { message: 'Auth disabled' };
+  const response = await apiClient.post('/auth/login', { email, password });
+  const payload = response?.data?.data;
+  if (!payload?.token) {
+    throw new Error('Invalid login response');
+  }
+  setToken(payload.token);
+  setUser(normalizeAuthPayload(payload));
+  return normalizeAuthPayload(payload);
 };
 
-/**
- * Stub register function
- */
 export const register = async (registerData) => {
-    console.warn('Authentication is disabled');
-    return { message: 'Auth disabled' };
+  const response = await apiClient.post('/auth/register', registerData);
+  const payload = response?.data?.data;
+  if (!payload?.token) {
+    throw new Error('Invalid register response');
+  }
+  setToken(payload.token);
+  setUser(normalizeAuthPayload(payload));
+  return normalizeAuthPayload(payload);
 };
 
-/**
- * Stub logout function
- */
 export const logout = () => {
-    console.warn('Authentication is disabled');
+  clearAuth();
 };
 
-/**
- * Stub getCurrentUser function
- */
-export const getCurrentUser = () => {
-    return null;
+export const getCurrentUser = () => getUser();
+
+export const isAuthenticated = () => isLoggedIn() && !!getToken();
+
+export const getDefaultRouteForRole = (role) => {
+  if (role === 'SEEKER') return '/my-requests';
+  if (role === 'WORKER') return '/browse-requests';
+  if (role === 'ADMIN') return '/admin/dashboard';
+  return '/';
 };
 
-/**
- * Stub isAuthenticated function
- */
-export const isAuthenticated = () => {
-    return false;
+export const updateCurrentUser = (updates) => {
+  const current = getUser();
+  if (!current) return null;
+  const merged = { ...current, ...updates };
+  setUser(merged);
+  return merged;
 };

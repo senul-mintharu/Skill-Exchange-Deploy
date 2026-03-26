@@ -12,6 +12,7 @@ package lk.wedalk.common.enums;
 public enum QuoteStatus {
     PENDING,
     ACCEPTED,
+    NOT_ACCEPTED,
     REJECTED,
     WITHDRAWN
 }
