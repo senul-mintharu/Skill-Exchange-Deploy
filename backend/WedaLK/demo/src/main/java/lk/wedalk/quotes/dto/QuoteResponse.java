@@ -28,6 +28,7 @@ public class QuoteResponse {
 
     // ── Worker info ──────────────────────────────────────────────────────────
     private Long workerId;
+    private Long workerProfileId;
     private String workerName;
 
     // ── Quote details ────────────────────────────────────────────────────────

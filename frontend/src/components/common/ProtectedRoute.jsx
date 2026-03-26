@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import {
   getCurrentUser,
   getDefaultRouteForRole,
@@ -13,12 +13,13 @@ import {
  */
 
 const ProtectedRoute = ({ allowedRoles = [] }) => {
+    const location = useLocation();
     const authenticated = isAuthenticated();
     const user = getCurrentUser();
 
     // Not authenticated - redirect to login
     if (!authenticated) {
-        return <Navigate to="/login" replace />;
+        return <Navigate to="/login" replace state={{ from: location }} />;
     }
 
     // Check if user has required role

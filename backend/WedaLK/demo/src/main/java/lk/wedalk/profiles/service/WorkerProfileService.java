@@ -5,6 +5,10 @@ import lk.wedalk.profiles.dto.WorkerProfileResponse;
 import lk.wedalk.profiles.dto.WorkerProfileUpdateRequest;
 import lk.wedalk.profiles.model.WorkerProfile;
 import lk.wedalk.profiles.repository.WorkerProfileRepository;
+import lk.wedalk.common.exceptions.BadRequestException;
+import lk.wedalk.common.exceptions.NotFoundException;
+import lk.wedalk.common.exceptions.UnauthorizedException;
+import lk.wedalk.users.model.Role;
 import lk.wedalk.users.model.User;
 import lk.wedalk.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,21 +26,25 @@ public class WorkerProfileService {
     private final UserRepository userRepository;
 
     @Transactional
-    public WorkerProfileResponse createProfile(WorkerProfileCreateRequest request) {
-        // Automatically generate a User for the profile (Sprint 1 simplification)
-        String uniqueSuffix = String.valueOf(System.currentTimeMillis());
-        String fullName = Optional.ofNullable(request.getFullName())
-                .map(String::trim)
-                .filter(value -> !value.isEmpty())
-                .orElse("Worker_" + uniqueSuffix);
-        User newUser = User.builder()
-                .fullName(fullName)
-                .email("worker_" + uniqueSuffix + "@test.com")
-                .password("password")
-                .phoneNumber(request.getContactNumber())
-                .role(lk.wedalk.users.model.Role.WORKER)
-                .build();
-        User user = userRepository.save(newUser);
+    public WorkerProfileResponse createProfile(Long userId, WorkerProfileCreateRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Authenticated user not found"));
+
+        if (user.getRole() != Role.WORKER) {
+            throw new UnauthorizedException("Only workers can create worker profiles");
+        }
+
+        if (workerProfileRepository.findByUserId(userId).isPresent()) {
+            throw new BadRequestException("Worker profile already exists for this user");
+        }
+
+        if (request.getFullName() != null && !request.getFullName().trim().isEmpty()) {
+            user.setFullName(request.getFullName().trim());
+        }
+        if (request.getContactNumber() != null) {
+            user.setPhoneNumber(request.getContactNumber());
+        }
+        userRepository.save(user);
 
         WorkerProfile profile = WorkerProfile.builder()
                 .user(user)
@@ -63,20 +70,24 @@ public class WorkerProfileService {
 
     public WorkerProfileResponse getProfile(Long id) {
         WorkerProfile profile = workerProfileRepository.findById(id)
-                .orElseThrow(() -> new lk.wedalk.common.exceptions.NotFoundException("Profile not found"));
+                .orElseThrow(() -> new NotFoundException("Profile not found"));
         return mapToResponse(profile);
     }
 
     public WorkerProfileResponse getProfileByUserId(Long userId) {
         WorkerProfile profile = workerProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new lk.wedalk.common.exceptions.NotFoundException("Profile not found for user"));
+                .orElseThrow(() -> new NotFoundException("Profile not found for user"));
         return mapToResponse(profile);
     }
 
     @Transactional
-    public WorkerProfileResponse updateProfile(Long id, WorkerProfileUpdateRequest request) {
+    public WorkerProfileResponse updateProfile(Long id, Long currentUserId, WorkerProfileUpdateRequest request) {
         WorkerProfile profile = workerProfileRepository.findById(id)
-                .orElseThrow(() -> new lk.wedalk.common.exceptions.NotFoundException("Profile not found"));
+                .orElseThrow(() -> new NotFoundException("Profile not found"));
+
+        if (!profile.getUser().getId().equals(currentUserId)) {
+            throw new UnauthorizedException("You can only update your own worker profile");
+        }
 
         if (request.getFullName() != null)
             profile.getUser().setFullName(request.getFullName());
@@ -99,6 +110,18 @@ public class WorkerProfileService {
 
         WorkerProfile savedProfile = workerProfileRepository.save(profile);
         return mapToResponse(savedProfile);
+    }
+
+    @Transactional
+    public void deleteProfile(Long id, Long currentUserId) {
+        WorkerProfile profile = workerProfileRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Profile not found"));
+
+        if (!profile.getUser().getId().equals(currentUserId)) {
+            throw new UnauthorizedException("You can only delete your own worker profile");
+        }
+
+        workerProfileRepository.delete(profile);
     }
 
     private WorkerProfileResponse mapToResponse(WorkerProfile profile) {

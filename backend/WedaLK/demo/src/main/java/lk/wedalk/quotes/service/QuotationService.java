@@ -5,6 +5,7 @@ import lk.wedalk.common.enums.RequestStatus;
 import lk.wedalk.common.exceptions.BadRequestException;
 import lk.wedalk.common.exceptions.NotFoundException;
 import lk.wedalk.common.exceptions.UnauthorizedException;
+import lk.wedalk.profiles.repository.WorkerProfileRepository;
 import lk.wedalk.quotes.dto.QuoteCreateRequest;
 import lk.wedalk.quotes.dto.QuoteResponse;
 import lk.wedalk.quotes.model.Quotation;
@@ -34,6 +35,7 @@ public class QuotationService {
     private final QuotationRepository quotationRepository;
     private final ServiceRequestRepository serviceRequestRepository;
     private final UserRepository userRepository;
+    private final WorkerProfileRepository workerProfileRepository;
 
     // =========================================================================
     // Story 1 — Submit a Quotation
@@ -235,11 +237,17 @@ public class QuotationService {
     }
 
     private QuoteResponse mapToResponse(Quotation q) {
+        Long workerProfileId = workerProfileRepository
+            .findByUserId(q.getWorker().getId())
+            .map(profile -> profile.getId())
+            .orElse(null);
+
         return QuoteResponse.builder()
                 .id(q.getId())
                 .requestId(q.getRequest().getId())
                 .requestTitle(q.getRequest().getTitle())
                 .workerId(q.getWorker().getId())
+            .workerProfileId(workerProfileId)
                 .workerName(q.getWorker().getFullName())
                 .price(q.getPrice())
                 .estimatedDays(q.getEstimatedDays())

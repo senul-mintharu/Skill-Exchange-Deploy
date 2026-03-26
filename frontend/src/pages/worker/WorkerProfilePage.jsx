@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { getProfileById } from '../../services/profileService';
 import './WorkerProfile.css';
 
@@ -16,6 +16,7 @@ import './WorkerProfile.css';
  */
 const WorkerProfilePage = () => {
     const { id } = useParams();
+    const location = useLocation();
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -158,10 +159,23 @@ const WorkerProfilePage = () => {
     if (!profile) return null;
 
     const serviceCards = getServiceCards(profile.skills);
+    const showProfileCreatedCTA = !!location.state?.profileCreated;
 
     return (
         <div className="wpp-page">
             <div className="wpp-card">
+                {showProfileCreatedCTA && (
+                    <div className="wpp-profile-notice" role="status">
+                        <div className="wpp-profile-notice__content">
+                            <span className="material-icons">check_circle</span>
+                            <p>Your worker profile is ready. Start finding jobs now.</p>
+                        </div>
+                        <Link to="/browse-requests" className="wpp-profile-notice__cta">
+                            Find Work
+                        </Link>
+                    </div>
+                )}
+
                 {/* Profile Header */}
                 <div className="wpp-header">
                     <div className="wpp-avatar-container">

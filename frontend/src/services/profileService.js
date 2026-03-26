@@ -56,3 +56,13 @@ export const updateProfile = async (id, profileData) => {
     const response = await apiClient.put(`/profiles/${id}`, profileData);
     return response.data;
 };
+
+/**
+ * Delete a worker profile
+ * @param {number} id - Profile ID
+ * @returns {Promise<boolean>} True if successful
+ */
+export const deleteProfile = async (id) => {
+    await apiClient.delete(`/profiles/${id}`);
+    return true;
+};

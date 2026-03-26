@@ -1,13 +1,37 @@
 package lk.wedalk.users.dto;
 
-/**
- * UserDto.java — User Data Transfer Object
- *
- * <p>This file should contain: - Fields (safe to expose — NO password): - Long id - String fullName
- * - String email - String phone - String district - Role role - boolean isSuspended - LocalDateTime
- * createdAt - Lombok: @Data, @Builder, @NoArgsConstructor, @AllArgsConstructor - Static method:
- * fromEntity(User user) — converts User entity to UserDto
- *
- * <p>Purpose: Used to return user information to the frontend without exposing sensitive data like
- * the password hash.
- */
+import java.time.LocalDateTime;
+import lk.wedalk.users.model.User;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class UserDto {
+
+	private Long id;
+	private String fullName;
+	private String email;
+	private String phoneNumber;
+	private String district;
+	private String role;
+	private Boolean isSuspended;
+	private LocalDateTime createdAt;
+
+	public static UserDto fromEntity(User user) {
+		return UserDto.builder()
+				.id(user.getId())
+				.fullName(user.getFullName())
+				.email(user.getEmail())
+				.phoneNumber(user.getPhoneNumber())
+				.district(user.getDistrict())
+				.role(user.getRole() != null ? user.getRole().name() : null)
+				.isSuspended(user.getIsSuspended())
+				.createdAt(user.getCreatedAt())
+				.build();
+	}
+}

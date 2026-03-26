@@ -144,7 +144,7 @@ const WorkerRequestDetailsPage = () => {
                         <h2>{is404 ? 'Request Not Found' : 'Something Went Wrong'}</h2>
                         <p>{error || 'This request could not be loaded.'}</p>
                         <div className="wrd-error-actions">
-                            <Link to="/worker/browse" className="wrd-btn wrd-btn-primary">
+                            <Link to="/browse-requests" className="wrd-btn wrd-btn-primary">
                                 <span className="material-icons">arrow_back</span>
                                 Browse Requests
                             </Link>
@@ -170,7 +170,7 @@ const WorkerRequestDetailsPage = () => {
             <main className="wrd-container">
                 {/* Breadcrumb */}
                 <div className="wrd-breadcrumb">
-                    <Link to="/worker/browse" className="wrd-back-link">
+                    <Link to="/browse-requests" className="wrd-back-link">
                         <span className="material-icons">arrow_back</span>
                         Back to Browse Requests
                     </Link>
@@ -283,7 +283,7 @@ const WorkerRequestDetailsPage = () => {
                             </div>
                             <button
                                 className="wrd-send-quote-btn"
-                                onClick={() => navigate(`/worker/submit-quote/${request.id}`)}
+                                onClick={() => navigate(`/requests/${request.id}/quote`)}
                             >
                                 <span className="material-icons">send</span>
                                 Send Quote
@@ -341,7 +341,7 @@ const WorkerRequestDetailsPage = () => {
 
                         {/* Browse Similar Link */}
                         <Link
-                            to={`/worker/browse?category=${request.category}`}
+                            to={`/browse-requests?category=${request.category}`}
                             className="wrd-similar-link"
                         >
                             <span className="material-icons">search</span>

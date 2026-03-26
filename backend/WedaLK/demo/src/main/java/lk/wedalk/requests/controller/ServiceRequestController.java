@@ -4,14 +4,18 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lk.wedalk.common.ApiResponse;
 import lk.wedalk.common.PagedResponse;
+import lk.wedalk.common.exceptions.NotFoundException;
 import lk.wedalk.common.enums.ServiceCategory;
 import lk.wedalk.requests.dto.RequestCreateRequest;
 import lk.wedalk.requests.dto.RequestResponse;
 import lk.wedalk.requests.dto.WorkerAssignedJobResponse;
 import lk.wedalk.requests.service.ServiceRequestService;
+import lk.wedalk.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -29,21 +33,27 @@ import org.springframework.web.bind.annotation.*;
 public class ServiceRequestController {
 
   private final ServiceRequestService serviceRequestService;
+  private final UserRepository userRepository;
+
+  private Long requireCurrentUserId() {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    String email = auth.getName();
+    return userRepository
+        .findByEmail(email)
+        .orElseThrow(() -> new NotFoundException("Authenticated user not found"))
+        .getId();
+  }
 
   @PostMapping
-  public ResponseEntity<ApiResponse<RequestResponse>> createRequest(
-      @Valid @RequestBody RequestCreateRequest request,
-      @RequestParam(required = false, defaultValue = "1") Long seekerId) {
-    // For now, accept seekerId as parameter or use default test user
-    RequestResponse response = serviceRequestService.createRequest(seekerId, request);
+  public ResponseEntity<ApiResponse<RequestResponse>> createRequest(@Valid @RequestBody RequestCreateRequest request) {
+    RequestResponse response = serviceRequestService.createRequest(requireCurrentUserId(), request);
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(ApiResponse.success(response, "Service request created successfully"));
   }
 
   @GetMapping("/my")
-  public ResponseEntity<ApiResponse<List<RequestResponse>>> getMyRequests(
-      @RequestParam(required = false, defaultValue = "1") Long seekerId) {
-    List<RequestResponse> requests = serviceRequestService.getMyRequests(seekerId);
+  public ResponseEntity<ApiResponse<List<RequestResponse>>> getMyRequests() {
+    List<RequestResponse> requests = serviceRequestService.getMyRequests(requireCurrentUserId());
     return ResponseEntity.ok(ApiResponse.success(requests, "Requests retrieved successfully"));
   }
 
@@ -79,6 +89,12 @@ public class ServiceRequestController {
     return ResponseEntity.ok(ApiResponse.success(requests, "Assigned requests retrieved successfully"));
   }
 
+  @GetMapping("/worker/my")
+  public ResponseEntity<ApiResponse<List<WorkerAssignedJobResponse>>> getMyAssignedRequests() {
+    List<WorkerAssignedJobResponse> requests = serviceRequestService.getAssignedRequestsForWorker(requireCurrentUserId());
+    return ResponseEntity.ok(ApiResponse.success(requests, "Assigned requests retrieved successfully"));
+  }
+
   @GetMapping("/search")
   public ResponseEntity<ApiResponse<List<RequestResponse>>> searchRequests(
       @RequestParam(required = false) String locationArea,
@@ -91,13 +107,13 @@ public class ServiceRequestController {
   public ResponseEntity<ApiResponse<RequestResponse>> updateRequest(
       @PathVariable Long id,
       @Valid @RequestBody RequestCreateRequest request) {
-    RequestResponse response = serviceRequestService.updateRequest(id, request);
+    RequestResponse response = serviceRequestService.updateRequest(id, requireCurrentUserId(), request);
     return ResponseEntity.ok(ApiResponse.success(response, "Service request updated successfully"));
   }
 
   @DeleteMapping("/{id}")
   public ResponseEntity<ApiResponse<Void>> deleteRequest(@PathVariable Long id) {
-    serviceRequestService.deleteRequest(id);
+    serviceRequestService.deleteRequest(id, requireCurrentUserId());
     return ResponseEntity.ok(ApiResponse.success(null, "Service request deleted successfully"));
   }
 }

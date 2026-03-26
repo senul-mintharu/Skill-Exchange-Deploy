@@ -59,10 +59,9 @@ public class QuotationController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<QuoteResponse>> submitQuote(
-            @Valid @RequestBody QuoteCreateRequest request,
-            @RequestParam(defaultValue = "2") Long workerId) {
+            @Valid @RequestBody QuoteCreateRequest request) {
 
-        QuoteResponse response = quotationService.createQuote(workerId, request);
+        QuoteResponse response = quotationService.createQuote(requireCurrentUserId(), request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(ApiResponse.success(response, "Quotation submitted successfully!"));
@@ -73,19 +72,16 @@ public class QuotationController {
     // =========================================================================
 
     @GetMapping("/my")
-    public ResponseEntity<ApiResponse<List<QuoteResponse>>> getMyQuotes(
-            @RequestParam(defaultValue = "2") Long workerId) {
+    public ResponseEntity<ApiResponse<List<QuoteResponse>>> getMyQuotes() {
 
-        List<QuoteResponse> quotes = quotationService.getQuotesByWorker(workerId);
+        List<QuoteResponse> quotes = quotationService.getQuotesByWorker(requireCurrentUserId());
         return ResponseEntity.ok(ApiResponse.success(quotes, "Quotations retrieved successfully"));
     }
 
     @DeleteMapping("/{quoteId}")
-    public ResponseEntity<ApiResponse<QuoteResponse>> withdrawQuote(
-            @PathVariable Long quoteId,
-            @RequestParam(defaultValue = "2") Long workerId) {
+    public ResponseEntity<ApiResponse<QuoteResponse>> withdrawQuote(@PathVariable Long quoteId) {
 
-        QuoteResponse response = quotationService.withdrawQuote(quoteId, workerId);
+        QuoteResponse response = quotationService.withdrawQuote(quoteId, requireCurrentUserId());
         return ResponseEntity.ok(ApiResponse.success(response, "Quotation withdrawn successfully"));
     }
 

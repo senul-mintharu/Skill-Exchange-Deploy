@@ -165,7 +165,7 @@ const EditWorkerProfilePage = () => {
                 navigate(`/profile/${id}`);
             } else {
                 const data = await createProfile(payload);
-                navigate(`/profile/${data.id}`);
+                navigate(`/profile/${data.id}`, { state: { profileCreated: true } });
             }
         } catch (err) {
             if (err.response?.data?.details) {

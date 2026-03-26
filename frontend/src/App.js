@@ -27,6 +27,7 @@ import EditWorkerProfilePage from './pages/worker/EditWorkerProfilePage';
 import WorkerProfilePage from './pages/worker/WorkerProfilePage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AccountProfilePage from './pages/account/AccountProfilePage';
+import RequireWorkerProfile from './components/common/RequireWorkerProfile';
 
 /**
  * App.js — Main Application Component with RBAC route guards
@@ -55,11 +56,15 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={['WORKER']} />}>
             <Route path="/browse-requests" element={<BrowseRequestsPage />} />
             <Route path="/requests/:requestId" element={<WorkerRequestDetailsPage />} />
-            <Route path="/requests/:requestId/quote" element={<SubmitQuotePage />} />
-            <Route path="/my-quotations" element={<MyQuotationsPage />} />
             <Route path="/create-profile" element={<EditWorkerProfilePage />} />
             <Route path="/edit-profile/:id" element={<EditWorkerProfilePage />} />
             <Route path="/profile/:id" element={<WorkerProfilePage />} />
+
+            <Route element={<RequireWorkerProfile />}>
+              <Route path="/requests/:requestId/quote" element={<SubmitQuotePage />} />
+              <Route path="/my-quotations" element={<MyQuotationsPage />} />
+              <Route path="/my-jobs" element={<MyJobsPage />} />
+            </Route>
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
@@ -72,14 +77,8 @@ function App() {
             <Route path="/account/profile/edit" element={<AccountProfilePage />} />
           </Route>
 
-          {/* SCRUM-69: Worker - View Assigned Jobs */}
-          <Route path="/my-jobs" element={<MyJobsPage />} />
+          <Route path="*" element={<NotFound />} />
 
-          {/* SCRUM-19, 20, 21: Worker Profile */}
-          <Route path="/create-profile" element={<EditWorkerProfilePage />} />
-          <Route path="/edit-profile/:id" element={<EditWorkerProfilePage />} />
-          <Route path="/profile/:id" element={<WorkerProfilePage />} />
-          <Route path="/workers/:id" element={<PublicWorkerProfilePage />} />
         </Route>
       </Routes>
     </BrowserRouter>
