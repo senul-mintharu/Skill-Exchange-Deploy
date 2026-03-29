@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
 import Breadcrumb from '../../components/common/Breadcrumb';
-import { getRequestById, deleteRequest } from '../../services/requestService';
+import { getRequestById, deleteRequest, updateRequestStatus } from '../../services/requestService';
 import { getQuotesByRequest } from '../../services/quoteService';
 import { formatBudget } from '../../utils/constants';
 import './RequestDetailsPage.css';
@@ -23,11 +23,78 @@ const RequestDetailsPage = () => {
     const [request, setRequest] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [statusUpdateMessage, setStatusUpdateMessage] = useState('');
+    const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
     // Quotes (Seeker view)
     const [quotes, setQuotes] = useState([]);
     const [quotesLoading, setQuotesLoading] = useState(false);
     const [quotesError, setQuotesError] = useState('');
+
+    const transformRequestData = (data) => ({
+        ...data,
+        postedDate: new Date(data.createdAt).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        }),
+        // Default values for fields potentially missing in backend
+        urgency: data.urgency || 'Standard',
+        budget: data.budget,
+        verification: 'Standard Request',
+        timeline: [
+            { status: "Request Posted", date: new Date(data.createdAt).toLocaleDateString(), active: true, completed: true },
+            { status: "Receiving Quotes", date: "In Progress", active: true, completed: false },
+            { status: "Hire Professional", date: "", active: false, completed: false },
+            { status: "Job Completion", date: "", active: false, completed: false }
+        ]
+    });
+
+    const fetchRequestDetails = async (showLoading = true) => {
+        if (!requestId) return;
+
+        if (showLoading) {
+            setLoading(true);
+        }
+
+        try {
+            const data = await getRequestById(requestId);
+            setRequest(transformRequestData(data));
+            setError('');
+        } catch (err) {
+            console.error("Error fetching request details:", err);
+            if (err.response && err.response.status === 404) {
+                setError('This request was not found. It may have been removed.');
+            } else {
+                setError('Failed to load request details. Please try again.');
+            }
+        } finally {
+            if (showLoading) {
+                setLoading(false);
+            }
+        }
+    };
+
+    const handleUpdateJobOutcome = async (status) => {
+        const statusLabel = status === 'COMPLETED' ? 'Completed' : 'Not Completed';
+        const confirmed = window.confirm(`Are you sure you want to mark this job as ${statusLabel}?`);
+
+        if (!confirmed) return;
+
+        setIsUpdatingStatus(true);
+        setStatusUpdateMessage('');
+
+        try {
+            await updateRequestStatus(request.id, status);
+            setStatusUpdateMessage(`Job marked as ${statusLabel} successfully.`);
+            await fetchRequestDetails(false);
+        } catch (err) {
+            const message = err.response?.data?.message || 'Failed to update job status. Please try again.';
+            setStatusUpdateMessage(message);
+        } finally {
+            setIsUpdatingStatus(false);
+        }
+    };
 
     const fetchQuotes = async () => {
         if (!requestId || isWorker) return;
@@ -46,44 +113,10 @@ const RequestDetailsPage = () => {
     };
 
     useEffect(() => {
-        const fetchRequestDetails = async () => {
-            try {
-                const data = await getRequestById(requestId);
-                // Transform API data to match UI needs (handling missing fields with defaults)
-                const transformedRequest = {
-                    ...data,
-                    postedDate: new Date(data.createdAt).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric'
-                    }),
-                    // Default values for fields potentially missing in backend
-                    urgency: data.urgency || 'Standard',
-                    budget: data.budget,
-                    verification: 'Standard Request',
-                    timeline: [
-                        { status: "Request Posted", date: new Date(data.createdAt).toLocaleDateString(), active: true, completed: true },
-                        { status: "Receiving Quotes", date: "In Progress", active: true, completed: false },
-                        { status: "Hire Professional", date: "", active: false, completed: false },
-                        { status: "Job Completion", date: "", active: false, completed: false }
-                    ]
-                };
-                setRequest(transformedRequest);
-            } catch (err) {
-                console.error("Error fetching request details:", err);
-                if (err.response && err.response.status === 404) {
-                    setError('This request was not found. It may have been removed.');
-                } else {
-                    setError('Failed to load request details. Please try again.');
-                }
-            } finally {
-                setLoading(false);
-            }
-        };
-
         if (requestId) {
-            fetchRequestDetails();
+            fetchRequestDetails(true);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [requestId]);
 
     useEffect(() => {
@@ -255,6 +288,31 @@ const RequestDetailsPage = () => {
                                             </div>
                                         </div>
                                     </div>
+
+                                    {!isWorker && request.status === 'ASSIGNED' && (
+                                        <div className="rd-actions">
+                                            <button
+                                                className="rd-btn rd-btn-primary"
+                                                type="button"
+                                                onClick={() => handleUpdateJobOutcome('COMPLETED')}
+                                                disabled={isUpdatingStatus}
+                                            >
+                                                Mark as Completed
+                                            </button>
+                                            <button
+                                                className="rd-btn rd-btn-secondary"
+                                                type="button"
+                                                onClick={() => handleUpdateJobOutcome('NOT_COMPLETED')}
+                                                disabled={isUpdatingStatus}
+                                            >
+                                                Mark as Not Completed
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {statusUpdateMessage && (
+                                        <p className="rd-value" style={{ marginTop: '0.75rem' }}>{statusUpdateMessage}</p>
+                                    )}
                                 </div>
 
                                 <div className="rd-description-section">

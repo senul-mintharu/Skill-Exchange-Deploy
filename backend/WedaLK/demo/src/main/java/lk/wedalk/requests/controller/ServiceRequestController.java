@@ -8,6 +8,7 @@ import lk.wedalk.common.exceptions.NotFoundException;
 import lk.wedalk.common.enums.ServiceCategory;
 import lk.wedalk.requests.dto.RequestCreateRequest;
 import lk.wedalk.requests.dto.RequestResponse;
+import lk.wedalk.requests.dto.RequestStatusUpdateRequest;
 import lk.wedalk.requests.dto.WorkerAssignedJobResponse;
 import lk.wedalk.requests.service.ServiceRequestService;
 import lk.wedalk.users.repository.UserRepository;
@@ -109,6 +110,15 @@ public class ServiceRequestController {
       @Valid @RequestBody RequestCreateRequest request) {
     RequestResponse response = serviceRequestService.updateRequest(id, requireCurrentUserId(), request);
     return ResponseEntity.ok(ApiResponse.success(response, "Service request updated successfully"));
+  }
+
+  @PutMapping("/{requestId}/status")
+  public ResponseEntity<ApiResponse<RequestResponse>> updateRequestStatus(
+      @PathVariable Long requestId,
+      @Valid @RequestBody RequestStatusUpdateRequest request,
+      @RequestParam(required = false, defaultValue = "1") Long seekerId) {
+    RequestResponse response = serviceRequestService.updateRequestStatus(requestId, seekerId, request);
+    return ResponseEntity.ok(ApiResponse.success(response, "Request status updated successfully"));
   }
 
   @DeleteMapping("/{id}")

@@ -98,6 +98,20 @@ export const updateRequest = async (id, updateData) => {
 };
 
 /**
+ * Update request job outcome status (ASSIGNED -> COMPLETED / NOT_COMPLETED)
+ * @param {number} id - Request ID
+ * @param {string} status - COMPLETED or NOT_COMPLETED
+ * @returns {Promise<Object>} Updated request
+ */
+export const updateRequestStatus = async (id, status) => {
+    const response = await apiClient.put(
+        `/requests/${id}/status?seekerId=${DEFAULT_SEEKER_ID}`,
+        { status }
+    );
+    return response.data.data;
+};
+
+/**
  * Delete (or cancel) a service request
  * @param {number} id - Request ID
  * @returns {Promise<boolean>} True if successful
