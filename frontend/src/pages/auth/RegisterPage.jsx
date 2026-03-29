@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getDefaultRouteForRole, register } from '../../services/authService';
 import './LoginPage.css';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
@@ -49,7 +50,8 @@ const RegisterPage = () => {
         password: formData.password,
       };
       const response = await register(payload);
-      navigate(getDefaultRouteForRole(response.role), { replace: true });
+      const redirectTo = location.state?.from?.pathname;
+      navigate(redirectTo || getDefaultRouteForRole(response.role), { replace: true });
     } catch (err) {
       setError(
         err?.response?.data?.message || 'Registration failed. Please try again.'
@@ -142,7 +144,7 @@ const RegisterPage = () => {
         </form>
         <div className="login-footer">
           <p>
-            Already have an account? <Link to="/login">Login</Link>
+            Already have an account? <Link to="/login" state={location.state}>Login</Link>
           </p>
         </div>
       </div>

@@ -6,6 +6,10 @@ import java.util.stream.Collectors;
 import lk.wedalk.common.enums.QuoteStatus;
 import lk.wedalk.common.enums.RequestStatus;
 import lk.wedalk.common.enums.ServiceCategory;
+import lk.wedalk.common.exceptions.UnauthorizedException;
+import lk.wedalk.profiles.repository.WorkerProfileRepository;
+import lk.wedalk.quotes.model.Quotation;
+import lk.wedalk.quotes.repository.QuotationRepository;
 import lk.wedalk.users.model.Role;
 import lk.wedalk.common.enums.UrgencyLevel;
 import lk.wedalk.common.exceptions.BadRequestException;
@@ -42,8 +46,12 @@ public class ServiceRequestService {
 
   @Transactional
   public RequestResponse createRequest(Long seekerId, RequestCreateRequest request) {
-    // Get or create test user
-    User seeker = userRepository.findById(seekerId).orElseGet(() -> createTestUser(seekerId));
+    User seeker = userRepository.findById(seekerId)
+        .orElseThrow(() -> new NotFoundException("Authenticated seeker not found"));
+
+    if (seeker.getRole() != Role.SEEKER) {
+      throw new UnauthorizedException("Only seekers can create service requests");
+    }
 
     // Create service request
     ServiceRequest serviceRequest = ServiceRequest.builder()
@@ -59,18 +67,6 @@ public class ServiceRequestService {
 
     ServiceRequest savedRequest = serviceRequestRepository.save(serviceRequest);
     return mapToResponse(savedRequest);
-  }
-
-  /** Create a test user if not exists */
-  private User createTestUser(Long userId) {
-    User user = User.builder()
-        .id(userId)
-        .fullName("Test User")
-        .email("test" + userId + "@example.com")
-        .password("password")
-        .role(Role.SEEKER)
-        .build();
-    return userRepository.save(user);
   }
 
   @Transactional(readOnly = true)
@@ -155,9 +151,13 @@ public class ServiceRequestService {
   }
 
   @Transactional
-  public RequestResponse updateRequest(Long requestId, RequestCreateRequest requestData) {
+  public RequestResponse updateRequest(Long requestId, Long seekerId, RequestCreateRequest requestData) {
     ServiceRequest existingRequest = serviceRequestRepository.findById(requestId)
         .orElseThrow(() -> new NotFoundException("Service request not found"));
+
+    if (!existingRequest.getSeeker().getId().equals(seekerId)) {
+      throw new UnauthorizedException("You can only update your own service requests");
+    }
 
     // Update fields
     existingRequest.setTitle(requestData.getTitle());
@@ -203,7 +203,8 @@ public class ServiceRequestService {
     if (!serviceRequestRepository.existsById(requestId)) {
       throw new NotFoundException("Service request not found");
     }
-    serviceRequestRepository.deleteById(requestId);
+
+    serviceRequestRepository.delete(existingRequest);
   }
 
   private RequestResponse mapToResponse(ServiceRequest request) {

@@ -161,7 +161,7 @@ const SubmitQuotePage = () => {
                         <span className="material-icons sq-error-icon">error_outline</span>
                         <h2>Couldn't Load Request</h2>
                         <p>{requestError}</p>
-                        <Link to="/worker/browse" className="sq-btn sq-btn-primary">
+                        <Link to="/browse-requests" className="sq-btn sq-btn-primary">
                             <span className="material-icons">arrow_back</span>
                             Browse Requests
                         </Link>
@@ -222,11 +222,11 @@ const SubmitQuotePage = () => {
                         </div>
 
                         <div className="sq-success-actions">
-                            <Link to="/worker/browse" className="sq-btn sq-btn-primary">
+                            <Link to="/browse-requests" className="sq-btn sq-btn-primary">
                                 <span className="material-icons">search</span>
                                 Browse More Requests
                             </Link>
-                            <Link to={`/worker/requests/${requestId}`} className="sq-btn sq-btn-outline">
+                            <Link to={`/requests/${requestId}`} className="sq-btn sq-btn-outline">
                                 <span className="material-icons">visibility</span>
                                 Back to Request
                             </Link>
@@ -250,7 +250,7 @@ const SubmitQuotePage = () => {
 
                 {/* Breadcrumb */}
                 <div className="sq-breadcrumb">
-                    <Link to={`/worker/requests/${requestId}`} className="sq-back-link">
+                    <Link to={`/requests/${requestId}`} className="sq-back-link">
                         <span className="material-icons">arrow_back</span>
                         Back to Request
                     </Link>
@@ -416,7 +416,7 @@ const SubmitQuotePage = () => {
                         {/* Actions */}
                         <div className="sq-form-actions">
                             <Link
-                                to={`/worker/requests/${requestId}`}
+                                to={`/requests/${requestId}`}
                                 className="sq-btn sq-btn-ghost"
                             >
                                 Cancel

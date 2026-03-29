@@ -59,6 +59,9 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.GET, "/api/quotes/request/**").hasRole("SEEKER")
             .requestMatchers(HttpMethod.POST, "/api/requests").hasRole("SEEKER")
             .requestMatchers(HttpMethod.GET, "/api/requests/my").hasRole("SEEKER")
+            .requestMatchers(HttpMethod.PUT, "/api/requests/*").hasRole("SEEKER")
+            .requestMatchers(HttpMethod.DELETE, "/api/requests/*").hasRole("SEEKER")
+            .requestMatchers(HttpMethod.GET, "/api/requests/worker/my").hasRole("WORKER")
             .requestMatchers("/api/admin/**").hasRole("ADMIN")
             .anyRequest().authenticated());
 

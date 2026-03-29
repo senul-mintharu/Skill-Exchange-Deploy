@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { getDefaultRouteForRole, login } from '../../services/authService';
 import './LoginPage.css';
 
@@ -11,6 +11,7 @@ import './LoginPage.css';
 
 const LoginPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     
@@ -42,7 +43,8 @@ const LoginPage = () => {
 
         try {
             const response = await login(formData.email, formData.password);
-            navigate(getDefaultRouteForRole(response.role), { replace: true });
+            const redirectTo = location.state?.from?.pathname;
+            navigate(redirectTo || getDefaultRouteForRole(response.role), { replace: true });
         } catch (err) {
             console.error('Login error:', err);
             setError(
@@ -107,7 +109,7 @@ const LoginPage = () => {
                 <div className="login-footer">
                     <p>
                         Don't have an account?{' '}
-                        <Link to="/register">Register here</Link>
+                        <Link to="/register" state={location.state}>Register here</Link>
                     </p>
                 </div>
             </div>

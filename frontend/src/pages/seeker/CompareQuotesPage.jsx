@@ -135,12 +135,21 @@ const CompareQuotesPage = () => {
                                     {sorted.map((q) => (
                                         <tr key={q.id}>
                                             <td data-label="Worker">
-                                                <Link to={`/workers/${q.workerId}`} className="cq-worker">
-                                                    <span className="cq-avatar" aria-hidden="true">
-                                                        {(q.workerName || 'W').charAt(0).toUpperCase()}
+                                                {q.workerProfileId ? (
+                                                    <Link to={`/workers/${q.workerProfileId}`} className="cq-worker">
+                                                        <span className="cq-avatar" aria-hidden="true">
+                                                            {(q.workerName || 'W').charAt(0).toUpperCase()}
+                                                        </span>
+                                                        <span>{q.workerName || `Worker #${q.workerId}`}</span>
+                                                    </Link>
+                                                ) : (
+                                                    <span className="cq-worker" title="Worker profile not available yet">
+                                                        <span className="cq-avatar" aria-hidden="true">
+                                                            {(q.workerName || 'W').charAt(0).toUpperCase()}
+                                                        </span>
+                                                        <span>{q.workerName || `Worker #${q.workerId}`}</span>
                                                     </span>
-                                                    <span>{q.workerName || `Worker #${q.workerId}`}</span>
-                                                </Link>
+                                                )}
                                             </td>
                                             <td data-label="Price" className="cq-price">
                                                 LKR {Number(q.price).toLocaleString()}

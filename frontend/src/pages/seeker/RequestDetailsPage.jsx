@@ -327,9 +327,17 @@ const RequestDetailsPage = () => {
                             <div className="rd-card rd-quotes-card">
                                 <div className="rd-quotes-header">
                                     <h3>📜 Quotes Received</h3>
-                                    <span className="rd-quotes-count">
-                                        {quotesLoading ? '…' : quotes.length}
-                                    </span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        <span className="rd-quotes-count">
+                                            {quotesLoading ? '…' : quotes.length}
+                                        </span>
+                                        <Link
+                                            to={`/my-requests/${requestId}/quotations`}
+                                            className="rd-btn rd-btn-secondary"
+                                        >
+                                            View All Quotations
+                                        </Link>
+                                    </div>
                                 </div>
                                 
                                 <div className="rd-quotes-body">
@@ -382,12 +390,21 @@ const RequestDetailsPage = () => {
                                                     {quotes.map((q) => (
                                                         <tr key={q.id}>
                                                             <td data-label="Worker">
-                                                                <Link to={`/workers/${q.workerId}`} className="rd-worker-link">
-                                                                    <span className="rd-worker-avatar" aria-hidden="true">
-                                                                        {(q.workerName || 'W').charAt(0).toUpperCase()}
+                                                                {q.workerProfileId ? (
+                                                                    <Link to={`/workers/${q.workerProfileId}`} className="rd-worker-link">
+                                                                        <span className="rd-worker-avatar" aria-hidden="true">
+                                                                            {(q.workerName || 'W').charAt(0).toUpperCase()}
+                                                                        </span>
+                                                                        <span className="rd-worker-name">{q.workerName || `Worker #${q.workerId}`}</span>
+                                                                    </Link>
+                                                                ) : (
+                                                                    <span className="rd-worker-link" title="Worker profile not available yet">
+                                                                        <span className="rd-worker-avatar" aria-hidden="true">
+                                                                            {(q.workerName || 'W').charAt(0).toUpperCase()}
+                                                                        </span>
+                                                                        <span className="rd-worker-name">{q.workerName || `Worker #${q.workerId}`}</span>
                                                                     </span>
-                                                                    <span className="rd-worker-name">{q.workerName || `Worker #${q.workerId}`}</span>
-                                                                </Link>
+                                                                )}
                                                             </td>
                                                             <td data-label="Price" className="rd-quote-price">
                                                                 LKR {Number(q.price).toLocaleString()}

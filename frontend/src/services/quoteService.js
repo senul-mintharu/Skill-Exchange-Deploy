@@ -12,11 +12,10 @@ import apiClient from './apiClient';
 /**
  * Submit a new quotation for a service request.
  * @param {Object} quoteData - { requestId, price, estimatedDays, message }
- * @param {number} workerId  - Worker's user ID (temp param until auth is wired)
  * @returns {Promise<Object>} Created QuoteResponse
  */
-export const createQuote = async (quoteData, workerId = 2) => {
-    const response = await apiClient.post(`/quotes?workerId=${workerId}`, quoteData);
+export const createQuote = async (quoteData) => {
+    const response = await apiClient.post('/quotes', quoteData);
     return response.data.data;
 };
 
@@ -24,22 +23,20 @@ export const createQuote = async (quoteData, workerId = 2) => {
 
 /**
  * Get all quotations submitted by the current worker.
- * @param {number} workerId
  * @returns {Promise<Array>} List of QuoteResponse objects
  */
-export const getMyQuotes = async (workerId = 2) => {
-    const response = await apiClient.get(`/quotes/my?workerId=${workerId}`);
+export const getMyQuotes = async () => {
+    const response = await apiClient.get('/quotes/my');
     return response.data.data;
 };
 
 /**
  * Withdraw a PENDING quotation.
  * @param {number} quoteId
- * @param {number} workerId
  * @returns {Promise<Object>} Updated QuoteResponse
  */
-export const withdrawQuote = async (quoteId, workerId = 2) => {
-    const response = await apiClient.delete(`/quotes/${quoteId}?workerId=${workerId}`);
+export const withdrawQuote = async (quoteId) => {
+    const response = await apiClient.delete(`/quotes/${quoteId}`);
     return response.data.data;
 };
 

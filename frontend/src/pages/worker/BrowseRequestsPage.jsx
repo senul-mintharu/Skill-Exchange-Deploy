@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { browseRequests } from '../../services/requestService';
+import { getProfileByUserId } from '../../services/profileService';
+import { getCurrentUser } from '../../services/authService';
 import { CATEGORIES, getCategoryIcon, formatCategoryLabel, formatBudget } from '../../utils/constants';
 import './BrowseRequestsPage.css';
 
@@ -13,9 +15,11 @@ const PAGE_SIZE = 9;
  * server-side sort, skeleton loading, auto-apply category filter.
  */
 const BrowseRequestsPage = () => {
+    const currentUser = getCurrentUser();
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [needsProfile, setNeedsProfile] = useState(false);
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(0);
@@ -45,7 +49,24 @@ const BrowseRequestsPage = () => {
 
             const data = await browseRequests(params);
 
-            const formattedContent = data.content.map(req => ({
+            // Support both paginated responses and plain arrays from backend.
+            const normalized = Array.isArray(data)
+                ? {
+                    content: data,
+                    page,
+                    totalPages: 1,
+                    totalElements: data.length,
+                }
+                : {
+                    content: Array.isArray(data?.content) ? data.content : [],
+                    page: Number.isInteger(data?.page) ? data.page : page,
+                    totalPages: Number.isInteger(data?.totalPages) ? data.totalPages : 1,
+                    totalElements: Number.isInteger(data?.totalElements)
+                        ? data.totalElements
+                        : (Array.isArray(data?.content) ? data.content.length : 0),
+                };
+
+            const formattedContent = normalized.content.map(req => ({
                 ...req,
                 postedDate: req.createdAt
                     ? new Date(req.createdAt).toLocaleDateString()
@@ -53,9 +74,9 @@ const BrowseRequestsPage = () => {
             }));
 
             setRequests(formattedContent);
-            setCurrentPage(data.page);
-            setTotalPages(data.totalPages);
-            setTotalElements(data.totalElements);
+            setCurrentPage(normalized.page);
+            setTotalPages(normalized.totalPages);
+            setTotalElements(normalized.totalElements);
         } catch (err) {
             console.error('Error fetching open requests:', err);
             setError('Failed to load available jobs. Please try again later.');
@@ -68,6 +89,25 @@ const BrowseRequestsPage = () => {
     useEffect(() => {
         fetchRequests(0);
     }, [fetchRequests]);
+
+    useEffect(() => {
+        const checkWorkerProfile = async () => {
+            if (!currentUser?.id || currentUser?.role !== 'WORKER') {
+                return;
+            }
+
+            try {
+                await getProfileByUserId(currentUser.id);
+                setNeedsProfile(false);
+            } catch (err) {
+                if (err?.response?.status === 404) {
+                    setNeedsProfile(true);
+                }
+            }
+        };
+
+        checkWorkerProfile();
+    }, [currentUser?.id, currentUser?.role]);
 
     // Auto-apply when category or sort changes
     const handleCategoryChange = (value) => {
@@ -191,6 +231,20 @@ const BrowseRequestsPage = () => {
                     <h1 className="br-title">Find Work</h1>
                     <p className="br-subtitle">Browse open requests and send quotes to start your next job.</p>
                 </div>
+
+                {needsProfile && (
+                    <div className="br-profile-notice" role="status">
+                        <div className="br-profile-notice__content">
+                            <span className="material-icons">info</span>
+                            <p>
+                                You can browse jobs now. To submit quotes or manage jobs, please create your worker profile first.
+                            </p>
+                        </div>
+                        <Link to="/create-profile" className="br-profile-notice__cta">
+                            Create Worker Profile
+                        </Link>
+                    </div>
+                )}
 
                 {/* Filter & Sort Bar */}
                 <div className="br-filters">
@@ -319,7 +373,7 @@ const BrowseRequestsPage = () => {
                                             <span className="br-budget-value">{formatBudget(req.budget)}</span>
                                         </div>
                                         <Link
-                                            to={`/worker/requests/${req.id}`}
+                                            to={`/requests/${req.id}`}
                                             state={{ from: 'browse-requests' }}
                                             className="br-quote-btn"
                                         >

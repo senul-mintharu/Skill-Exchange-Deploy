@@ -1,14 +1,10 @@
 /**
- * requestService.js — Service Request API Service (Simplified)
+ * requestService.js — Service Request API Service
  *
- * No authentication - uses default seekerId
+ * Uses authenticated JWT user identity on backend.
  */
 
 import apiClient from './apiClient';
-
-// Default seeker ID for development (no auth)
-const DEFAULT_SEEKER_ID = 1;
-const DEFAULT_WORKER_ID = 2;
 
 /**
  * Create a new service request
@@ -16,7 +12,7 @@ const DEFAULT_WORKER_ID = 2;
  * @returns {Promise<Object>} Created request response
  */
 export const createRequest = async (requestData) => {
-    const response = await apiClient.post(`/requests?seekerId=${DEFAULT_SEEKER_ID}`, requestData);
+    const response = await apiClient.post('/requests', requestData);
     return response.data.data; // Backend wraps in ApiResponse with data field
 };
 
@@ -25,7 +21,7 @@ export const createRequest = async (requestData) => {
  * @returns {Promise<Array>} List of requests
  */
 export const getMyRequests = async () => {
-    const response = await apiClient.get(`/requests/my?seekerId=${DEFAULT_SEEKER_ID}`);
+    const response = await apiClient.get('/requests/my');
     return response.data.data;
 };
 
@@ -71,8 +67,8 @@ export const getRequestById = async (id) => {
  * @param {number} workerId - Worker ID
  * @returns {Promise<Array>} List of assigned jobs
  */
-export const getMyAssignedJobs = async (workerId = DEFAULT_WORKER_ID) => {
-    const response = await apiClient.get(`/requests/worker/${workerId}`);
+export const getMyAssignedJobs = async () => {
+    const response = await apiClient.get('/requests/worker/my');
     return response.data.data;
 };
 
@@ -97,7 +93,7 @@ export const searchRequests = async (filters) => {
  * @returns {Promise<Object>} Updated request
  */
 export const updateRequest = async (id, updateData) => {
-    const response = await apiClient.put(`/requests/${id}?seekerId=${DEFAULT_SEEKER_ID}`, updateData);
+    const response = await apiClient.put(`/requests/${id}`, updateData);
     return response.data.data;
 };
 
@@ -121,6 +117,6 @@ export const updateRequestStatus = async (id, status) => {
  * @returns {Promise<boolean>} True if successful
  */
 export const deleteRequest = async (id) => {
-    await apiClient.delete(`/requests/${id}?seekerId=${DEFAULT_SEEKER_ID}`);
+    await apiClient.delete(`/requests/${id}`);
     return true;
 };
