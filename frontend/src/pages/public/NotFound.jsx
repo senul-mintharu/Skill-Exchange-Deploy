@@ -1,27 +1,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { EmptyState } from '../../components/ui/PortalPrimitives';
 
-const NotFound = () => {
-	return (
-		<div className="page-wrapper" style={{ alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-			<div style={{
-				width: '100%',
-				maxWidth: '560px',
-				background: 'var(--white)',
-				borderRadius: '16px',
-				padding: '2rem',
-				textAlign: 'center',
-				boxShadow: 'var(--shadow-lg)'
-			}}>
-				<h1 style={{ fontSize: '3rem', marginBottom: '0.5rem', color: 'var(--primary-dark)' }}>404</h1>
-				<h2 style={{ marginBottom: '0.75rem' }}>Page Not Found</h2>
-				<p style={{ marginBottom: '1.5rem' }}>The page you're looking for doesn't exist.</p>
-				<Link to="/" className="btn btn-primary">
-					Go Back Home
-				</Link>
-			</div>
-		</div>
-	);
-};
+const NotFound = () => (
+  <div className="page-wrapper flex items-center justify-center px-4 py-10">
+    <EmptyState
+      icon="search_off"
+      title="Page Not Found"
+      text="The page you're looking for doesn't exist or may have been moved."
+      action={<Link to="/" className="ui-button-primary">Go Back Home</Link>}
+      className="w-full"
+    />
+  </div>
+);
 
 export default NotFound;

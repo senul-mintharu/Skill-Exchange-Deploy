@@ -5,6 +5,7 @@
  */
 
 import apiClient from './apiClient';
+import { getUser } from '../utils/storage';
 
 /**
  * Create a new service request
@@ -104,8 +105,13 @@ export const updateRequest = async (id, updateData) => {
  * @returns {Promise<Object>} Updated request
  */
 export const updateRequestStatus = async (id, status) => {
+    const currentUser = getUser();
+    if (!currentUser?.id) {
+        throw new Error('User must be logged in to update request status');
+    }
+
     const response = await apiClient.put(
-        `/requests/${id}/status?seekerId=${DEFAULT_SEEKER_ID}`,
+        `/requests/${id}/status?seekerId=${currentUser.id}`,
         { status }
     );
     return response.data.data;

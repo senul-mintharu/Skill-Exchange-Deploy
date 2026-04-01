@@ -7,14 +7,10 @@ import lk.wedalk.common.enums.QuoteStatus;
 import lk.wedalk.common.enums.RequestStatus;
 import lk.wedalk.common.enums.ServiceCategory;
 import lk.wedalk.common.exceptions.UnauthorizedException;
-import lk.wedalk.profiles.repository.WorkerProfileRepository;
-import lk.wedalk.quotes.model.Quotation;
-import lk.wedalk.quotes.repository.QuotationRepository;
 import lk.wedalk.users.model.Role;
 import lk.wedalk.common.enums.UrgencyLevel;
 import lk.wedalk.common.exceptions.BadRequestException;
 import lk.wedalk.common.exceptions.NotFoundException;
-import lk.wedalk.common.exceptions.UnauthorizedException;
 import lk.wedalk.requests.dto.RequestCreateRequest;
 import lk.wedalk.requests.dto.RequestResponse;
 import lk.wedalk.requests.dto.RequestStatusUpdateRequest;
@@ -199,9 +195,12 @@ public class ServiceRequestService {
   }
 
   @Transactional
-  public void deleteRequest(Long requestId) {
-    if (!serviceRequestRepository.existsById(requestId)) {
-      throw new NotFoundException("Service request not found");
+  public void deleteRequest(Long requestId, Long seekerId) {
+    ServiceRequest existingRequest = serviceRequestRepository.findById(requestId)
+        .orElseThrow(() -> new NotFoundException("Service request not found"));
+
+    if (!existingRequest.getSeeker().getId().equals(seekerId)) {
+      throw new UnauthorizedException("You can only delete your own service requests");
     }
 
     serviceRequestRepository.delete(existingRequest);

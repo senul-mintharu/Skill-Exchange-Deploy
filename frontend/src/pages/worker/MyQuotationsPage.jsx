@@ -1,282 +1,246 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import Breadcrumb from '../../components/common/Breadcrumb';
-import PageHeader from '../../components/common/PageHeader';
+import {
+  AlertPanel,
+  EmptyState,
+  LoadingPanel,
+  PageIntro,
+  StatCard,
+  StatusPill,
+} from '../../components/ui/PortalPrimitives';
 import { getMyQuotes, withdrawQuote } from '../../services/quoteService';
-import './MyQuotationsPage.css';
 
 const statusMeta = (status) => {
-    const s = String(status || '').toUpperCase();
-    switch (s) {
-        case 'PENDING':
-            return { label: 'PENDING', tone: 'pending', icon: 'hourglass_top' };
-        case 'ACCEPTED':
-            return { label: 'ACCEPTED', tone: 'accepted', icon: 'check_circle' };
-        case 'REJECTED':
-            return { label: 'REJECTED', tone: 'rejected', icon: 'cancel' };
-        case 'NOT_ACCEPTED':
-            return { label: 'NOT ACCEPTED', tone: 'rejected', icon: 'cancel' };
-        case 'WITHDRAWN':
-            return { label: 'WITHDRAWN', tone: 'withdrawn', icon: 'undo' };
-        default:
-            return { label: s || 'UNKNOWN', tone: 'unknown', icon: 'help_outline' };
-    }
+  const normalized = String(status || '').toUpperCase();
+  switch (normalized) {
+    case 'PENDING':
+      return { label: 'Pending', tone: 'warning', icon: 'hourglass_top' };
+    case 'ACCEPTED':
+      return { label: 'Accepted', tone: 'success', icon: 'check_circle' };
+    case 'REJECTED':
+    case 'NOT_ACCEPTED':
+      return { label: 'Rejected', tone: 'danger', icon: 'cancel' };
+    case 'WITHDRAWN':
+      return { label: 'Withdrawn', tone: 'neutral', icon: 'undo' };
+    default:
+      return { label: normalized || 'Unknown', tone: 'neutral', icon: 'help_outline' };
+  }
 };
 
 const MyQuotationsPage = () => {
-    const [quotes, setQuotes] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [banner, setBanner] = useState(null); // { type: 'success' | 'error', title, message }
-    const [withdrawingId, setWithdrawingId] = useState(null);
+  const [quotes, setQuotes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [banner, setBanner] = useState(null);
+  const [withdrawingId, setWithdrawingId] = useState(null);
 
-    const hasQuotes = quotes && quotes.length > 0;
+  const counts = useMemo(() => {
+    const summary = { total: quotes.length, pending: 0, accepted: 0, rejected: 0, withdrawn: 0 };
+    for (const quote of quotes) {
+      const status = String(quote.status || '').toUpperCase();
+      if (status === 'PENDING') summary.pending += 1;
+      else if (status === 'ACCEPTED') summary.accepted += 1;
+      else if (status === 'REJECTED' || status === 'NOT_ACCEPTED') summary.rejected += 1;
+      else if (status === 'WITHDRAWN') summary.withdrawn += 1;
+    }
+    return summary;
+  }, [quotes]);
 
-    const counts = useMemo(() => {
-        const c = { total: quotes.length, pending: 0, accepted: 0, rejected: 0, withdrawn: 0 };
-        for (const q of quotes) {
-            const s = String(q.status || '').toUpperCase();
-            if (s === 'PENDING') c.pending += 1;
-            else if (s === 'ACCEPTED') c.accepted += 1;
-            else if (s === 'REJECTED' || s === 'NOT_ACCEPTED') c.rejected += 1;
-            else if (s === 'WITHDRAWN') c.withdrawn += 1;
-        }
-        return c;
-    }, [quotes]);
+  const load = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await getMyQuotes();
+      setQuotes(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load your quotations. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const load = async () => {
-        setLoading(true);
-        setError('');
-        try {
-            const data = await getMyQuotes();
-            setQuotes(Array.isArray(data) ? data : []);
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to load your quotations. Please try again.');
-        } finally {
-            setLoading(false);
-        }
-    };
+  useEffect(() => {
+    load();
+  }, []);
 
-    useEffect(() => {
-        load();
-    }, []);
+  const handleWithdraw = async (quote) => {
+    setBanner(null);
+    setWithdrawingId(quote.id);
+    try {
+      const updated = await withdrawQuote(quote.id);
+      setQuotes((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+      setBanner({
+        type: 'success',
+        title: 'Quotation Withdrawn',
+        message: 'Your quotation has been withdrawn successfully.',
+      });
+    } catch (err) {
+      const backendMsg = err.response?.data?.message;
+      const status = String(quote.status || '').toUpperCase();
+      const restriction = status === 'ACCEPTED'
+        ? 'This quotation has already been accepted and cannot be withdrawn.'
+        : 'This quotation cannot be withdrawn in its current status.';
 
-    const handleWithdraw = async (quote) => {
-        setBanner(null);
-        setWithdrawingId(quote.id);
-        try {
-            const updated = await withdrawQuote(quote.id);
-            setQuotes(prev => prev.map(q => (q.id === updated.id ? updated : q)));
-            setBanner({
-                type: 'success',
-                title: 'Quotation Withdrawn',
-                message: 'Your quotation has been withdrawn successfully.',
-            });
-        } catch (err) {
-            const backendMsg = err.response?.data?.message;
-            const status = String(quote.status || '').toUpperCase();
-            const restriction =
-                status === 'ACCEPTED'
-                    ? 'This quotation has already been accepted and cannot be withdrawn.'
-                    : 'This quotation cannot be withdrawn in its current status.';
+      setBanner({
+        type: 'danger',
+        title: 'Withdrawal Not Allowed',
+        message: backendMsg || restriction,
+      });
+    } finally {
+      setWithdrawingId(null);
+    }
+  };
 
-            setBanner({
-                type: 'error',
-                title: 'Withdrawal Not Allowed',
-                message: backendMsg || restriction,
-            });
-        } finally {
-            setWithdrawingId(null);
-        }
-    };
+  return (
+    <div className="page-wrapper">
+      <main className="ui-shell space-y-5">
+        <section className="ui-panel p-5 sm:p-6">
+          <PageIntro
+            eyebrow="Worker Quotations"
+            title="My Quotations"
+            subtitle="Review every submitted offer, keep an eye on pending decisions, and withdraw only when it still makes sense."
+            actions={(
+              <Link to="/browse-requests" className="ui-button-primary w-full sm:w-auto">
+                <span className="material-icons text-base">travel_explore</span>
+                Find Work
+              </Link>
+            )}
+            className="mb-0"
+          />
+        </section>
 
-    return (
-        <div className="page-wrapper">
-            <main className="mq-container">
-                <Breadcrumb />
-                <PageHeader title="My Quotations" />
-
-                {/* Summary */}
-                <div className="mq-summary">
-                    <div className="mq-stat">
-                        <p className="mq-stat-label">Total</p>
-                        <p className="mq-stat-value">{counts.total}</p>
-                    </div>
-                    <div className="mq-stat">
-                        <p className="mq-stat-label">Pending</p>
-                        <p className="mq-stat-value">{counts.pending}</p>
-                    </div>
-                    <div className="mq-stat">
-                        <p className="mq-stat-label">Accepted</p>
-                        <p className="mq-stat-value">{counts.accepted}</p>
-                    </div>
-                    <div className="mq-stat">
-                        <p className="mq-stat-label">Rejected</p>
-                        <p className="mq-stat-value">{counts.rejected}</p>
-                    </div>
-                    <div className="mq-stat">
-                        <p className="mq-stat-label">Withdrawn</p>
-                        <p className="mq-stat-value">{counts.withdrawn}</p>
-                    </div>
-                </div>
-
-                {/* Banner */}
-                {banner && (
-                    <div className={`mq-banner mq-banner--${banner.type}`} role="alert">
-                        <span className="material-icons mq-banner-icon">
-                            {banner.type === 'success' ? 'check_circle' : 'error_outline'}
-                        </span>
-                        <div className="mq-banner-body">
-                            <strong>{banner.title}</strong>
-                            <p>{banner.message}</p>
-                        </div>
-                        <button
-                            className="mq-banner-close"
-                            onClick={() => setBanner(null)}
-                            aria-label="Close message"
-                            type="button"
-                        >
-                            <span className="material-icons">close</span>
-                        </button>
-                    </div>
-                )}
-
-                {/* Loading */}
-                {loading && (
-                    <div className="mq-loading">
-                        <div className="mq-spinner" aria-hidden="true" />
-                        <p>Loading your quotations…</p>
-                    </div>
-                )}
-
-                {/* Error */}
-                {!loading && error && (
-                    <div className="mq-error">
-                        <span className="material-icons">error_outline</span>
-                        <div>
-                            <h3>Couldn’t load quotations</h3>
-                            <p>{error}</p>
-                            <button className="mq-btn mq-btn-primary" onClick={load} type="button">
-                                <span className="material-icons">refresh</span>
-                                Try Again
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Empty state (AC2) */}
-                {!loading && !error && !hasQuotes && (
-                    <div className="mq-empty">
-                        <div className="mq-empty-card">
-                            <div className="mq-empty-icon">
-                                <span className="material-icons">request_quote</span>
-                            </div>
-                            <h2>No quotations submitted yet</h2>
-                            <p>
-                                When you submit quotations to service requests, they’ll show up here so you can track their status.
-                            </p>
-                            <Link to="/browse-requests" className="mq-btn mq-btn-primary">
-                                <span className="material-icons">search</span>
-                                Find Work
-                            </Link>
-                        </div>
-                    </div>
-                )}
-
-                {/* List (AC1) */}
-                {!loading && !error && hasQuotes && (
-                    <div className="mq-list" aria-label="My quotations list">
-                        {quotes.map((q) => {
-                            const meta = statusMeta(q.status);
-                            const isPending = meta.label === 'PENDING';
-                            const isAccepted = meta.label === 'ACCEPTED';
-                            const isBusy = withdrawingId === q.id;
-                            const restrictionMsg = isAccepted
-                                ? 'Accepted quotations cannot be withdrawn.'
-                                : !isPending
-                                    ? 'Only pending quotations can be withdrawn.'
-                                    : null;
-
-                            return (
-                                <div key={q.id} className="mq-card">
-                                    <div className="mq-card-top">
-                                        <div className="mq-card-title">
-                                            <h3 className="mq-request-title">{q.requestTitle || `Request #${q.requestId}`}</h3>
-                                            <p className="mq-request-sub">
-                                                <span className="material-icons">tag</span>
-                                                Quote #{q.id}
-                                            </p>
-                                        </div>
-                                        <span className={`mq-status mq-status--${meta.tone}`}>
-                                            <span className="material-icons">{meta.icon}</span>
-                                            {meta.label}
-                                        </span>
-                                    </div>
-
-                                    <div className="mq-metrics">
-                                        <div className="mq-metric">
-                                            <p className="mq-metric-label">
-                                                <span className="material-icons">payments</span> Price
-                                            </p>
-                                            <p className="mq-metric-value mq-price">
-                                                LKR {Number(q.price).toLocaleString()}
-                                            </p>
-                                        </div>
-                                        <div className="mq-metric">
-                                            <p className="mq-metric-label">
-                                                <span className="material-icons">schedule</span> ETA
-                                            </p>
-                                            <p className="mq-metric-value">
-                                                {q.estimatedDays} {q.estimatedDays === 1 ? 'day' : 'days'}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="mq-actions">
-                                        <Link className="mq-btn mq-btn-ghost" to={`/requests/${q.requestId}`}>
-                                            <span className="material-icons">visibility</span>
-                                            View Request
-                                        </Link>
-
-                                        <button
-                                            className="mq-btn mq-btn-danger"
-                                            type="button"
-                                            disabled={isBusy}
-                                            onClick={() => {
-                                                if (!isPending) {
-                                                    setBanner({
-                                                        type: 'error',
-                                                        title: 'Withdrawal Not Allowed',
-                                                        message: restrictionMsg || 'This quotation cannot be withdrawn.',
-                                                    });
-                                                    return;
-                                                }
-                                                handleWithdraw(q);
-                                            }}
-                                            title={restrictionMsg || 'Withdraw this quotation'}
-                                        >
-                                            {isBusy ? (
-                                                <>
-                                                    <span className="mq-mini-spinner" aria-hidden="true" />
-                                                    Withdrawing…
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <span className="material-icons">undo</span>
-                                                    Withdraw
-                                                </>
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-            </main>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <StatCard label="Total" value={counts.total} icon="request_quote" tone="brand" compact />
+          <StatCard label="Pending" value={counts.pending} icon="hourglass_top" tone="warning" compact />
+          <StatCard label="Accepted" value={counts.accepted} icon="check_circle" tone="success" compact />
+          <StatCard label="Rejected" value={counts.rejected} icon="cancel" tone="danger" compact />
+          <StatCard label="Withdrawn" value={counts.withdrawn} icon="undo" tone="neutral" compact />
         </div>
-    );
+
+        {banner ? (
+          <AlertPanel
+            tone={banner.type}
+            icon={banner.type === 'success' ? 'check_circle' : 'error_outline'}
+            title={banner.title}
+            onClose={() => setBanner(null)}
+          >
+            <p>{banner.message}</p>
+          </AlertPanel>
+        ) : null}
+
+        {loading ? <LoadingPanel message="Loading your quotations…" /> : null}
+
+        {!loading && error ? (
+          <AlertPanel
+            tone="danger"
+            icon="error_outline"
+            title="Couldn’t load quotations"
+            action={<button className="ui-button-primary" onClick={load} type="button">Try Again</button>}
+          >
+            <p>{error}</p>
+          </AlertPanel>
+        ) : null}
+
+        {!loading && !error && quotes.length === 0 ? (
+          <EmptyState
+            icon="request_quote"
+            title="No quotations submitted yet"
+            text="When you submit quotations to service requests, they’ll show up here so you can track their status."
+            action={<Link to="/browse-requests" className="ui-button-primary">Find Work</Link>}
+          />
+        ) : null}
+
+        {!loading && !error && quotes.length > 0 ? (
+          <div className="grid gap-4 md:grid-cols-2">
+            {quotes.map((quote) => {
+              const meta = statusMeta(quote.status);
+              const isPending = meta.label.toUpperCase() === 'PENDING';
+              const isAccepted = meta.label.toUpperCase() === 'ACCEPTED';
+              const isBusy = withdrawingId === quote.id;
+              const restrictionMessage = isAccepted
+                ? 'Accepted quotations cannot be withdrawn.'
+                : !isPending
+                  ? 'Only pending quotations can be withdrawn.'
+                  : null;
+
+              return (
+                <article key={quote.id} className="ui-card flex flex-col gap-4 overflow-hidden p-5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="ui-badge-muted">Quote #{quote.id}</span>
+                        <StatusPill tone={meta.tone} icon={meta.icon}>
+                          {meta.label}
+                        </StatusPill>
+                      </div>
+                      <h3 className="text-xl font-bold text-ink">
+                        {quote.requestTitle || `Request #${quote.requestId}`}
+                      </h3>
+                      <p className="text-sm leading-6 text-ink-muted">
+                        Keep this quotation clear and current so you can react quickly if the seeker follows up.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-card border border-brand-100 bg-brand-50/50 px-4 py-3">
+                      <p className="ui-stat-label">Price</p>
+                      <p className="mt-2 text-lg font-extrabold text-brand-800">
+                        LKR {Number(quote.price).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="rounded-card border border-line bg-surface-muted px-4 py-3">
+                      <p className="ui-stat-label">ETA</p>
+                      <p className="mt-2 text-lg font-bold text-ink">
+                        {quote.estimatedDays} {quote.estimatedDays === 1 ? 'day' : 'days'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <Link className="ui-button-ghost flex-1" to={`/requests/${quote.requestId}`}>
+                      <span className="material-icons text-base">visibility</span>
+                      View Request
+                    </Link>
+
+                    <button
+                      className="ui-button-danger flex-1"
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => {
+                        if (!isPending) {
+                          setBanner({
+                            type: 'danger',
+                            title: 'Withdrawal Not Allowed',
+                            message: restrictionMessage || 'This quotation cannot be withdrawn.',
+                          });
+                          return;
+                        }
+                        handleWithdraw(quote);
+                      }}
+                      title={restrictionMessage || 'Withdraw this quotation'}
+                    >
+                      {isBusy ? (
+                        <>
+                          <div className="ui-spinner !h-4 !w-4 border-white/35 border-t-white" aria-hidden="true" />
+                          Withdrawing...
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-icons text-base">undo</span>
+                          Withdraw
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : null}
+      </main>
+    </div>
+  );
 };
 
 export default MyQuotationsPage;
-

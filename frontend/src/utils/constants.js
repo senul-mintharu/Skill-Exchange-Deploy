@@ -75,7 +75,6 @@ export const SERVING_AREAS = {
     'Anuradhapura': ['Anuradhapura Town', 'Kekirawa', 'Medawachchiya'],
     'Ratnapura': ['Ratnapura Town', 'Balangoda', 'Embilipitiya'],
     'Badulla': ['Badulla Town', 'Bandarawela', 'Haputale', 'Ella'],
-    'Gampaha': ['Negombo', 'Ja-Ela', 'Wattala', 'Kadawatha', 'Kelaniya', 'Ragama'],
     'Hambantota': ['Hambantota Town', 'Tangalle', 'Tissamaharama'],
     'Jaffna': ['Jaffna Town', 'Chavakachcheri', 'Point Pedro'],
     'Trincomalee': ['Trincomalee Town', 'Kinniya', 'Mutur'],

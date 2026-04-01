@@ -1,6 +1,5 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import './App.css';
 
 import MainLayout from './layouts/MainLayout';
 import LandingPage from './pages/public/LandingPage';
@@ -11,11 +10,13 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 
 import PublicWorkerProfilePage from './pages/public/PublicWorkerProfilePage';
 
+import SeekerDashboard from './pages/seeker/SeekerDashboard';
 import CreateRequestPage from './pages/seeker/CreateRequestPage';
 import MyRequestsPage from './pages/seeker/MyRequestsPage';
 import RequestDetailsPage from './pages/seeker/RequestDetailsPage';
 import BrowseWorkersPage from './pages/seeker/BrowseWorkersPage';
 import CompareQuotesPage from './pages/seeker/CompareQuotesPage';
+import WorkerDashboard from './pages/worker/WorkerDashboard';
 import BrowseRequestsPage from './pages/worker/BrowseRequestsPage';
 import WorkerRequestDetailsPage from './pages/worker/WorkerRequestDetailsPage';
 import SubmitQuotePage from './pages/worker/SubmitQuotePage';
@@ -43,6 +44,7 @@ function App() {
           <Route path="/workers/:id" element={<PublicWorkerProfilePage />} />
 
           <Route element={<ProtectedRoute allowedRoles={['SEEKER']} />}>
+            <Route path="/seeker/dashboard" element={<SeekerDashboard />} />
             <Route path="/create-request" element={<CreateRequestPage />} />
             <Route path="/my-requests" element={<MyRequestsPage />} />
             <Route path="/my-requests/:requestId" element={<RequestDetailsPage />} />
@@ -54,6 +56,7 @@ function App() {
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['WORKER']} />}>
+            <Route path="/worker/dashboard" element={<WorkerDashboard />} />
             <Route path="/browse-requests" element={<BrowseRequestsPage />} />
             <Route path="/requests/:requestId" element={<WorkerRequestDetailsPage />} />
             <Route path="/create-profile" element={<EditWorkerProfilePage />} />

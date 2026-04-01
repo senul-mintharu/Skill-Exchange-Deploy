@@ -7,7 +7,7 @@ const MainLayout = () => {
   const isLanding = ['/', '/login', '/register'].includes(location.pathname);
 
   return (
-    <div className="main-layout">
+    <div className="min-h-screen">
       <Navbar variant={isLanding ? 'landing' : 'portal'} />
       <main className="content">
         <Outlet />

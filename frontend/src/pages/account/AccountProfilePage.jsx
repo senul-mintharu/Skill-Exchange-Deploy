@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getCurrentUser, logout, updateCurrentUser } from '../../services/authService';
 import { deleteMyAccount, getMyAccount, updateMyAccount } from '../../services/userService';
-import '../../pages/auth/LoginPage.css';
+import AuthShell from '../../components/ui/AuthShell';
+import ErrorBanner from '../../components/common/ErrorBanner';
 
 const AccountProfilePage = () => {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ const AccountProfilePage = () => {
     fullName: user?.fullName || '',
     email: user?.email || '',
     phoneNumber: '',
-    district: ''
+    district: '',
   });
 
   useEffect(() => {
@@ -34,7 +35,7 @@ const AccountProfilePage = () => {
           fullName: account.fullName || '',
           email: account.email || '',
           phoneNumber: account.phoneNumber || '',
-          district: account.district || ''
+          district: account.district || '',
         });
       } catch (err) {
         setMessage(err?.response?.data?.message || 'Failed to load account details');
@@ -50,14 +51,14 @@ const AccountProfilePage = () => {
     return null;
   }
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const handleChange = (event) => {
+    const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setMessage('');
   };
 
-  const handleSave = async (e) => {
-    e.preventDefault();
+  const handleSave = async (event) => {
+    event.preventDefault();
     if (!formData.fullName.trim()) {
       setMessage('Name is required');
       return;
@@ -69,7 +70,7 @@ const AccountProfilePage = () => {
         fullName: formData.fullName.trim(),
         email: formData.email.trim(),
         phoneNumber: formData.phoneNumber.trim() || null,
-        district: formData.district.trim() || null
+        district: formData.district.trim() || null,
       });
       updateCurrentUser({ fullName: updated.fullName, email: updated.email });
       setEditing(false);
@@ -102,88 +103,91 @@ const AccountProfilePage = () => {
     }
   };
 
+  const formFields = (
+    <div className="grid gap-5 md:grid-cols-2">
+      <div className="ui-field md:col-span-2">
+        <label htmlFor="fullName" className="ui-label">Full Name</label>
+        <input id="fullName" name="fullName" value={formData.fullName} onChange={handleChange} className="ui-input" disabled={!editing} />
+      </div>
+
+      <div className="ui-field">
+        <label htmlFor="email" className="ui-label">Email</label>
+        <input id="email" name="email" value={formData.email} onChange={handleChange} type="email" className="ui-input" disabled={!editing} />
+      </div>
+
+      <div className="ui-field">
+        <label htmlFor="phoneNumber" className="ui-label">Phone Number</label>
+        <input id="phoneNumber" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} className="ui-input" disabled={!editing} />
+      </div>
+
+      <div className="ui-field">
+        <label htmlFor="district" className="ui-label">District</label>
+        <input id="district" name="district" value={formData.district} onChange={handleChange} className="ui-input" disabled={!editing} />
+      </div>
+
+      <div className="ui-field">
+        <label className="ui-label">Role</label>
+        <input value={user.role} className="ui-input" disabled />
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
-      <div className="login-page">
-        <div className="login-container">
-          <div className="login-header">
-            <h1>My Profile</h1>
-            <p>Loading account details...</p>
-          </div>
+      <AuthShell title="My Profile" subtitle="Loading account details...">
+        <div className="ui-loading-state">
+          <div className="ui-spinner" />
+          <p className="text-sm font-medium text-ink-muted">Fetching your profile…</p>
         </div>
-      </div>
+      </AuthShell>
     );
   }
 
   return (
-    <div className="login-page">
-      <div className="login-container">
-        <div className="login-header">
-          <h1>My Profile</h1>
-          <p>View and manage your account details</p>
-        </div>
+    <AuthShell
+      title="My Profile"
+      subtitle="View and manage your account details."
+    >
+      <div className="space-y-5">
+        <ErrorBanner
+          message={message}
+          type={message.toLowerCase().includes('success') ? 'success' : 'error'}
+          onClose={() => setMessage('')}
+        />
 
-        {message && <div className="alert">{message}</div>}
-
-        {!editing ? (
-          <div className="login-form">
-            <div className="form-group">
-              <label>Full Name</label>
-              <input value={formData.fullName} disabled />
+        {editing ? (
+          <form onSubmit={handleSave} className="space-y-5">
+            {formFields}
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <button type="submit" className="ui-button-primary flex-1" disabled={saving}>
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+              <button type="button" className="ui-button-ghost flex-1" onClick={() => setEditing(false)}>
+                Cancel
+              </button>
+              <button type="button" className="ui-button-secondary flex-1" onClick={handleLogout}>
+                Logout
+              </button>
             </div>
-            <div className="form-group">
-              <label>Email</label>
-              <input value={formData.email} disabled />
-            </div>
-            <div className="form-group">
-              <label>Phone Number</label>
-              <input value={formData.phoneNumber || '-'} disabled />
-            </div>
-            <div className="form-group">
-              <label>District</label>
-              <input value={formData.district || '-'} disabled />
-            </div>
-            <div className="form-group">
-              <label>Role</label>
-              <input value={user.role} disabled />
-            </div>
-            <button type="button" className="btn btn-primary btn-full" onClick={() => setEditing(true)}>
-              Edit Profile
-            </button>
-            <button type="button" className="btn btn-full" onClick={handleLogout}>
-              Logout
-            </button>
-            <button type="button" className="btn btn-full" onClick={handleDeleteAccount} disabled={deleting}>
-              {deleting ? 'Deleting account...' : 'Delete Account'}
-            </button>
-          </div>
-        ) : (
-          <form className="login-form" onSubmit={handleSave}>
-            <div className="form-group">
-              <label htmlFor="fullName">Full Name</label>
-              <input id="fullName" name="fullName" value={formData.fullName} onChange={handleChange} />
-            </div>
-            <div className="form-group">
-              <label htmlFor="email">Email</label>
-              <input id="email" name="email" value={formData.email} onChange={handleChange} type="email" />
-            </div>
-            <div className="form-group">
-              <label htmlFor="phoneNumber">Phone Number</label>
-              <input id="phoneNumber" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} />
-            </div>
-            <div className="form-group">
-              <label htmlFor="district">District</label>
-              <input id="district" name="district" value={formData.district} onChange={handleChange} />
-            </div>
-            <button type="submit" className="btn btn-primary btn-full" disabled={saving}>
-              {saving ? 'Saving...' : 'Save Changes'}
-            </button>
-            <button type="button" className="btn btn-full" onClick={() => setEditing(false)}>Cancel</button>
-            <button type="button" className="btn btn-full" onClick={handleLogout}>Logout</button>
           </form>
+        ) : (
+          <div className="space-y-5">
+            {formFields}
+            <div className="grid gap-3 sm:grid-cols-3">
+              <button type="button" className="ui-button-primary" onClick={() => setEditing(true)}>
+                Edit Profile
+              </button>
+              <button type="button" className="ui-button-secondary" onClick={handleLogout}>
+                Logout
+              </button>
+              <button type="button" className="ui-button-danger" onClick={handleDeleteAccount} disabled={deleting}>
+                {deleting ? 'Deleting...' : 'Delete Account'}
+              </button>
+            </div>
+          </div>
         )}
       </div>
-    </div>
+    </AuthShell>
   );
 };
 

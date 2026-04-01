@@ -1,223 +1,235 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Breadcrumb from '../../components/common/Breadcrumb';
 import PageHeader from '../../components/common/PageHeader';
+import {
+  AlertPanel,
+  EmptyState,
+  LoadingPanel,
+  StatusPill,
+} from '../../components/ui/PortalPrimitives';
 import { acceptQuote, getQuotesByRequest } from '../../services/quoteService';
-import './CompareQuotesPage.css';
+
+const statusTone = (status) => {
+  const normalized = String(status || '').toUpperCase();
+  if (normalized === 'ACCEPTED') return 'success';
+  if (normalized === 'PENDING') return 'warning';
+  if (normalized === 'REJECTED' || normalized === 'NOT_ACCEPTED') return 'danger';
+  return 'neutral';
+};
 
 const CompareQuotesPage = () => {
-    const { requestId } = useParams();
-    const [quotes, setQuotes] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [actionError, setActionError] = useState('');
-    const [confirmingQuote, setConfirmingQuote] = useState(null);
-    const [acceptingId, setAcceptingId] = useState(null);
+  const { requestId } = useParams();
+  const [quotes, setQuotes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [actionError, setActionError] = useState('');
+  const [confirmingQuote, setConfirmingQuote] = useState(null);
+  const [acceptingId, setAcceptingId] = useState(null);
 
-    const sorted = useMemo(() => {
-        const list = Array.isArray(quotes) ? [...quotes] : [];
-        // Default comparison sort: lowest price first, then fastest ETA
-        list.sort((a, b) => {
-            const ap = Number(a.price ?? 0);
-            const bp = Number(b.price ?? 0);
-            if (ap !== bp) return ap - bp;
-            const ad = Number(a.estimatedDays ?? 0);
-            const bd = Number(b.estimatedDays ?? 0);
-            return ad - bd;
-        });
-        return list;
-    }, [quotes]);
+  const sortedQuotes = useMemo(() => {
+    const list = Array.isArray(quotes) ? [...quotes] : [];
+    list.sort((a, b) => {
+      const aPrice = Number(a.price ?? 0);
+      const bPrice = Number(b.price ?? 0);
+      if (aPrice !== bPrice) return aPrice - bPrice;
+      const aDays = Number(a.estimatedDays ?? 0);
+      const bDays = Number(b.estimatedDays ?? 0);
+      return aDays - bDays;
+    });
+    return list;
+  }, [quotes]);
 
-    const loadQuotes = async () => {
-        setLoading(true);
-        setError('');
-        try {
-            const data = await getQuotesByRequest(Number(requestId));
-            setQuotes(Array.isArray(data) ? data : []);
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to load quotations. Please try again.');
-        } finally {
-            setLoading(false);
-        }
-    };
+  const loadQuotes = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await getQuotesByRequest(Number(requestId));
+      setQuotes(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load quotations. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [requestId]);
 
-    useEffect(() => {
-        if (requestId) loadQuotes();
-    }, [requestId]);
+  useEffect(() => {
+    if (requestId) loadQuotes();
+  }, [loadQuotes, requestId]);
 
-    const handleConfirmAccept = async () => {
-        if (!confirmingQuote?.id) return;
-        setActionError('');
-        setAcceptingId(confirmingQuote.id);
-        try {
-            await acceptQuote(confirmingQuote.id);
-            setConfirmingQuote(null);
-            await loadQuotes();
-        } catch (err) {
-            setActionError(err.response?.data?.message || 'Failed to accept quotation. Please try again.');
-        } finally {
-            setAcceptingId(null);
-        }
-    };
+  const handleConfirmAccept = async () => {
+    if (!confirmingQuote?.id) return;
+    setActionError('');
+    setAcceptingId(confirmingQuote.id);
+    try {
+      await acceptQuote(confirmingQuote.id);
+      setConfirmingQuote(null);
+      await loadQuotes();
+    } catch (err) {
+      setActionError(err.response?.data?.message || 'Failed to accept quotation. Please try again.');
+    } finally {
+      setAcceptingId(null);
+    }
+  };
 
-    const formatQuoteStatus = (status) => String(status || '').replaceAll('_', ' ');
-
-    const hasQuotes = sorted.length > 0;
-
-    return (
-        <div className="page-wrapper">
-            <main className="cq-container">
-                <Breadcrumb />
-                <div className="cq-topbar">
-                    <Link to={`/my-requests/${requestId}`} className="cq-back">
-                        <span className="material-icons">arrow_back</span>
-                        Back to Request
-                    </Link>
-                </div>
-
-                <PageHeader title="Quotations Received" />
-
-                {loading && (
-                    <div className="cq-loading">
-                        <div className="cq-spinner" aria-hidden="true" />
-                        <p>Loading quotations…</p>
-                    </div>
-                )}
-
-                {!loading && error && (
-                    <div className="cq-banner" role="alert">
-                        <span className="material-icons">error_outline</span>
-                        <div>
-                            <h3>Couldn’t load quotations</h3>
-                            <p>{error}</p>
-                        </div>
-                    </div>
-                )}
-
-                {!loading && !error && actionError && (
-                    <div className="cq-banner" role="alert">
-                        <span className="material-icons">error_outline</span>
-                        <div>
-                            <h3>Couldn’t accept quotation</h3>
-                            <p>{actionError}</p>
-                        </div>
-                    </div>
-                )}
-
-                {/* Empty state (AC3) */}
-                {!loading && !error && !hasQuotes && (
-                    <div className="cq-empty">
-                        <div className="cq-empty-card">
-                            <div className="cq-empty-icon">
-                                <span className="material-icons">request_quote</span>
-                            </div>
-                            <h2>No quotations received yet</h2>
-                            <p>Workers haven’t submitted quotations for this request yet. Please check back soon.</p>
-                        </div>
-                    </div>
-                )}
-
-                {/* List/table (AC1, AC2, AC4) */}
-                {!loading && !error && hasQuotes && (
-                    <>
-                        <div className="cq-table-wrap">
-                            <table className="cq-table" aria-label="Quotations comparison table">
-                                <thead>
-                                    <tr>
-                                        <th>Worker</th>
-                                        <th>Price</th>
-                                        <th>ETA</th>
-                                        <th>Status</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {sorted.map((q) => (
-                                        <tr key={q.id}>
-                                            <td data-label="Worker">
-                                                {q.workerProfileId ? (
-                                                    <Link to={`/workers/${q.workerProfileId}`} className="cq-worker">
-                                                        <span className="cq-avatar" aria-hidden="true">
-                                                            {(q.workerName || 'W').charAt(0).toUpperCase()}
-                                                        </span>
-                                                        <span>{q.workerName || `Worker #${q.workerId}`}</span>
-                                                    </Link>
-                                                ) : (
-                                                    <span className="cq-worker" title="Worker profile not available yet">
-                                                        <span className="cq-avatar" aria-hidden="true">
-                                                            {(q.workerName || 'W').charAt(0).toUpperCase()}
-                                                        </span>
-                                                        <span>{q.workerName || `Worker #${q.workerId}`}</span>
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td data-label="Price" className="cq-price">
-                                                LKR {Number(q.price).toLocaleString()}
-                                            </td>
-                                            <td data-label="ETA" className="cq-eta">
-                                                {q.estimatedDays} {q.estimatedDays === 1 ? 'day' : 'days'}
-                                            </td>
-                                            <td data-label="Status">
-                                                <span className={`cq-status cq-status-${String(q.status || '').toLowerCase().replace('_', '-')}`}>
-                                                    {formatQuoteStatus(q.status)}
-                                                </span>
-                                            </td>
-                                            <td data-label="Action">
-                                                <button
-                                                    type="button"
-                                                    className="cq-accept-btn"
-                                                    disabled={q.status === 'ACCEPTED' || acceptingId === q.id}
-                                                    onClick={() => {
-                                                        setActionError('');
-                                                        setConfirmingQuote(q);
-                                                    }}
-                                                >
-                                                    {acceptingId === q.id ? 'Accepting...' : q.status === 'ACCEPTED' ? 'Accepted' : 'Accept'}
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        <p className="cq-footnote">
-                            Tip: quotations are sorted by lowest price first (then fastest ETA).
-                        </p>
-                    </>
-                )}
-
-                {confirmingQuote && (
-                    <div className="cq-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="accept-quote-title">
-                        <div className="cq-modal">
-                            <h3 id="accept-quote-title">Accept this quotation?</h3>
-                            <p>
-                                You are about to accept <strong>{confirmingQuote.workerName || `Worker #${confirmingQuote.workerId}`}</strong>'s
-                                quotation for <strong>LKR {Number(confirmingQuote.price).toLocaleString()}</strong>. This will close all other quotations.
-                            </p>
-                            <div className="cq-modal-actions">
-                                <button
-                                    type="button"
-                                    className="cq-btn-secondary"
-                                    disabled={acceptingId === confirmingQuote.id}
-                                    onClick={() => setConfirmingQuote(null)}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="button"
-                                    className="cq-btn-primary"
-                                    disabled={acceptingId === confirmingQuote.id}
-                                    onClick={handleConfirmAccept}
-                                >
-                                    {acceptingId === confirmingQuote.id ? 'Accepting...' : 'Confirm Accept'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </main>
+  return (
+    <div className="page-wrapper">
+      <main className="ui-shell space-y-4">
+        <Breadcrumb />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <PageHeader title="Quotations Received" />
+            <p className="text-sm text-white/75">Compare offers, timing, and the best fit for your request.</p>
+          </div>
+          <Link to={`/my-requests/${requestId}`} className="ui-button-secondary w-full sm:w-auto">
+            <span className="material-icons text-base">arrow_back</span>
+            Back to Request
+          </Link>
         </div>
-    );
+
+        {loading ? <LoadingPanel message="Loading quotations…" /> : null}
+
+        {!loading && error ? (
+          <AlertPanel tone="danger" icon="error_outline" title="Couldn’t load quotations">
+            <p>{error}</p>
+          </AlertPanel>
+        ) : null}
+
+        {!loading && !error && actionError ? (
+          <AlertPanel tone="danger" icon="error_outline" title="Couldn’t accept quotation">
+            <p>{actionError}</p>
+          </AlertPanel>
+        ) : null}
+
+        {!loading && !error && sortedQuotes.length === 0 ? (
+          <EmptyState
+            icon="request_quote"
+            title="No quotations received yet"
+            text="Workers haven’t submitted quotations for this request yet. Please check back soon."
+          />
+        ) : null}
+
+        {!loading && !error && sortedQuotes.length > 0 ? (
+          <>
+            <div className="ui-card overflow-hidden">
+              <div className="border-b border-line bg-white px-4 py-3 sm:px-5">
+                <p className="text-sm font-medium text-ink-muted">
+                  Tip: quotations are sorted by lowest price first, then fastest ETA.
+                </p>
+              </div>
+
+              <div className="hidden grid-cols-[2.2fr_1fr_1fr_1fr_1.1fr] gap-4 border-b border-line bg-surface-muted px-5 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-ink-subtle lg:grid">
+                <span>Worker</span>
+                <span>Price</span>
+                <span>ETA</span>
+                <span>Status</span>
+                <span>Action</span>
+              </div>
+
+              <div className="divide-y divide-line">
+                {sortedQuotes.map((quote) => {
+                  const workerName = quote.workerName || `Worker #${quote.workerId}`;
+                  const isAccepted = quote.status === 'ACCEPTED';
+                  const isBusy = acceptingId === quote.id;
+                  return (
+                    <article
+                      key={quote.id}
+                      className="grid gap-3 px-4 py-4 sm:px-5 lg:grid-cols-[2.2fr_1fr_1fr_1fr_1.1fr] lg:items-center"
+                    >
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-subtle lg:hidden">Worker</p>
+                        {quote.workerProfileId ? (
+                          <Link to={`/workers/${quote.workerProfileId}`} className="inline-flex items-center gap-3 font-semibold text-ink transition hover:text-brand-800">
+                            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-gradient text-sm font-bold text-white">
+                              {workerName.charAt(0).toUpperCase()}
+                            </span>
+                            <span>{workerName}</span>
+                          </Link>
+                        ) : (
+                          <div className="inline-flex items-center gap-3 font-semibold text-ink">
+                            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-gradient text-sm font-bold text-white">
+                              {workerName.charAt(0).toUpperCase()}
+                            </span>
+                            <span>{workerName}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-subtle lg:hidden">Price</p>
+                        <p className="text-base font-extrabold text-brand-800 sm:text-lg">
+                          LKR {Number(quote.price).toLocaleString()}
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-subtle lg:hidden">ETA</p>
+                        <p className="text-sm font-semibold text-ink">
+                          {quote.estimatedDays} {quote.estimatedDays === 1 ? 'day' : 'days'}
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-subtle lg:hidden">Status</p>
+                        <StatusPill tone={statusTone(quote.status)}>
+                          {String(quote.status || '').replaceAll('_', ' ')}
+                        </StatusPill>
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-subtle lg:hidden">Action</p>
+                        <button
+                          type="button"
+                          className={isAccepted ? 'ui-button-ghost w-full' : 'ui-button-primary w-full'}
+                          disabled={isAccepted || isBusy}
+                          onClick={() => {
+                            setActionError('');
+                            setConfirmingQuote(quote);
+                          }}
+                        >
+                          {isBusy ? 'Accepting...' : isAccepted ? 'Accepted' : 'Accept'}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        ) : null}
+
+        {confirmingQuote ? (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/55 px-4">
+            <div className="ui-panel w-full max-w-lg p-5 sm:p-6">
+              <h3 className="text-xl font-bold text-ink sm:text-2xl">Accept this quotation?</h3>
+              <p className="mt-3 text-sm leading-6 text-ink-muted">
+                You are about to accept <strong>{confirmingQuote.workerName || `Worker #${confirmingQuote.workerId}`}</strong>&apos;s
+                quotation for <strong>LKR {Number(confirmingQuote.price).toLocaleString()}</strong>. This will close all other quotations.
+              </p>
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  className="ui-button-ghost flex-1"
+                  disabled={acceptingId === confirmingQuote.id}
+                  onClick={() => setConfirmingQuote(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="ui-button-primary flex-1"
+                  disabled={acceptingId === confirmingQuote.id}
+                  onClick={handleConfirmAccept}
+                >
+                  {acceptingId === confirmingQuote.id ? 'Accepting...' : 'Confirm Accept'}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </main>
+    </div>
+  );
 };
 
 export default CompareQuotesPage;

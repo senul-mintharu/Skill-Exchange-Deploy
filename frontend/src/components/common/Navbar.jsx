@@ -1,148 +1,239 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { getCurrentUser } from '../../services/authService';
-import './Navbar.css';
+import { cn } from '../../utils/cn';
 
 const Navbar = ({ variant = 'landing' }) => {
-    const [scrolled, setScrolled] = useState(false);
-    const [mobileOpen, setMobileOpen] = useState(false);
-    const user = getCurrentUser();
-    const role = user?.role;
-    const displayName = user?.fullName || user?.email || 'User';
-    const avatarText = (displayName || 'U')
-        .split(' ')
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((part) => part[0]?.toUpperCase())
-        .join('') || 'U';
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const user = getCurrentUser();
+  const role = user?.role;
+  const displayName = user?.fullName || user?.email || 'User';
+  const avatarText = (displayName || 'U')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'U';
 
-    const dashboardPath =
-        role === 'SEEKER' ? '/my-requests' :
-        role === 'WORKER' ? '/browse-requests' :
-        role === 'ADMIN' ? '/admin/dashboard' : '/';
+  const dashboardPath =
+    role === 'SEEKER' ? '/seeker/dashboard' :
+    role === 'WORKER' ? '/worker/dashboard' :
+    role === 'ADMIN' ? '/admin/dashboard' : '/';
 
-    useEffect(() => {
-        const handleScroll = () => {
-            setScrolled(window.scrollY > 50);
-        };
+  const isPortal = variant === 'portal';
+  const showLightDesktop = !isPortal && !scrolled;
 
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 40);
+    handleScroll();
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-    useEffect(() => {
-        const handleResize = () => {
-            if (window.innerWidth > 768) {
-                setMobileOpen(false);
-            }
-        };
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 768) {
+        setMobileOpen(false);
+      }
+    };
 
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
-    useEffect(() => {
-        document.body.style.overflow = mobileOpen ? 'hidden' : '';
-        return () => {
-            document.body.style.overflow = '';
-        };
-    }, [mobileOpen]);
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileOpen]);
 
-    const closeMobile = () => setMobileOpen(false);
-    const isPortal = variant === 'portal';
+  const closeMobile = () => setMobileOpen(false);
 
-    return (
-        <>
-            <nav className={`navbar ${scrolled ? 'navbar--scrolled' : ''} ${isPortal ? 'navbar--portal' : ''}`} id="main-navbar">
-                <div className="navbar__inner container">
-                    <Link to="/" className="navbar__logo" onClick={closeMobile}>
-                        <span className="navbar__logo-icon">🔧</span>
-                        <span className="navbar__logo-text">
-                            Lanka<span className="navbar__logo-accent">FIX</span>
-                        </span>
-                    </Link>
+  const navLinkBase = cn(
+    'relative rounded-full px-3 py-2 text-sm font-medium transition',
+    isPortal
+      ? 'text-white/80 hover:bg-white/10 hover:text-white'
+      : showLightDesktop
+        ? 'text-white/85 hover:bg-white/10 hover:text-white'
+        : 'text-ink-muted hover:bg-brand-50 hover:text-brand-800'
+  );
 
-                    <div className="navbar__right">
-                        {!isPortal ? (
-                            <>
-                                <a href="#hero" className="navbar__link">Home</a>
-                                <a href="#how-it-works" className="navbar__link">How It Works</a>
-                                <a href="#services" className="navbar__link">Services</a>
-                                <Link to="/login" className="navbar__link">Sign up / Log in</Link>
-                                <Link to="/create-profile" className="btn btn-sm btn-secondary navbar__btn-tasker">
-                                    Become a Tasker
-                                </Link>
-                            </>
-                        ) : (
-                            <>
-                                <NavLink to={dashboardPath} end className={({ isActive }) => `navbar__link ${isActive ? 'active' : ''}`}>Dashboard</NavLink>
-                                {role === 'WORKER' && <NavLink to="/browse-requests" className={({ isActive }) => `navbar__link ${isActive ? 'active' : ''}`}>Find Work</NavLink>}
-                                {role === 'SEEKER' && <NavLink to="/browse-workers" className={({ isActive }) => `navbar__link ${isActive ? 'active' : ''}`}>Browse Workers</NavLink>}
-                                {role === 'WORKER' && <NavLink to="/my-quotations" className={({ isActive }) => `navbar__link ${isActive ? 'active' : ''}`}>My Quotations</NavLink>}
-                                {role === 'SEEKER' && <NavLink to="/my-requests" className={({ isActive }) => `navbar__link ${isActive ? 'active' : ''}`}>My Requests</NavLink>}
-                                <div className="navbar__portal-actions" style={{ position: 'relative' }}>
-                                    <button type="button" className="navbar__icon-btn">
-                                        <span className="navbar__emoji">🔔</span>
-                                    </button>
-                                    <Link to="/account/profile" className="navbar__avatar" title={displayName}>
-                                        {avatarText}
-                                    </Link>
-                                </div>
-                            </>
-                        )}
-                    </div>
-
-                    <button
-                        className={`navbar__hamburger ${mobileOpen ? 'navbar__hamburger--active' : ''}`}
-                        onClick={() => setMobileOpen(!mobileOpen)}
-                        aria-label="Toggle navigation menu"
-                        id="navbar-hamburger"
-                        type="button"
-                    >
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </button>
-                </div>
-            </nav>
-
-            <div className={`navbar__overlay ${mobileOpen ? 'navbar__overlay--visible' : ''}`} onClick={closeMobile} />
-
-            <div className={`navbar__drawer ${mobileOpen ? 'navbar__drawer--open' : ''}`} id="mobile-drawer">
-                <ul className="navbar__drawer-links">
-                    {!isPortal ? (
-                        <>
-                            <li><a href="#hero" className="navbar__drawer-link" onClick={closeMobile}>Home</a></li>
-                            <li><a href="#how-it-works" className="navbar__drawer-link" onClick={closeMobile}>How It Works</a></li>
-                            <li><a href="#services" className="navbar__drawer-link" onClick={closeMobile}>Services</a></li>
-                            <li><Link to="/login" className="navbar__drawer-link" onClick={closeMobile}>Sign up / Log in</Link></li>
-                        </>
-                    ) : (
-                        <>
-                            <li><NavLink to={dashboardPath} end className={({ isActive }) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>Dashboard</NavLink></li>
-                            {role === 'WORKER' && <li><NavLink to="/browse-requests" className={({ isActive }) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>Find Work</NavLink></li>}
-                            {role === 'SEEKER' && <li><NavLink to="/browse-workers" className={({ isActive }) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>Browse Workers</NavLink></li>}
-                            {role === 'WORKER' && <li><NavLink to="/my-quotations" className={({ isActive }) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>My Quotations</NavLink></li>}
-                            {role === 'SEEKER' && <li><NavLink to="/my-requests" className={({ isActive }) => `navbar__drawer-link ${isActive ? 'active' : ''}`} onClick={closeMobile}>My Requests</NavLink></li>}
-                        </>
-                    )}
-                </ul>
-
-                <div className="navbar__drawer-actions">
-                    {!isPortal ? (
-                        <Link to="/create-profile" className="btn btn-primary" onClick={closeMobile} style={{ width: '100%' }}>
-                            Become a Tasker
-                        </Link>
-                    ) : (
-                        <div className="navbar__drawer-profile">
-                            <div className="navbar__avatar">{avatarText}</div>
-                            <span className="navbar__username">{displayName}</span>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </>
+  const navLinkClass = ({ isActive }) =>
+    cn(
+      navLinkBase,
+      isPortal && isActive && 'bg-white/18 text-white ring-1 ring-white/30 shadow-soft font-semibold',
+      !isPortal && isActive && 'bg-brand-50 text-brand-800 font-semibold',
     );
+
+  const mobilePortalNavLinkClass = ({ isActive }) => cn(
+    'block rounded-2xl px-4 py-3 text-base font-medium transition',
+    isActive
+      ? 'bg-brand-50 text-brand-800 shadow-soft'
+      : 'text-ink-soft hover:bg-brand-50 hover:text-brand-800',
+  );
+
+  return (
+    <>
+      <nav
+        id="main-navbar"
+        className={cn(
+          'left-0 right-0 z-50 transition-all duration-300',
+          isPortal ? 'sticky top-0 border-b border-white/10 bg-brand-gradient-strong shadow-brand' : 'fixed top-0',
+          !isPortal && scrolled && 'border-b border-white/70 bg-white/90 shadow-soft backdrop-blur-xl',
+          !isPortal && !scrolled && 'bg-transparent'
+        )}
+      >
+        <div className="container flex items-center justify-between py-3">
+          <Link to="/" className="flex items-center gap-3" onClick={closeMobile}>
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-gradient text-xl shadow-brand">
+              <span role="img" aria-label="LankaFix logo">
+                🔧
+              </span>
+            </span>
+            <span
+              className={cn(
+                'font-display text-2xl font-extrabold tracking-snugger',
+                showLightDesktop || isPortal ? 'text-white' : 'text-ink'
+              )}
+            >
+              Lanka
+              <span className={cn(
+                'bg-clip-text text-transparent',
+                showLightDesktop
+                  ? 'bg-[linear-gradient(135deg,#fbbf24,#fde68a)]'
+                  : 'bg-highlight-gradient'
+              )}
+              >
+                FIX
+              </span>
+            </span>
+          </Link>
+
+          <div className="hidden items-center gap-2 md:flex">
+            {!isPortal ? (
+              <>
+                <a href="#hero" className={navLinkBase}>Home</a>
+                <a href="#how-it-works" className={navLinkBase}>How It Works</a>
+                <a href="#services" className={navLinkBase}>Services</a>
+                <Link to="/login" className={navLinkBase}>Sign up / Log in</Link>
+                <Link
+                  to="/create-profile"
+                  className={cn(
+                    'ui-button px-5 py-2.5 text-sm',
+                    showLightDesktop
+                      ? 'border-white/40 bg-white/10 text-white hover:bg-white hover:text-brand-800'
+                      : 'border-brand-200 bg-white text-brand-800 hover:bg-brand-50'
+                  )}
+                >
+                  Become a Tasker
+                </Link>
+              </>
+            ) : (
+              <>
+                <NavLink to={dashboardPath} end className={navLinkClass}>Dashboard</NavLink>
+                {role === 'WORKER' ? <NavLink to="/browse-requests" className={navLinkClass}>Find Work</NavLink> : null}
+                {role === 'SEEKER' ? <NavLink to="/browse-workers" className={navLinkClass}>Browse Workers</NavLink> : null}
+                {role === 'WORKER' ? <NavLink to="/my-quotations" className={navLinkClass}>My Quotations</NavLink> : null}
+                {role === 'SEEKER' ? <NavLink to="/my-requests" className={navLinkClass}>My Requests</NavLink> : null}
+                <div className="ml-3 flex items-center gap-3">
+                  <button
+                    type="button"
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/20"
+                  >
+                    <span role="img" aria-label="Notifications">🔔</span>
+                  </button>
+                  <Link
+                    to="/account/profile"
+                    title={displayName}
+                    className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/70 bg-highlight-gradient text-sm font-bold text-brand-900 shadow-soft"
+                  >
+                    {avatarText}
+                  </Link>
+                </div>
+              </>
+            )}
+          </div>
+
+          <button
+            type="button"
+            id="navbar-hamburger"
+            aria-label="Toggle navigation menu"
+            onClick={() => setMobileOpen((value) => !value)}
+            className={cn(
+              'flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-2xl border md:hidden',
+              isPortal || showLightDesktop
+                ? 'border-white/25 bg-white/10 text-white'
+                : 'border-line bg-white text-ink'
+            )}
+          >
+            <span className={cn('block h-0.5 w-5 rounded-full bg-current transition', mobileOpen && 'translate-y-2 rotate-45')} />
+            <span className={cn('block h-0.5 w-5 rounded-full bg-current transition', mobileOpen && 'opacity-0')} />
+            <span className={cn('block h-0.5 w-5 rounded-full bg-current transition', mobileOpen && '-translate-y-2 -rotate-45')} />
+          </button>
+        </div>
+      </nav>
+
+      <button
+        type="button"
+        aria-label="Close mobile navigation"
+        onClick={closeMobile}
+        className={cn(
+          'fixed inset-0 z-40 bg-slate-950/45 transition',
+          mobileOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+        )}
+      />
+
+      <aside
+        className={cn(
+          'fixed right-0 top-0 z-50 flex h-screen w-[320px] max-w-[85vw] flex-col bg-white px-6 pb-8 pt-24 shadow-panel transition-transform duration-300',
+          mobileOpen ? 'translate-x-0' : 'translate-x-full'
+        )}
+      >
+        <div className="flex flex-1 flex-col gap-8">
+          <div className="space-y-2">
+            {!isPortal ? (
+              <>
+                <a href="#hero" className="block rounded-2xl px-4 py-3 text-base font-medium text-ink-soft hover:bg-brand-50 hover:text-brand-800" onClick={closeMobile}>Home</a>
+                <a href="#how-it-works" className="block rounded-2xl px-4 py-3 text-base font-medium text-ink-soft hover:bg-brand-50 hover:text-brand-800" onClick={closeMobile}>How It Works</a>
+                <a href="#services" className="block rounded-2xl px-4 py-3 text-base font-medium text-ink-soft hover:bg-brand-50 hover:text-brand-800" onClick={closeMobile}>Services</a>
+                <Link to="/login" className="block rounded-2xl px-4 py-3 text-base font-medium text-ink-soft hover:bg-brand-50 hover:text-brand-800" onClick={closeMobile}>Sign up / Log in</Link>
+              </>
+            ) : (
+              <>
+                <NavLink to={dashboardPath} end className={mobilePortalNavLinkClass} onClick={closeMobile}>Dashboard</NavLink>
+                {role === 'WORKER' ? <NavLink to="/browse-requests" className={mobilePortalNavLinkClass} onClick={closeMobile}>Find Work</NavLink> : null}
+                {role === 'SEEKER' ? <NavLink to="/browse-workers" className={mobilePortalNavLinkClass} onClick={closeMobile}>Browse Workers</NavLink> : null}
+                {role === 'WORKER' ? <NavLink to="/my-quotations" className={mobilePortalNavLinkClass} onClick={closeMobile}>My Quotations</NavLink> : null}
+                {role === 'SEEKER' ? <NavLink to="/my-requests" className={mobilePortalNavLinkClass} onClick={closeMobile}>My Requests</NavLink> : null}
+              </>
+            )}
+          </div>
+
+          <div className="mt-auto space-y-4">
+            {!isPortal ? (
+              <Link to="/create-profile" className="ui-button-primary flex w-full" onClick={closeMobile}>
+                Become a Tasker
+              </Link>
+            ) : (
+              <div className="rounded-card border border-line bg-surface-muted p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-gradient text-sm font-bold text-white">
+                    {avatarText}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-ink">{displayName}</p>
+                    <p className="text-xs uppercase tracking-[0.16em] text-ink-subtle">{role || 'Guest'}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </aside>
+    </>
+  );
 };
 
 export default Navbar;

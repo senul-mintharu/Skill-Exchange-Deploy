@@ -39,8 +39,8 @@ export const getCurrentUser = () => getUser();
 export const isAuthenticated = () => isLoggedIn() && !!getToken();
 
 export const getDefaultRouteForRole = (role) => {
-  if (role === 'SEEKER') return '/my-requests';
-  if (role === 'WORKER') return '/browse-requests';
+  if (role === 'SEEKER') return '/seeker/dashboard';
+  if (role === 'WORKER') return '/worker/dashboard';
   if (role === 'ADMIN') return '/admin/dashboard';
   return '/';
 };

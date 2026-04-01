@@ -1,496 +1,516 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { createRequest, updateRequest } from '../../services/requestService';
-import './CreateRequestPage.css';
+import { CATEGORIES, formatBudget } from '../../utils/constants';
+import { AlertPanel, PageIntro, SectionCard, StatusPill } from '../../components/ui/PortalPrimitives';
 
-/**
- * Multi-Step Request Creation Wizard
- * Step 1: Category & Location
- * Step 2: Details & Description
- * Step 3: Urgency & Review
- */
+const urgencyOptions = [
+  { value: 'LOW', label: 'Low', subtitle: 'Within a week', icon: '📅', tone: 'info', hint: 'Flexible timing' },
+  { value: 'MEDIUM', label: 'Medium', subtitle: 'Within 48 hours', icon: '⏰', tone: 'info', hint: 'Soon, but not urgent' },
+  { value: 'HIGH', label: 'High', subtitle: 'ASAP / Today', icon: '⚡', tone: 'warning', hint: 'Quick response preferred' },
+  { value: 'URGENT', label: 'Urgent', subtitle: 'Emergency', icon: '🚨', tone: 'danger', hint: 'Immediate attention needed' },
+];
+
+const categoryHints = {
+  PLUMBING: 'Leaks, pipes, fittings, bathrooms',
+  ELECTRICAL: 'Switches, wiring, lights, breakers',
+  CARPENTRY: 'Woodwork, repairs, fittings, shelves',
+  PAINTING: 'Walls, touch-ups, coating, finishing',
+  CLEANING: 'Deep cleaning, move-out, routine support',
+  AC_REPAIR: 'Cooling issues, servicing, maintenance',
+  APPLIANCE_REPAIR: 'Kitchen and home appliance fixes',
+  GARDENING: 'Yard care, trimming, upkeep, cleanup',
+  MASONRY: 'Brickwork, cement, patching, surfaces',
+  ROOFING: 'Leaks, repairs, tiles, structural checks',
+  PEST_CONTROL: 'Insects, rodents, treatment, prevention',
+  OTHER: 'Custom work not covered above',
+};
+
+const stepDetails = [
+  { step: 1, title: 'Title & Category', description: 'Define the job and where it is located.' },
+  { step: 2, title: 'Details & Timing', description: 'Explain the problem, urgency, and budget.' },
+  { step: 3, title: 'Review & Submit', description: 'Double-check the final details before posting.' },
+];
+
+const previewText = (text) => {
+  if (!text) return 'A clear description helps workers understand the issue and quote accurately.';
+  return text;
+};
+
 const CreateRequestPage = () => {
-    const navigate = useNavigate();
-    const location = useLocation();
-    
-    // Check if we are in "Edit Mode"
-    const isEditMode = location.state && location.state.requestToEdit;
-    const requestToEdit = isEditMode ? location.state.requestToEdit : null;
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isEditMode = Boolean(location.state?.requestToEdit);
+  const requestToEdit = isEditMode ? location.state.requestToEdit : null;
+  const [currentStep, setCurrentStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [formData, setFormData] = useState({
+    title: requestToEdit?.title || '',
+    category: requestToEdit?.category || '',
+    locationArea: requestToEdit?.locationArea || '',
+    description: requestToEdit?.description || '',
+    urgency: requestToEdit?.urgency || 'MEDIUM',
+    budget: requestToEdit?.budget || '',
+  });
 
-    const [currentStep, setCurrentStep] = useState(1);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState(false);
+  useEffect(() => {
+    if (isEditMode) {
+      setCurrentStep(1);
+    }
+  }, [isEditMode]);
 
-    const [formData, setFormData] = useState({
-        title: requestToEdit?.title || '',
-        category: requestToEdit?.category || '',
-        locationArea: requestToEdit?.locationArea || '',
-        description: requestToEdit?.description || '',
-        urgency: requestToEdit?.urgency || 'MEDIUM',
-        budget: requestToEdit?.budget || ''
-    });
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: '' }));
+    }
+  };
 
-    const [errors, setErrors] = useState({});
+  const validateStep = (step) => {
+    const nextErrors = {};
+    if (step === 1) {
+      if (!formData.title.trim()) nextErrors.title = 'Title is required';
+      else if (formData.title.trim().length > 150) nextErrors.title = 'Title must not exceed 150 characters';
+      if (!formData.category) nextErrors.category = 'Please select a category';
+      if (!formData.locationArea.trim()) nextErrors.locationArea = 'Location is required';
+    }
+    if (step === 2) {
+      if (!formData.description.trim()) nextErrors.description = 'Description is required';
+      else if (formData.description.trim().length < 20) nextErrors.description = 'Description must be at least 20 characters';
+      else if (formData.description.length > 2000) nextErrors.description = 'Description must not exceed 2000 characters';
+    }
 
-    // Populate form if editing (effect for safety, though initial state handles most)
-    useEffect(() => {
-        if (isEditMode) {
-             // Ensure step is set correctly if needed, or just let users flow through
-        }
-    }, [isEditMode]);
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
 
-    // Category options with icons
-    const categories = [
-        { value: 'PLUMBING', label: 'Plumbing', icon: '🔧' },
-        { value: 'ELECTRICAL', label: 'Electrical', icon: '⚡' },
-        { value: 'CARPENTRY', label: 'Carpentry', icon: '🪚' },
-        { value: 'PAINTING', label: 'Painting', icon: '🎨' },
-        { value: 'CLEANING', label: 'Cleaning', icon: '🧹' },
-        { value: 'AC_REPAIR', label: 'AC Repair', icon: '❄️' },
-        { value: 'APPLIANCE_REPAIR', label: 'Appliance', icon: '🔌' },
-        { value: 'GARDENING', label: 'Gardening', icon: '🌱' },
-        { value: 'MASONRY', label: 'Masonry', icon: '🧱' },
-        { value: 'ROOFING', label: 'Roofing', icon: '🏠' },
-        { value: 'PEST_CONTROL', label: 'Pest Control', icon: '🐛' },
-        { value: 'OTHER', label: 'Other', icon: '⋯' }
-    ];
+  const handleSubmit = async () => {
+    if (!formData.title || !formData.description || !formData.locationArea || !formData.category || !formData.urgency) {
+      setError('Please fill in all required details before submitting.');
+      return;
+    }
+    if (!formData.budget && formData.budget !== 0) {
+      setError('Please provide a budget for your request.');
+      return;
+    }
 
-    const urgencyOptions = [
-        { value: 'LOW', label: 'Low', subtitle: 'Within a week', icon: '📅' },
-        { value: 'MEDIUM', label: 'Medium', subtitle: 'Within 48 hours', icon: '⏰' },
-        { value: 'HIGH', label: 'High', subtitle: 'ASAP / Today', icon: '⚡' },
-        { value: 'URGENT', label: 'Urgent', subtitle: 'Emergency', icon: '🚨' }
-    ];
+    setError('');
+    setLoading(true);
 
-    const handleChange = (field, value) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-        if (errors[field]) {
-            setErrors(prev => ({ ...prev, [field]: '' }));
-        }
-    };
+    try {
+      const payload = {
+        title: formData.title,
+        category: formData.category,
+        locationArea: formData.locationArea,
+        description: formData.description,
+        urgency: formData.urgency,
+        budget: formData.budget,
+      };
 
-    const validateStep = (step) => {
-        const newErrors = {};
+      if (isEditMode) {
+        await updateRequest(requestToEdit.id, payload);
+        setSuccess(true);
+        setTimeout(() => navigate(`/my-requests/${requestToEdit.id}`), 1800);
+      } else {
+        await createRequest(payload);
+        setSuccess(true);
+        setTimeout(() => navigate('/my-requests'), 1800);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || `Failed to ${isEditMode ? 'update' : 'create'} request. Please try again.`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        if (step === 1) {
-            if (!formData.title?.trim()) {
-                newErrors.title = 'Title is required';
-            } else if (formData.title.trim().length > 150) {
-                newErrors.title = 'Title must not exceed 150 characters';
-            }
-            if (!formData.category) newErrors.category = 'Please select a category';
-            if (!formData.locationArea?.trim()) newErrors.locationArea = 'Location is required';
-        }
+  const selectedCategory = useMemo(
+    () => CATEGORIES.find((item) => item.value === formData.category),
+    [formData.category],
+  );
+  const selectedUrgency = useMemo(
+    () => urgencyOptions.find((item) => item.value === formData.urgency),
+    [formData.urgency],
+  );
 
-        if (step === 2) {
-            if (!formData.description?.trim()) {
-                newErrors.description = 'Description is required';
-            } else if (formData.description.trim().length < 20) {
-                newErrors.description = 'Description must be at least 20 characters';
-            } else if (formData.description.length > 2000) {
-                newErrors.description = 'Description must not exceed 2000 characters';
-            }
-            // Add budget validation if needed for step 2, or a new step
-            // if (!formData.budget) newErrors.budget = 'Budget is required';
-        }
+  return (
+    <div className="page-wrapper">
+      <main className="ui-shell space-y-5">
+        <PageIntro
+          eyebrow="Request Wizard"
+          title={isEditMode ? 'Edit Your Request' : 'Post a New Request'}
+          subtitle={isEditMode
+            ? 'Update the details below so workers can clearly understand the latest version of your job.'
+            : 'Create a request that is easy to scan, easy to quote, and easy for the right worker to understand quickly.'}
+          light
+        />
 
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
+        {error ? (
+          <AlertPanel tone="danger" icon="error_outline" title="Please review your request">
+            <p>{error}</p>
+          </AlertPanel>
+        ) : null}
 
-    const handleNext = () => {
-        if (validateStep(currentStep)) {
-            setCurrentStep(prev => prev + 1);
-            window.scrollTo(0, 0);
-        }
-    };
+        {success ? (
+          <AlertPanel tone="success" icon="check_circle" title="Request saved">
+            <p>Request {isEditMode ? 'updated' : 'created'} successfully. Redirecting...</p>
+          </AlertPanel>
+        ) : null}
 
-    const handleBack = () => {
-        setCurrentStep(prev => prev - 1);
-        window.scrollTo(0, 0);
-    };
+        <div className="grid items-start gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
+          <aside className="space-y-5 xl:sticky xl:top-24 xl:self-start">
+            <SectionCard className="border-brand-100 bg-white shadow-card">
+              <p className="ui-stat-label">Progress</p>
+              <h2 className="mt-2 text-xl font-bold text-ink">Build a request workers can quote fast.</h2>
+              <p className="mt-2 text-sm leading-6 text-ink-muted">
+                Each step adds information that helps workers understand the task and avoid vague estimates.
+              </p>
 
-    const handleSubmit = async () => {
-        // Final validation before submission
-        if (!formData.title || !formData.description || !formData.locationArea || !formData.category || !formData.urgency) {
-            setError('Please fill in all required details before submitting.');
-            return;
-        }
-        if (!formData.budget) {
-            setError('Please provide a budget for your request.');
-            return;
-        }
+              <div className="mt-4 space-y-3">
+                {stepDetails.map((item) => {
+                  const active = currentStep === item.step;
+                  const complete = currentStep > item.step;
+                  return (
+                    <div
+                      key={item.step}
+                      className={`rounded-card border px-4 py-3.5 transition ${active
+                        ? 'border-brand-200 bg-brand-50/80 shadow-soft'
+                        : complete
+                          ? 'border-green-100 bg-green-50/80'
+                          : 'border-line bg-surface-muted/70'}`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${active
+                          ? 'bg-brand-gradient text-white'
+                          : complete
+                            ? 'bg-green-600 text-white'
+                            : 'bg-white text-brand-800'}`}>
+                          {complete ? '✓' : item.step}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-ink">{item.title}</p>
+                          <p className="mt-1 text-sm leading-6 text-ink-muted">{item.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </SectionCard>
 
-        setError('');
-        setLoading(true);
+            <SectionCard className="border-brand-100 bg-white shadow-card">
+              <p className="ui-stat-label">Live Preview</p>
+              <h2 className="mt-2 text-xl font-bold text-ink">How your request reads</h2>
 
-        try {
-            const payload = {
-                title: formData.title,
-                category: formData.category,
-                locationArea: formData.locationArea,
-                description: formData.description,
-                urgency: formData.urgency,
-                budget: formData.budget
-            };
-
-            if (isEditMode) {
-                await updateRequest(requestToEdit.id, payload);
-
-                setSuccess(true);
-                setTimeout(() => {
-                    navigate(`/my-requests/${requestToEdit.id}`);
-                }, 2000);
-            } else {
-                await createRequest(payload);
-
-                setSuccess(true);
-                setTimeout(() => {
-                    navigate('/my-requests');
-                }, 2000);
-            }
-        } catch (err) {
-            console.error('Error creating/updating request:', err);
-            setError(
-                err.response?.data?.message ||
-                `Failed to ${isEditMode ? 'update' : 'create'} request. Please try again.`
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Step 1: Category & Location
-    const renderStep1 = () => (
-        <div className="step-content">
-            <div className="step-header">
-                <h1>What do you need help with?</h1>
-                <p>Give your request a title and select a category.</p>
-            </div>
-
-            <div className="form-section">
-                <div className="label-row">
-                    <label className="section-label" htmlFor="title">
-                        Request Title
-                    </label>
-                    <span className="char-count">
-                        {formData.title.length} / 150
-                    </span>
+              <div className="mt-4 rounded-card border border-brand-100 bg-brand-50/75 p-4 shadow-soft">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="ui-badge">{selectedCategory?.label || 'Choose a category'}</span>
+                  <StatusPill tone={selectedUrgency?.tone || 'info'}>
+                    {selectedUrgency?.label || 'Medium'}
+                  </StatusPill>
                 </div>
-                <div className="title-input-wrapper">
-                    <span className="input-icon">✏️</span>
+                <h3 className="mt-3 text-xl font-bold leading-tight text-ink">
+                  {formData.title || 'Add a clear request title'}
+                </h3>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                  <div className="rounded-card border border-line bg-white px-4 py-3">
+                    <p className="ui-stat-label">Location</p>
+                    <p className="mt-2 text-base font-bold text-ink">{formData.locationArea || 'Not set yet'}</p>
+                  </div>
+                  <div className="rounded-card border border-line bg-white px-4 py-3">
+                    <p className="ui-stat-label">Budget</p>
+                    <p className="mt-2 text-base font-bold text-ink">
+                      {formData.budget || formData.budget === 0 ? formatBudget(formData.budget) : 'Add your budget'}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 rounded-card border border-line bg-white px-4 py-3">
+                  <p className="ui-stat-label">Description Preview</p>
+                  <p className="mt-2 text-sm leading-6 text-ink-muted">{previewText(formData.description)}</p>
+                </div>
+              </div>
+            </SectionCard>
+          </aside>
+
+          <section className="ui-panel p-4 sm:p-5 lg:p-6">
+            {currentStep === 1 ? (
+              <div className="space-y-5">
+                <div className="border-b border-line pb-4">
+                  <h2 className="text-xl font-bold text-ink sm:text-2xl">What do you need help with?</h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-muted">
+                    Start with the job name, category, and exact area so workers instantly know what they are looking at.
+                  </p>
+                </div>
+
+                <div className="ui-field">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <label className="ui-label" htmlFor="title">Request Title</label>
+                    <span className="text-xs font-semibold text-ink-subtle">{formData.title.length} / 150</span>
+                  </div>
+                  <div className="ui-input-icon-wrap">
+                    <span className="material-icons text-brand-700">edit</span>
                     <input
-                        type="text"
-                        id="title"
-                        value={formData.title}
-                        onChange={(e) => handleChange('title', e.target.value)}
-                        placeholder="E.g., Fix leaking kitchen tap"
-                        className={`title-input ${errors.title ? 'error' : ''}`}
-                        maxLength={150}
+                      id="title"
+                      type="text"
+                      value={formData.title}
+                      onChange={(event) => handleChange('title', event.target.value)}
+                      placeholder="E.g., Fix leaking kitchen tap"
+                      maxLength={150}
                     />
+                  </div>
+                  {errors.title ? <p className="ui-error-text">{errors.title}</p> : null}
                 </div>
-                {errors.title && <span className="error-message">{errors.title}</span>}
-            </div>
 
-            <div className="form-section">
-                <label className="section-label">Service Category</label>
-                <div className="category-grid">
-                    {categories.map(cat => (
-                        <label key={cat.value} className="category-card">
-                            <input
-                                type="radio"
-                                name="category"
-                                value={cat.value}
-                                checked={formData.category === cat.value}
-                                onChange={(e) => handleChange('category', e.target.value)}
-                                className="category-radio"
-                            />
-                            <div className="category-card-content">
-                                <div className="category-icon">{cat.icon}</div>
-                                <span className="category-label">{cat.label}</span>
-                                {formData.category === cat.value && (
-                                    <div className="check-icon">✓</div>
-                                )}
-                            </div>
-                        </label>
-                    ))}
+                <div>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="ui-label">Service Category</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-subtle">Select one</p>
+                  </div>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {CATEGORIES.map((category) => {
+                      const active = formData.category === category.value;
+                      return (
+                        <button
+                          key={category.value}
+                          type="button"
+                          onClick={() => handleChange('category', category.value)}
+                          className={`min-h-[96px] rounded-card border px-4 py-3 text-left transition ${active
+                            ? 'border-brand-200 bg-brand-50 text-brand-900 shadow-soft'
+                            : 'border-line bg-white text-ink hover:border-brand-100 hover:bg-brand-50/40'}`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-xl ${active ? 'bg-brand-gradient text-white' : 'bg-brand-50 text-brand-800'}`}>
+                              {category.icon}
+                            </span>
+                            <span className="min-w-0">
+                              <span className="block text-base font-bold">{category.label}</span>
+                              <span className="mt-1 block text-sm leading-6 text-ink-muted">
+                                {categoryHints[category.value] || 'General service work'}
+                              </span>
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {errors.category ? <p className="mt-2 ui-error-text">{errors.category}</p> : null}
                 </div>
-                {errors.category && <span className="error-message">{errors.category}</span>}
-            </div>
 
-            <div className="form-section">
-                <label className="section-label" htmlFor="location">
-                    Where is the task located?
-                </label>
-                <div className="location-input-wrapper">
-                    <span className="input-icon">📍</span>
+                <div className="ui-field">
+                  <label className="ui-label" htmlFor="location">Where is the task located?</label>
+                  <div className="ui-input-icon-wrap">
+                    <span className="material-icons text-brand-700">location_on</span>
                     <input
-                        type="text"
-                        id="location"
-                        value={formData.locationArea}
-                        onChange={(e) => handleChange('locationArea', e.target.value)}
-                        placeholder="Enter area or city (e.g., Colombo 03)"
-                        className={`location-input ${errors.locationArea ? 'error' : ''}`}
+                      id="location"
+                      type="text"
+                      value={formData.locationArea}
+                      onChange={(event) => handleChange('locationArea', event.target.value)}
+                      placeholder="Enter area or city (e.g., Colombo 03)"
                     />
+                  </div>
+                  {errors.locationArea ? <p className="ui-error-text">{errors.locationArea}</p> : null}
                 </div>
-                {errors.locationArea && <span className="error-message">{errors.locationArea}</span>}
-            </div>
-        </div>
-    );
+              </div>
+            ) : null}
 
-    // Step 2: Details & Urgency
-    const renderStep2 = () => (
-        <div className="step-content">
-            <div className="step-header">
-                <h1>Tell us about your task</h1>
-                <p>Please provide specific details so taskers can give you an accurate offer.</p>
-            </div>
-
-            <div className="form-section">
-                <div className="label-row">
-                    <label className="section-label" htmlFor="description">
-                        Task Description
-                    </label>
-                    <span className="char-count">
-                        {formData.description.length} / 2000
-                    </span>
+            {currentStep === 2 ? (
+              <div className="space-y-5">
+                <div className="border-b border-line pb-4">
+                  <h2 className="text-xl font-bold text-ink sm:text-2xl">Tell workers what matters</h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-muted">
+                    Specific details help workers price the job correctly and reduce back-and-forth questions.
+                  </p>
                 </div>
-                <textarea
+
+                <div className="ui-field">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <label className="ui-label" htmlFor="description">Task Description</label>
+                    <span className="text-xs font-semibold text-ink-subtle">{formData.description.length} / 2000</span>
+                  </div>
+                  <textarea
                     id="description"
                     value={formData.description}
-                    onChange={(e) => handleChange('description', e.target.value)}
-                    placeholder="Example: I need a leaking tap fixed in the kitchen. It seems to be dripping from the handle. I have a replacement washer if needed, but might need new parts."
+                    onChange={(event) => handleChange('description', event.target.value)}
+                    placeholder="Example: I need a leaking tap fixed in the kitchen. It seems to be dripping from the handle..."
                     rows="6"
-                    className={`description-textarea ${errors.description ? 'error' : ''}`}
-                />
-                {errors.description && <span className="error-message">{errors.description}</span>}
-                
-                <div className="helper-tags">
-                    <span className="helper-tag">💡 Be specific about the issue</span>
-                    <span className="helper-tag">📏 Mention size if relevant</span>
-                    <span className="helper-tag">🔧 List tools/parts needed</span>
-                </div>
-            </div>
-
-            <div className="form-section">
-                <label className="section-label">How urgent is this task?</label>
-                <div className="urgency-grid">
-                    {urgencyOptions.map(option => (
-                        <label key={option.value} className="urgency-card">
-                            <input
-                                type="radio"
-                                name="urgency"
-                                value={option.value}
-                                checked={formData.urgency === option.value}
-                                onChange={(e) => handleChange('urgency', e.target.value)}
-                                className="urgency-radio"
-                            />
-                            <div className="urgency-card-content">
-                                <div className="urgency-icon">{option.icon}</div>
-                                <h3>{option.label}</h3>
-                                <p>{option.subtitle}</p>
-                                {formData.urgency === option.value && (
-                                    <div className="check-icon-urgency">✓</div>
-                                )}
-                            </div>
-                        </label>
+                    className="ui-textarea"
+                  />
+                  {errors.description ? <p className="ui-error-text">{errors.description}</p> : null}
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {[
+                      'Explain the issue clearly',
+                      'Mention size, area, or quantity',
+                      'Add useful details about timing or access',
+                    ].map((hint) => (
+                      <div key={hint} className="rounded-card border border-line bg-surface-muted px-4 py-3 text-sm font-medium text-ink-muted">
+                        {hint}
+                      </div>
                     ))}
+                  </div>
                 </div>
-            </div>
 
-            {/* New Budget Input */}
-            <div className="form-section">
-                <label className="section-label" htmlFor="budget">
-                    What is your budget for this task?
-                </label>
-                <div className="budget-input-wrapper">
-                    <span className="input-icon">රු</span> {/* Sri Lankan Rupee symbol */}
+                <div>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="ui-label">How urgent is this task?</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-subtle">Choose one</p>
+                  </div>
+                  <div className="mt-3 grid gap-3 md:grid-cols-2">
+                    {urgencyOptions.map((option) => {
+                      const active = formData.urgency === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => handleChange('urgency', option.value)}
+                          className={`min-h-[96px] rounded-card border px-4 py-3 text-left transition ${active
+                            ? option.tone === 'danger'
+                              ? 'border-red-200 bg-red-50 shadow-soft'
+                              : option.tone === 'warning'
+                                ? 'border-amber-200 bg-amber-50 shadow-soft'
+                                : 'border-brand-200 bg-brand-50 shadow-soft'
+                            : 'border-line bg-white hover:border-brand-100 hover:bg-brand-50/30'}`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-xl ${active
+                              ? option.tone === 'danger'
+                                ? 'bg-red-600 text-white'
+                                : option.tone === 'warning'
+                                  ? 'bg-amber-500 text-white'
+                                  : 'bg-brand-gradient text-white'
+                              : 'bg-brand-50 text-brand-800'}`}>
+                              {option.icon}
+                            </span>
+                            <span className="min-w-0">
+                              <span className="block text-base font-bold text-ink">{option.label}</span>
+                              <span className="mt-1 block text-sm leading-6 text-ink-muted">{option.subtitle}</span>
+                              <span className="mt-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-subtle">{option.hint}</span>
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="ui-field">
+                  <label className="ui-label" htmlFor="budget">What is your budget for this task?</label>
+                  <div className="ui-input-icon-wrap">
+                    <span className="text-sm font-semibold text-ink-subtle">රු</span>
                     <input
-                        type="number"
-                        id="budget"
-                        value={formData.budget}
-                        onChange={(e) => handleChange('budget', e.target.value)}
-                        placeholder="Enter your budget (e.g., 5000)"
-                        className={`budget-input ${errors.budget ? 'error' : ''}`}
-                        min="0"
+                      id="budget"
+                      type="number"
+                      value={formData.budget}
+                      onChange={(event) => handleChange('budget', event.target.value)}
+                      placeholder="Enter your budget (e.g., 5000)"
+                      min="0"
                     />
+                  </div>
                 </div>
-                {errors.budget && <span className="error-message">{errors.budget}</span>}
-            </div>
+              </div>
+            ) : null}
 
+            {currentStep === 3 ? (
+              <div className="space-y-5">
+                <div className="border-b border-line pb-4">
+                  <h2 className="text-xl font-bold text-ink sm:text-2xl">Review your request</h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-muted">
+                    Make sure the key details are easy to understand before you post this job.
+                  </p>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  {[
+                    { label: 'Title', value: formData.title, step: 1, tone: 'border-brand-100 bg-brand-50/75' },
+                    { label: 'Service Type', value: selectedCategory?.label, step: 1, tone: 'border-blue-100 bg-blue-50/75' },
+                    { label: 'Location', value: formData.locationArea, step: 1, tone: 'border-amber-100 bg-amber-50/75' },
+                    { label: 'Budget', value: formData.budget || formData.budget === 0 ? formatBudget(formData.budget) : 'Not set', step: 2, tone: 'border-green-100 bg-green-50/75' },
+                  ].map((item) => (
+                    <div key={item.label} className={`rounded-card border px-4 py-4 shadow-soft ${item.tone}`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="ui-stat-label">{item.label}</p>
+                          <p className="mt-2 text-lg font-bold text-ink">{item.value || 'Not provided yet'}</p>
+                        </div>
+                        <button type="button" className="text-sm font-semibold text-brand-800 hover:text-brand-900" onClick={() => setCurrentStep(item.step)}>
+                          Edit
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+                  <div className="rounded-card border border-line bg-surface-muted/75 px-4 py-4 shadow-soft">
+                    <p className="ui-stat-label">Urgency</p>
+                    <div className="mt-3">
+                      <StatusPill tone={selectedUrgency?.tone || 'info'}>{selectedUrgency?.label || 'Medium'}</StatusPill>
+                    </div>
+                    <button type="button" className="mt-4 text-sm font-semibold text-brand-800 hover:text-brand-900" onClick={() => setCurrentStep(2)}>
+                      Edit urgency
+                    </button>
+                  </div>
+
+                  <div className="rounded-card border border-line bg-surface-muted/75 px-4 py-4 shadow-soft">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="ui-stat-label">Description</p>
+                        <p className="mt-2 text-sm leading-6 text-ink-muted">{previewText(formData.description)}</p>
+                      </div>
+                      <button type="button" className="text-sm font-semibold text-brand-800 hover:text-brand-900" onClick={() => setCurrentStep(2)}>
+                        Edit
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-card border border-brand-100 bg-brand-50/85 px-4 py-4 shadow-soft">
+                  <h3 className="text-lg font-bold text-brand-900">Why this request will be easier to quote</h3>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    {[
+                      formData.title ? 'Clear title' : 'Title still needed',
+                      formData.locationArea ? 'Location included' : 'Location still needed',
+                      formData.description.length >= 20 ? 'Strong description' : 'Description needs more detail',
+                    ].map((item) => (
+                      <span key={item} className="ui-badge">{item}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="mt-6 flex flex-col gap-3 border-t border-line pt-4 sm:flex-row sm:items-center sm:justify-between">
+              {currentStep > 1 ? (
+                <button type="button" className="ui-button-ghost w-full sm:w-auto" onClick={() => setCurrentStep((step) => step - 1)}>
+                  Back
+                </button>
+              ) : <div />}
+
+              {currentStep < 3 ? (
+                <button
+                  type="button"
+                  className="ui-button-primary w-full sm:w-auto"
+                  onClick={() => {
+                    if (validateStep(currentStep)) {
+                      setCurrentStep((step) => step + 1);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                >
+                  Next Step
+                </button>
+              ) : (
+                <button type="button" className="ui-button-primary w-full sm:w-auto" onClick={handleSubmit} disabled={loading || success}>
+                  {loading ? (isEditMode ? 'Updating...' : 'Posting...') : success ? (isEditMode ? 'Updated!' : 'Posted!') : (isEditMode ? 'Update Request' : 'Post Request')}
+                </button>
+              )}
+            </div>
+          </section>
         </div>
-    );
-
-    // Step 3: Review & Submit
-    const renderStep3 = () => (
-        <div className="step-content review-step">
-            <div className="step-header">
-                <h1>Review your request</h1>
-                <p>Please verify the details below before posting your job.</p>
-            </div>
-
-            {error && (
-                <div className="alert alert-error">
-                    {error}
-                </div>
-            )}
-
-            {success && (
-                <div className="alert alert-success">
-                    ✓ Request {isEditMode ? 'updated' : 'created'} successfully! Redirecting...
-                </div>
-            )}
-
-            <div className="review-sections">
-                <div className="review-card">
-                    <div className="review-icon">✏️</div>
-                    <div className="review-content">
-                        <h3>Title</h3>
-                        <p>{formData.title}</p>
-                    </div>
-                    <button onClick={() => setCurrentStep(1)} className="edit-btn">Edit</button>
-                </div>
-
-                <div className="review-card">
-                    <div className="review-icon">🔧</div>
-                    <div className="review-content">
-                        <h3>Service Type</h3>
-                        <p>{categories.find(c => c.value === formData.category)?.label}</p>
-                    </div>
-                    <button onClick={() => setCurrentStep(1)} className="edit-btn">Edit</button>
-                </div>
-
-                <div className="review-card">
-                    <div className="review-icon">📍</div>
-                    <div className="review-content">
-                        <h3>Location</h3>
-                        <p>{formData.locationArea}</p>
-                    </div>
-                    <button onClick={() => setCurrentStep(1)} className="edit-btn">Edit</button>
-                </div>
-
-                <div className="review-card">
-                    <div className="review-icon">⏰</div>
-                    <div className="review-content">
-                        <h3>Urgency</h3>
-                        <p className="urgency-badge">
-                            <span className={`urgency-dot ${formData.urgency.toLowerCase()}`}></span>
-                            {urgencyOptions.find(u => u.value === formData.urgency)?.label}
-                        </p>
-                    </div>
-                    <button onClick={() => setCurrentStep(2)} className="edit-btn">Edit</button>
-                </div>
-
-                {/* Display Budget in Review */}
-                <div className="review-card">
-                    <div className="review-icon">💰</div>
-                    <div className="review-content">
-                        <h3>Budget</h3>
-                        <p>රු {formData.budget}</p>
-                    </div>
-                    <button onClick={() => setCurrentStep(2)} className="edit-btn">Edit</button>
-                </div>
-
-                <div className="review-card description-card">
-                    <div className="review-icon">📝</div>
-                    <div className="review-content">
-                        <h3>Description</h3>
-                        <p>{formData.description}</p>
-                    </div>
-                    <button onClick={() => setCurrentStep(2)} className="edit-btn">Edit</button>
-                </div>
-            </div>
-
-            <div className="trust-panel">
-                <h4>Why choose LankaFix?</h4>
-                <div className="trust-items">
-                    <div className="trust-item">
-                        <span className="trust-icon">✓</span>
-                        <span>Verified Pros</span>
-                    </div>
-                    <div className="trust-item">
-                        <span className="trust-icon">🛡️</span>
-                        <span>Insured Work</span>
-                    </div>
-                    <div className="trust-item">
-                        <span className="trust-icon">💬</span>
-                        <span>24/7 Support</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-
-    return (
-        <div className="page-wrapper">
-
-            <div className="create-request-wizard">
-                <div className="wizard-container">
-                    {/* Left Sidebar - Info Panel */}
-                    <div className="wizard-sidebar">
-                        <div className="sidebar-content">
-                            <h2>Let's get your task done.</h2>
-                            <p>
-                                Connecting you with trusted professionals across Sri Lanka. 
-                                Tell us what you need, and we'll match you with the best experts for the job.
-                            </p>
-                        </div>
-                        <div className="sidebar-footer">
-                            © 2026 LankaFix Lanka Inc.
-                        </div>
-                    </div>
-
-                    {/* Right Content - Form Area */}
-                    <div className="wizard-main">
-                        {/* Progress Stepper */}
-                        <div className="cr-header-container">
-                            <div className="cr-header">
-                                <h1>{isEditMode ? 'Edit Your Request' : 'Post a New Request'}</h1>
-                                <p>{isEditMode ? 'Update the details of your service request below.' : 'Tell us what you need, and we\'ll connect you with verified professionals.'}</p>
-                            </div>
-
-                            <div className="cr-steps">
-                                <div className={`cr-step ${currentStep >= 1 ? 'active' : ''}`}>1</div>
-                                <div className="cr-connector"></div>
-                                <div className={`cr-step ${currentStep >= 2 ? 'active' : ''}`}>2</div>
-                                <div className="cr-connector"></div>
-                                <div className={`cr-step ${currentStep >= 3 ? 'active' : ''}`}>3</div>
-                            </div>
-                        </div>
-
-                        {/* Step Content */}
-                        {currentStep === 1 && renderStep1()}
-                        {currentStep === 2 && renderStep2()}
-                        {currentStep === 3 && renderStep3()}
-
-                        {/* Navigation Buttons */}
-                        <div className="wizard-actions">
-                            {currentStep > 1 && (
-                                <button onClick={handleBack} className="btn-back">
-                                    ← Back
-                                </button>
-                            )}
-                            
-                            {currentStep < 3 ? (
-                                <button onClick={handleNext} className="btn-next">
-                                    Next Step →
-                                </button>
-                            ) : (
-                                <button 
-                                    onClick={handleSubmit} 
-                                    className="btn-submit"
-                                    disabled={loading || success}
-                                >
-                                    {loading ? (isEditMode ? 'Updating...' : 'Posting...') : success ? (isEditMode ? 'Updated!' : 'Posted!') : (isEditMode ? 'Update Request' : 'Post Request')}
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
+      </main>
+    </div>
+  );
 };
 
 export default CreateRequestPage;

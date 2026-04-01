@@ -8,13 +8,7 @@ const PageHeader = ({ title }) => {
     if (!title) return null;
 
     return (
-        <h1 style={{
-            fontSize: '1.5rem',
-            fontWeight: 700,
-            margin: '0 0 0.75rem 0',
-            color: '#1a1a2e',
-            lineHeight: 1.3,
-        }}>
+        <h1 className="mb-3 font-display text-3xl font-extrabold tracking-snugger text-white md:text-4xl">
             {title}
         </h1>
     );

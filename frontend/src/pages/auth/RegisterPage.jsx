@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getDefaultRouteForRole, register } from '../../services/authService';
-import './LoginPage.css';
+import AuthShell from '../../components/ui/AuthShell';
+import ErrorBanner from '../../components/common/ErrorBanner';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -18,28 +19,33 @@ const RegisterPage = () => {
     confirmPassword: '',
   });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const handleChange = (event) => {
+    const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setError('');
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError('');
+
     if (!formData.fullName || !formData.email || !formData.password) {
       setError('Full name, email and password are required');
       return;
     }
+
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters');
       return;
     }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
     }
+
     setLoading(true);
+
     try {
       const payload = {
         fullName: formData.fullName,
@@ -62,93 +68,69 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="login-page">
-      <div className="login-container">
-        <div className="login-header">
-          <h1>Create Account</h1>
-          <p>Join LankaFix as a seeker or worker</p>
-        </div>
-        {error && <div className="alert alert-error">{error}</div>}
-        <form onSubmit={handleSubmit} className="login-form">
-          <div className="form-group">
-            <label htmlFor="fullName">Full Name</label>
-            <input
-              id="fullName"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              required
-            />
+    <AuthShell
+      title="Create Account"
+      subtitle="Join LankaFix as a service seeker or skilled worker and start using the marketplace today."
+      className="max-w-2xl"
+      footer={(
+        <p className="text-sm text-ink-muted">
+          Already have an account?{' '}
+          <Link to="/login" state={location.state} className="font-semibold text-brand-800 hover:text-brand-900">
+            Login
+          </Link>
+        </p>
+      )}
+    >
+      <div className="space-y-5">
+        <ErrorBanner message={error} />
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid gap-5 md:grid-cols-2">
+            <div className="ui-field md:col-span-2">
+              <label htmlFor="fullName" className="ui-label">Full Name</label>
+              <input id="fullName" name="fullName" value={formData.fullName} onChange={handleChange} className="ui-input" required />
+            </div>
+
+            <div className="ui-field">
+              <label htmlFor="email" className="ui-label">Email</label>
+              <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} className="ui-input" required />
+            </div>
+
+            <div className="ui-field">
+              <label htmlFor="phone" className="ui-label">Phone Number</label>
+              <input id="phone" name="phone" value={formData.phone} onChange={handleChange} className="ui-input" />
+            </div>
+
+            <div className="ui-field">
+              <label htmlFor="district" className="ui-label">District</label>
+              <input id="district" name="district" value={formData.district} onChange={handleChange} className="ui-input" />
+            </div>
+
+            <div className="ui-field">
+              <label htmlFor="role" className="ui-label">I want to...</label>
+              <select id="role" name="role" value={formData.role} onChange={handleChange} className="ui-select">
+                <option value="SEEKER">Find workers (Seeker)</option>
+                <option value="WORKER">Find work (Worker)</option>
+              </select>
+            </div>
+
+            <div className="ui-field">
+              <label htmlFor="password" className="ui-label">Password</label>
+              <input type="password" id="password" name="password" value={formData.password} onChange={handleChange} className="ui-input" required />
+            </div>
+
+            <div className="ui-field">
+              <label htmlFor="confirmPassword" className="ui-label">Confirm Password</label>
+              <input type="password" id="confirmPassword" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} className="ui-input" required />
+            </div>
           </div>
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="phone">Phone Number</label>
-            <input
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="district">District</label>
-            <input
-              id="district"
-              name="district"
-              value={formData.district}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="role">I want to...</label>
-            <select id="role" name="role" value={formData.role} onChange={handleChange}>
-              <option value="SEEKER">Find workers (Seeker)</option>
-              <option value="WORKER">Find work (Worker)</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+
+          <button type="submit" className="ui-button-primary flex w-full" disabled={loading}>
             {loading ? 'Creating account...' : 'Register'}
           </button>
         </form>
-        <div className="login-footer">
-          <p>
-            Already have an account? <Link to="/login" state={location.state}>Login</Link>
-          </p>
-        </div>
       </div>
-    </div>
+    </AuthShell>
   );
 };
 

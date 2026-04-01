@@ -1,20 +1,46 @@
-/**
- * ErrorBanner.jsx — Error Message Banner Component
- *
- * This file should contain:
- * - A dismissible error/warning banner component
- * - Props:
- *     - message: string — error message to display
- *     - type: 'error' | 'warning' | 'info' | 'success' (default: 'error')
- *     - onClose: function — callback when user dismisses the banner
- * - Visual: colored banner with icon, message text, and close button
- *     - error: red background
- *     - warning: yellow/orange background
- *     - success: green background
- *     - info: blue background
- *
- * Usage:
- *   {error && <ErrorBanner message={error} onClose={() => setError(null)} />}
- *
- * Export: default ErrorBanner component
- */
+import React from 'react';
+import { cn } from '../../utils/cn';
+
+const toneMap = {
+  error: {
+    wrapper: 'ui-alert ui-alert-danger',
+    icon: 'error_outline',
+  },
+  warning: {
+    wrapper: 'ui-alert ui-alert-warning',
+    icon: 'warning',
+  },
+  info: {
+    wrapper: 'ui-alert ui-alert-info',
+    icon: 'info',
+  },
+  success: {
+    wrapper: 'ui-alert ui-alert-success',
+    icon: 'check_circle',
+  },
+};
+
+const ErrorBanner = ({ message, type = 'error', onClose, className }) => {
+  if (!message) return null;
+
+  const tone = toneMap[type] || toneMap.error;
+
+  return (
+    <div className={cn(tone.wrapper, className)} role="alert">
+      <span className="material-icons mt-0.5 text-lg">{tone.icon}</span>
+      <p className="min-w-0 flex-1 text-sm leading-6 opacity-90">{message}</p>
+      {onClose ? (
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-xl p-1 opacity-80 transition hover:bg-black/5 hover:opacity-100"
+          aria-label="Dismiss message"
+        >
+          <span className="material-icons text-lg">close</span>
+        </button>
+      ) : null}
+    </div>
+  );
+};
+
+export default ErrorBanner;
