@@ -3,12 +3,14 @@ package lk.wedalk.verification.controller;
 import jakarta.validation.Valid;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.Map;
 import lk.wedalk.common.ApiResponse;
 import lk.wedalk.common.exceptions.NotFoundException;
 import lk.wedalk.users.model.Role;
 import lk.wedalk.users.model.User;
 import lk.wedalk.users.repository.UserRepository;
+import lk.wedalk.verification.dto.VerificationSubmitRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
@@ -32,7 +34,7 @@ public class VerificationController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<Object>> submitVerification(
-            @Valid @RequestBody Map<String, Object> request) {
+            @Valid @RequestBody VerificationSubmitRequest request) {
         AuthenticatedUser currentUser = requireAuthenticatedUser();
 
         // Defense-in-depth role check in controller even though security config already
@@ -42,7 +44,7 @@ public class VerificationController {
                     HttpStatus.FORBIDDEN, "Only workers can submit verification");
         }
 
-        submitWithAuthenticatedWorkerId(currentUser.userId(), request);
+        submitWithAuthenticatedWorkerId(currentUser.userId(), toPayloadMap(request));
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -102,6 +104,13 @@ public class VerificationController {
                     "Failed to submit verification",
                     ex);
         }
+    }
+
+    private Map<String, Object> toPayloadMap(VerificationSubmitRequest request) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("documentFile", request.getDocumentFile());
+        payload.put("metadata", request.getMetadata());
+        return payload;
     }
 
     private record AuthenticatedUser(Long userId, Role role) {
