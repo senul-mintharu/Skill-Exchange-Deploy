@@ -23,4 +23,7 @@ public class WorkerProfileResponse {
     private List<String> serviceAreas;
     private double hourlyRate;
     private String availability;
+    private String verificationStatus;
+    private Double averageRating;
+    private int totalJobsCompleted;
 }

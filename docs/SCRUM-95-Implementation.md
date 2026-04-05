@@ -159,5 +159,14 @@ Note:
 
 1. Authenticate as `ADMIN`.
 2. Call `PUT /api/disputes/{id}/resolve` with `{ "resolution": "Resolved after review" }`.
-3. Confirm dispute status becomes `RESOLVED`.
 4. Verify client cannot set arbitrary dispute status values through payload.
+
+---
+
+## Post-Audit Fixes
+
+- Added missing GET endpoints (`GET /api/verification/my` for workers, `GET /api/verification/pending` for admins).
+- Restricted `GET /api/verification/pending` to ADMIN role in `SecurityConfig`.
+- Implemented `reviewVerification` logic in `VerificationService` to update `status` in both the `VerificationSubmission` record and the `User` entity to ensure correct downstream data.
+- Corrected the frontend API implementation in `verificationService.js` to point to the actual `PUT /api/verification/{id}/status?approve=boolean` admin endpoint instead of an errant POST route.
+- Worker dashboard accurately reads from `WorkerProfileResponse.verificationStatus` instead of undefined.

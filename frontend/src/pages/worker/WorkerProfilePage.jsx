@@ -8,12 +8,14 @@ import {
 } from '../../components/ui/WorkerProfilePanel';
 import { AlertPanel } from '../../components/ui/PortalPrimitives';
 import { getProfileById } from '../../services/profileService';
+import { getReviewsForWorker } from '../../services/reviewService';
 
 const WorkerProfilePage = () => {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -22,6 +24,14 @@ const WorkerProfilePage = () => {
       setLoading(true);
       const data = await getProfileById(id);
       setProfile(data);
+      if (data?.userId) {
+        try {
+          const reviewData = await getReviewsForWorker(data.userId);
+          setReviews(Array.isArray(reviewData) ? reviewData : []);
+        } catch {
+          setReviews([]);
+        }
+      }
     } catch (err) {
       setError('Failed to fetch profile. It might not exist.');
     } finally {
@@ -49,6 +59,7 @@ const WorkerProfilePage = () => {
   return (
     <WorkerProfilePanel
       profile={profile}
+      reviews={reviews}
       backLink={<WorkerProfileBackButton to="/worker/dashboard" label="Back to Dashboard" />}
       notice={location.state?.profileCreated ? (
         <AlertPanel

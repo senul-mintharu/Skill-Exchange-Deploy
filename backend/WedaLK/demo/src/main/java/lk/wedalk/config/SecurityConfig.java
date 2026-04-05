@@ -54,6 +54,8 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.PUT, "/api/disputes/*/resolve").hasRole("ADMIN")
             .requestMatchers(HttpMethod.POST, "/api/verification", "/api/verification/")
             .hasRole("WORKER")
+            .requestMatchers(HttpMethod.GET, "/api/verification/pending").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.GET, "/api/verification/my").hasRole("WORKER")
             .requestMatchers("/api/verification/**").authenticated()
             .requestMatchers(HttpMethod.POST, "/api/quotes").hasRole("WORKER")
             .requestMatchers(HttpMethod.POST, "/api/quotes/*/accept").hasRole("SEEKER")

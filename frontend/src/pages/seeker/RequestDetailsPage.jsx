@@ -19,6 +19,7 @@ const getJobStatusLabel = (status) => {
   if (status === 'ASSIGNED') return 'Assigned';
   if (status === 'IN_PROGRESS') return 'In Progress';
   if (status === 'COMPLETED') return 'Completed';
+  if (status === 'NOT_COMPLETED') return 'Not Completed';
   return String(status || '').replaceAll('_', ' ');
 };
 
@@ -142,11 +143,12 @@ const RequestDetailsPage = () => {
   const [reviewError, setReviewError] = useState('');
   const [existingReview, setExistingReview] = useState(null);
 
-  // Dispute form state
-  const [disputeReason, setDisputeReason] = useState('');
-  const [disputeSubmitting, setDisputeSubmitting] = useState(false);
-  const [disputeMessage, setDisputeMessage] = useState('');
-  const [disputeSubmitted, setDisputeSubmitted] = useState(false);
+  // Not Completed modal state (SCRUM-89)
+  const [showNotCompletedModal, setShowNotCompletedModal] = useState(false);
+  const [notCompletedReason, setNotCompletedReason] = useState('');
+  const [notCompletedReasonError, setNotCompletedReasonError] = useState('');
+  const [notCompletedSubmitting, setNotCompletedSubmitting] = useState(false);
+  const [notCompletedSuccess, setNotCompletedSuccess] = useState(false);
 
   const fetchRequestDetails = useCallback(async (showLoading = true) => {
     if (!requestId) return;
@@ -240,22 +242,26 @@ const RequestDetailsPage = () => {
     }
   };
 
-  const handleSubmitDispute = async (e) => {
+  // SCRUM-89: Handle "Mark as Not Completed" modal submission
+  // Calls POST /api/disputes which atomically sets status to NOT_COMPLETED + creates OPEN dispute
+  const handleNotCompletedSubmit = async (e) => {
     e.preventDefault();
-    if (!disputeReason.trim()) {
-      setDisputeMessage('Please provide a reason for the dispute.');
+    if (!notCompletedReason.trim()) {
+      setNotCompletedReasonError('Please provide a reason so our admins can assist you.');
       return;
     }
-    setDisputeSubmitting(true);
-    setDisputeMessage('');
+    setNotCompletedReasonError('');
+    setNotCompletedSubmitting(true);
     try {
-      await submitDispute({ requestId: Number(requestId), reason: disputeReason });
-      setDisputeMessage('Dispute submitted successfully. Our team will review it shortly.');
-      setDisputeSubmitted(true);
+      await submitDispute({ requestId: Number(requestId), reason: notCompletedReason });
+      setNotCompletedSuccess(true);
+      setShowNotCompletedModal(false);
+      setNotCompletedReason('');
+      await fetchRequestDetails(false);
     } catch (err) {
-      setDisputeMessage(err.response?.data?.message || 'Failed to submit dispute. Please try again.');
+      setNotCompletedReasonError(err.response?.data?.message || 'Failed to submit. Please try again.');
     } finally {
-      setDisputeSubmitting(false);
+      setNotCompletedSubmitting(false);
     }
   };
 
@@ -467,9 +473,34 @@ const RequestDetailsPage = () => {
                   <button className="ui-button-primary flex-1" onClick={() => handleUpdateJobOutcome('COMPLETED')} disabled={isUpdatingStatus} type="button">
                     Mark as Completed
                   </button>
-                  <button className="ui-button-secondary flex-1" onClick={() => handleUpdateJobOutcome('NOT_COMPLETED')} disabled={isUpdatingStatus} type="button">
+                  {/* SCRUM-89: Opens modal with reason textarea instead of direct status update */}
+                  <button className="ui-button-secondary flex-1" onClick={() => { setShowNotCompletedModal(true); setNotCompletedReasonError(''); setNotCompletedReason(''); }} type="button">
                     Mark as Not Completed
                   </button>
+                </div>
+              ) : null}
+
+              {/* SCRUM-89: AC6 — Admin review banner shown after NOT_COMPLETED */}
+              {request.status === 'NOT_COMPLETED' ? (
+                <div className="mt-4 rounded-card border border-red-200 bg-red-50/80 px-4 py-4">
+                  <div className="flex items-start gap-3">
+                    <span className="material-icons mt-0.5 text-red-500">admin_panel_settings</span>
+                    <div>
+                      <p className="font-semibold text-red-900">This job is currently under administrative review.</p>
+                      <p className="mt-1 text-sm leading-6 text-red-800/80">
+                        Our team has been notified and will review the dispute. No further changes can be made to this job.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              {/* SCRUM-89: AC3 — Success banner after modal submission */}
+              {notCompletedSuccess ? (
+                <div className="mt-4">
+                  <AlertPanel tone="success" icon="check_circle" title="Dispute Raised">
+                    <p>The job has been marked as not completed and a dispute has been raised. Platform administrators will review the case.</p>
+                  </AlertPanel>
                 </div>
               ) : null}
 
@@ -566,73 +597,6 @@ const RequestDetailsPage = () => {
               </SectionCard>
             ) : null}
 
-            {/* SCRUM-94: Dispute submission — only visible to the seeker who owns this request, after NOT_COMPLETED */}
-            {!isWorker && request.status === 'NOT_COMPLETED' ? (
-              <SectionCard className="border-red-100 bg-white shadow-card">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="ui-stat-label">Issue Resolution</p>
-                    <h2 className="mt-2 text-xl font-bold text-ink">Raise a Dispute</h2>
-                    <p className="mt-2 text-sm leading-6 text-ink-muted">
-                      If the job was not completed satisfactorily, submit a dispute for admin review.
-                    </p>
-                  </div>
-                  <span className="material-icons text-4xl text-red-400">report_problem</span>
-                </div>
-
-                {disputeSubmitted ? (
-                  <div className="mt-4">
-                    <AlertPanel tone="success" icon="check_circle" title="Dispute Submitted">
-                      <p>{disputeMessage}</p>
-                    </AlertPanel>
-                  </div>
-                ) : (
-                  <form onSubmit={handleSubmitDispute} className="mt-5 space-y-4">
-                    <div>
-                      <label className="ui-stat-label mb-2 block" htmlFor="dispute-reason">
-                        Reason <span className="text-red-500">*</span>
-                      </label>
-                      <textarea
-                        id="dispute-reason"
-                        rows={4}
-                        value={disputeReason}
-                        onChange={(e) => setDisputeReason(e.target.value)}
-                        placeholder="Explain why the job was not completed as expected..."
-                        required
-                        className="w-full rounded-card border border-line bg-surface-muted/70 px-4 py-3 text-sm text-ink placeholder-ink-muted focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
-                      />
-                    </div>
-
-                    {disputeMessage ? (
-                      <AlertPanel
-                        tone={disputeMessage.toLowerCase().includes('successfully') ? 'success' : 'danger'}
-                        icon={disputeMessage.toLowerCase().includes('successfully') ? 'check_circle' : 'error_outline'}
-                      >
-                        <p>{disputeMessage}</p>
-                      </AlertPanel>
-                    ) : null}
-
-                    <button
-                      type="submit"
-                      disabled={disputeSubmitting}
-                      className="ui-button-primary w-full sm:w-auto"
-                    >
-                      {disputeSubmitting ? (
-                        <>
-                          <span className="material-icons animate-spin text-base">refresh</span>
-                          Submitting...
-                        </>
-                      ) : (
-                        <>
-                          <span className="material-icons text-base">report</span>
-                          Submit Dispute
-                        </>
-                      )}
-                    </button>
-                  </form>
-                )}
-              </SectionCard>
-            ) : null}
 
             {!isWorker ? (
               <SectionCard className="border-line-strong bg-white shadow-card">
@@ -758,6 +722,102 @@ const RequestDetailsPage = () => {
           </aside>
         </div>
       </main>
+
+      {/* SCRUM-89: "Mark as Not Completed" confirmation modal with reason textarea */}
+      {showNotCompletedModal ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="not-completed-modal-title"
+        >
+          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+            {/* Modal header */}
+            <div className="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-600">
+                  <span className="material-icons">report_problem</span>
+                </span>
+                <div>
+                  <h2 id="not-completed-modal-title" className="text-lg font-bold text-ink">
+                    Mark as Not Completed
+                  </h2>
+                  <p className="mt-0.5 text-sm text-ink-muted">This action will flag the job for admin review.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowNotCompletedModal(false)}
+                className="rounded-lg p-1 text-ink-muted transition hover:bg-surface-muted hover:text-ink"
+                aria-label="Close modal"
+              >
+                <span className="material-icons">close</span>
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <form onSubmit={handleNotCompletedSubmit} className="px-6 py-5 space-y-4">
+              <div className="rounded-card border border-amber-100 bg-amber-50/80 px-4 py-3">
+                <p className="text-sm leading-6 text-amber-900">
+                  <strong>Please note:</strong> Marking this job as not completed will automatically raise a dispute and notify our admin team. This action cannot be undone.
+                </p>
+              </div>
+
+              {/* AC1/AC2: Reason textarea — required */}
+              <div>
+                <label className="ui-stat-label mb-2 block" htmlFor="not-completed-reason">
+                  Reason for Incomplete Job <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  id="not-completed-reason"
+                  rows={4}
+                  value={notCompletedReason}
+                  onChange={(e) => { setNotCompletedReason(e.target.value); if (notCompletedReasonError) setNotCompletedReasonError(''); }}
+                  placeholder="Explain what went wrong or why the job was not completed as expected..."
+                  className={`w-full rounded-card border bg-surface-muted/70 px-4 py-3 text-sm text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand-200 ${notCompletedReasonError ? 'border-red-400 focus:border-red-400' : 'border-line focus:border-brand-400'}`}
+                  autoFocus
+                />
+                {/* AC2: Inline validation error */}
+                {notCompletedReasonError ? (
+                  <p className="mt-2 flex items-center gap-1.5 text-sm text-red-600">
+                    <span className="material-icons text-base">error_outline</span>
+                    {notCompletedReasonError}
+                  </p>
+                ) : null}
+              </div>
+
+              {/* Modal actions */}
+              <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowNotCompletedModal(false)}
+                  disabled={notCompletedSubmitting}
+                  className="ui-button-secondary w-full sm:w-auto"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={notCompletedSubmitting}
+                  className="w-full rounded-card bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60 sm:w-auto"
+                >
+                  {notCompletedSubmitting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="material-icons animate-spin text-base">refresh</span>
+                      Submitting...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="material-icons text-base">report</span>
+                      Confirm & Raise Dispute
+                    </span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

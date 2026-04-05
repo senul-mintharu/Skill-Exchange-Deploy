@@ -188,5 +188,12 @@ Typical messages:
 
 1. Call `POST /api/verification` with valid `WORKER` token but missing `documentFile` or `metadata`.
 2. Verify response status is **400**.
-3. Verify response message clearly identifies validation failure.
 4. Verify no persistence path is executed for invalid request.
+
+---
+
+## Post-Audit Fixes
+
+- Added defensive audit logging (`log.warn`) in `VerificationController` to capture and record unauthorized verification submission attempts.
+- Augmented the `VerificationController`'s internal identity resolution method to correctly cascade verification status assignments upon successful profile update.
+- Updated `WorkerProfileResponse` to include the canonical `verificationStatus` directly from the base `User` entity to maintain single source of truth.

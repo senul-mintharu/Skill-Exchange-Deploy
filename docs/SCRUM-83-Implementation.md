@@ -197,3 +197,11 @@ Frontend page: frontend/src/pages/worker/VerificationPage.jsx
 2. Attempt to submit a valid file.
 3. Confirm ErrorBanner displays the API error message.
 4. Confirm no false status transition to PENDING occurs.
+
+---
+
+## Post-Audit Fixes
+
+- Replaced calling profile API with `getMyVerification()` to act as source of truth for the verification status on the frontend.
+- Added locked state for `APPROVED` workers so already verified workers cannot see the form or submit it again.
+- Context-aware button labels ("Pending Review", "Already Verified").

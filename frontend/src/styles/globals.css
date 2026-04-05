@@ -343,6 +343,28 @@
   }
 }
 
+/* ── Material Icons fix ─────────────────────────────────────────────────────
+   Tailwind's preflight resets font-family on all elements, which breaks the
+   Material Icons ligature rendering. These rules force the correct font
+   settings so the icons always display as glyphs, never as raw text.
+   ──────────────────────────────────────────────────────────────────────── */
+.material-icons {
+  font-family: 'Material Icons' !important;
+  font-weight: normal !important;
+  font-style: normal !important;
+  font-size: inherit;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
 @media (max-width: 768px) {
   :root {
     --page-shell-y: 1.5rem;
