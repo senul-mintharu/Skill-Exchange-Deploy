@@ -1,17 +1,31 @@
-/**
- * verificationService.js — Verification API Service
- *
- * This file should contain:
- * - Import apiClient from './apiClient'
- * - Functions:
- *     - submitVerification(verificationData) → POST /verification/submit
- *     - getMyVerification() → GET /verification/my
- *     - getPendingSubmissions() → GET /verification/pending (admin)
- *     - reviewSubmission(decisionData) → POST /verification/review (admin)
- *
- * Purpose:
- *   Centralizes all verification API calls.
- *   Used by worker verification flow and admin review page.
- *
- * Export: { submitVerification, getMyVerification, getPendingSubmissions, reviewSubmission }
- */
+import apiClient from './apiClient';
+
+const unwrap = (response) => response?.data?.data ?? response?.data;
+
+export const submitVerification = async (documentFile) => {
+	const formData = new FormData();
+	formData.append('document', documentFile);
+
+	const response = await apiClient.post('/verification', formData, {
+		headers: {
+			'Content-Type': 'multipart/form-data',
+		},
+	});
+
+	return unwrap(response);
+};
+
+export const getMyVerification = async () => {
+	const response = await apiClient.get('/verification/my');
+	return unwrap(response);
+};
+
+export const getPendingSubmissions = async () => {
+	const response = await apiClient.get('/verification/pending');
+	return unwrap(response);
+};
+
+export const reviewSubmission = async (decisionData) => {
+	const response = await apiClient.post('/verification/review', decisionData);
+	return unwrap(response);
+};

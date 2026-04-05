@@ -1,18 +1,14 @@
 package lk.wedalk.verification.controller;
 
-import jakarta.validation.Valid;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
 import lk.wedalk.common.ApiResponse;
+import lk.wedalk.common.exceptions.BadRequestException;
 import lk.wedalk.common.exceptions.NotFoundException;
 import lk.wedalk.users.model.Role;
 import lk.wedalk.users.model.User;
 import lk.wedalk.users.repository.UserRepository;
-import lk.wedalk.verification.dto.VerificationSubmitRequest;
+import lk.wedalk.verification.dto.VerificationSubmitResponse;
+import lk.wedalk.verification.service.VerificationService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -20,11 +16,11 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
@@ -32,12 +28,12 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class VerificationController {
 
-    private final ApplicationContext applicationContext;
     private final UserRepository userRepository;
+    private final VerificationService verificationService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<Object>> submitVerification(
-            @Valid @RequestBody VerificationSubmitRequest request) {
+    public ResponseEntity<ApiResponse<VerificationSubmitResponse>> submitVerification(
+            @RequestParam("document") MultipartFile document) {
         AuthenticatedUser currentUser = requireAuthenticatedUser();
 
         // Defense-in-depth role check in controller even though security config already
@@ -47,11 +43,15 @@ public class VerificationController {
                     HttpStatus.FORBIDDEN, "Only workers can submit verification");
         }
 
-        submitWithAuthenticatedWorkerId(currentUser.userId(), toPayloadMap(request));
+        if (document == null || document.isEmpty()) {
+            throw new BadRequestException("Document file is required");
+        }
+
+        VerificationSubmitResponse response = verificationService.submitVerification(currentUser.userId(), document);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(ApiResponse.success(null, "Verification submitted successfully"));
+                .body(ApiResponse.success(response, "Verification submitted successfully"));
     }
 
     @PutMapping("/{id}/status")
@@ -91,97 +91,6 @@ public class VerificationController {
                 .orElse(user.getRole());
 
         return new AuthenticatedUser(user.getId(), role);
-    }
-
-    private void submitWithAuthenticatedWorkerId(Long workerId, Map<String, Object> request) {
-        Object verificationService;
-        try {
-            verificationService = applicationContext.getBean("verificationService");
-        } catch (Exception ex) {
-            throw new ResponseStatusException(
-                    HttpStatus.SERVICE_UNAVAILABLE,
-                    "Verification service is unavailable");
-        }
-
-        Method submitMethod = null;
-        for (Method method : verificationService.getClass().getMethods()) {
-            if ("submitVerification".equals(method.getName()) && method.getParameterCount() == 2) {
-                submitMethod = method;
-                break;
-            }
-        }
-
-        if (submitMethod == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "submitVerification(workerId, request) method not found");
-        }
-
-        try {
-            submitMethod.invoke(verificationService, workerId, request);
-        } catch (IllegalAccessException | InvocationTargetException ex) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to submit verification",
-                    ex);
-        }
-    }
-
-    private Map<String, Object> toPayloadMap(VerificationSubmitRequest request) {
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("documentFile", request.getDocumentFile());
-        payload.put("metadata", request.getMetadata());
-        return payload;
-    }
-
-    private void reviewWithAuthenticatedAdminId(
-            Long submissionId,
-            Long adminId,
-            String status,
-            String adminNotes) {
-        Object verificationService;
-        try {
-            verificationService = applicationContext.getBean("verificationService");
-        } catch (Exception ex) {
-            throw new ResponseStatusException(
-                    HttpStatus.SERVICE_UNAVAILABLE,
-                    "Verification service is unavailable");
-        }
-
-        Method reviewMethod = null;
-        for (Method method : verificationService.getClass().getMethods()) {
-            if ("reviewSubmission".equals(method.getName()) && method.getParameterCount() == 3) {
-                reviewMethod = method;
-                break;
-            }
-        }
-
-        if (reviewMethod == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "reviewSubmission(submissionId, adminId, request) method not found");
-        }
-
-        Map<String, Object> trustedPayload = new HashMap<>();
-        trustedPayload.put("submissionId", submissionId);
-        trustedPayload.put("decision", status);
-        trustedPayload.put("adminNotes", adminNotes);
-
-        try {
-            reviewMethod.invoke(verificationService, submissionId, adminId, trustedPayload);
-        } catch (IllegalAccessException | InvocationTargetException ex) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to review verification submission",
-                    ex);
-        }
-    }
-
-    private String asString(Object value) {
-        if (value == null) {
-            return null;
-        }
-        return String.valueOf(value);
     }
 
     private record AuthenticatedUser(Long userId, Role role) {

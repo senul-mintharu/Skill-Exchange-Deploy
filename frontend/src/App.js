@@ -23,6 +23,7 @@ import WorkerRequestDetailsPage from './pages/worker/WorkerRequestDetailsPage';
 import SubmitQuotePage from './pages/worker/SubmitQuotePage';
 import MyQuotationsPage from './pages/worker/MyQuotationsPage';
 import MyJobsPage from './pages/worker/MyJobsPage';
+import VerificationPage from './pages/worker/VerificationPage';
 
 
 import EditWorkerProfilePage from './pages/worker/EditWorkerProfilePage';
@@ -64,6 +65,7 @@ function App() {
             <Route path="/create-profile" element={<EditWorkerProfilePage />} />
             <Route path="/edit-profile/:id" element={<EditWorkerProfilePage />} />
             <Route path="/profile/:id" element={<WorkerProfilePage />} />
+            <Route path="/worker/verification" element={<VerificationPage />} />
 
             <Route element={<RequireWorkerProfile />}>
               <Route path="/requests/:requestId/quote" element={<SubmitQuotePage />} />
