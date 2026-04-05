@@ -2,6 +2,10 @@ import apiClient from './apiClient';
 
 const unwrap = (response) => response?.data?.data ?? response?.data;
 
+/**
+ * Submit a verification document (WORKER only).
+ * Sends a multipart/form-data POST to /api/verification.
+ */
 export const submitVerification = async (documentFile) => {
 	const formData = new FormData();
 	formData.append('document', documentFile);
@@ -15,17 +19,35 @@ export const submitVerification = async (documentFile) => {
 	return unwrap(response);
 };
 
+/**
+ * Get the current worker's own verification status.
+ * Returns a VerificationStatusResponse (or status: 'NONE' if never submitted).
+ */
 export const getMyVerification = async () => {
 	const response = await apiClient.get('/verification/my');
 	return unwrap(response);
 };
 
+/**
+ * Get all PENDING verification submissions (ADMIN only).
+ */
 export const getPendingSubmissions = async () => {
 	const response = await apiClient.get('/verification/pending');
 	return unwrap(response);
 };
 
-export const reviewSubmission = async (decisionData) => {
-	const response = await apiClient.post('/verification/review', decisionData);
+/**
+ * Approve or reject a verification submission (ADMIN only).
+ *
+ * @param {number} submissionId  - The ID of the VerificationSubmission to review
+ * @param {boolean} approve      - true = APPROVED, false = REJECTED
+ * @param {string|null} adminNotes - Optional notes explaining the decision
+ */
+export const reviewSubmission = async (submissionId, approve, adminNotes = null) => {
+	const response = await apiClient.put(
+		`/verification/${submissionId}/status`,
+		{ adminNotes },
+		{ params: { approve } }
+	);
 	return unwrap(response);
 };

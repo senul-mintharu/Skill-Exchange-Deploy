@@ -2,8 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import ErrorBanner from '../../components/common/ErrorBanner';
 import { PageIntro, SectionCard, StatusPill } from '../../components/ui/PortalPrimitives';
 import { getCurrentUser } from '../../services/authService';
-import { getProfileByUserId } from '../../services/profileService';
-import { submitVerification } from '../../services/verificationService';
+import { getMyVerification, submitVerification } from '../../services/verificationService';
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'pdf']);
@@ -38,7 +37,8 @@ const VerificationPage = () => {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  const isPending = verificationStatus === 'PENDING';
+  // Lock the form for both PENDING (awaiting review) and APPROVED (already verified)
+  const isLocked = verificationStatus === 'PENDING' || verificationStatus === 'APPROVED';
 
   useEffect(() => {
     let ignore = false;
@@ -54,13 +54,20 @@ const VerificationPage = () => {
       if (!currentUser?.id) return;
 
       try {
-        const profile = await getProfileByUserId(currentUser.id);
-        const status = String(profile?.verificationStatus || profile?.verification?.status || 'NONE').toUpperCase();
+        // Use the dedicated verification endpoint as the canonical source of truth.
+        const data = await getMyVerification();
+        const status = String(data?.verificationStatus || 'NONE').toUpperCase();
+        const docName = data?.documentName || '';
 
         if (!ignore) {
           setVerificationStatus(status);
+          if (docName) {
+            setUploadedFileName(docName);
+            localStorage.setItem(getStoredFileKey(currentUser?.id), docName);
+          }
         }
       } catch (err) {
+        // 404 means no submission yet — treat as NONE, not an error.
         if (err?.response?.status === 404) {
           return;
         }
@@ -132,7 +139,7 @@ const VerificationPage = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (isPending || submitting) {
+    if (isLocked || submitting) {
       return;
     }
 
@@ -174,7 +181,7 @@ const VerificationPage = () => {
         <SectionCard className="space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-xl font-bold text-ink">Verification Submission</h2>
-            <StatusPill tone={getStatusTone(verificationStatus)} icon={isPending ? 'hourglass_top' : 'verified_user'}>
+            <StatusPill tone={getStatusTone(verificationStatus)} icon={verificationStatus === 'PENDING' ? 'hourglass_top' : 'verified_user'}>
               {getStatusLabel(verificationStatus)}
             </StatusPill>
           </div>
@@ -196,7 +203,7 @@ const VerificationPage = () => {
                 type="file"
                 accept=".jpg,.png,.pdf"
                 onChange={handleFileChange}
-                disabled={isPending || submitting}
+                disabled={isLocked || submitting}
                 className="ui-input"
               />
               <p className="ui-helper">
@@ -210,18 +217,24 @@ const VerificationPage = () => {
               </p>
             ) : null}
 
-            {isPending ? (
+            {isLocked && uploadedFileName ? (
               <p className="text-sm text-ink-muted">
-                Uploaded file: <span className="font-semibold text-ink">{uploadedFileName || 'Document uploaded'}</span>
+                Uploaded file: <span className="font-semibold text-ink">{uploadedFileName}</span>
               </p>
             ) : null}
 
             <button
               type="submit"
               className="ui-button-primary"
-              disabled={isPending || submitting || !selectedFile}
+              disabled={isLocked || submitting || !selectedFile}
             >
-              {submitting ? 'Uploading...' : isPending ? 'Already Pending' : 'Submit Verification'}
+              {submitting
+                ? 'Uploading...'
+                : verificationStatus === 'APPROVED'
+                ? 'Already Verified'
+                : verificationStatus === 'PENDING'
+                ? 'Pending Review'
+                : 'Submit Verification'}
             </button>
           </form>
         </SectionCard>

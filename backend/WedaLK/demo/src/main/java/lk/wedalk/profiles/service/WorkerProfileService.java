@@ -8,6 +8,7 @@ import lk.wedalk.profiles.repository.WorkerProfileRepository;
 import lk.wedalk.common.exceptions.BadRequestException;
 import lk.wedalk.common.exceptions.NotFoundException;
 import lk.wedalk.common.exceptions.UnauthorizedException;
+import lk.wedalk.reviews.repository.ReviewRepository;
 import lk.wedalk.users.model.Role;
 import lk.wedalk.users.model.User;
 import lk.wedalk.users.repository.UserRepository;
@@ -24,6 +25,7 @@ public class WorkerProfileService {
 
     private final WorkerProfileRepository workerProfileRepository;
     private final UserRepository userRepository;
+    private final ReviewRepository reviewRepository;
 
     @Transactional
     public WorkerProfileResponse createProfile(Long userId, WorkerProfileCreateRequest request) {
@@ -125,9 +127,19 @@ public class WorkerProfileService {
     }
 
     private WorkerProfileResponse mapToResponse(WorkerProfile profile) {
+        Long userId = profile.getUser().getId();
+
+        String verificationStatus = profile.getUser().getVerificationStatus() != null
+                ? profile.getUser().getVerificationStatus().name()
+                : "NONE";
+
+        // Compute real rating and job count from the reviews table
+        Double averageRating = reviewRepository.findAverageRatingByWorkerId(userId);
+        int totalJobsCompleted = reviewRepository.findByWorkerId(userId).size();
+
         return new WorkerProfileResponse(
                 profile.getId(),
-                profile.getUser().getId(), // returning userId
+                userId,
                 profile.getUser().getFullName(),
                 profile.getUser().getPhoneNumber(),
                 profile.getBio(),
@@ -136,6 +148,9 @@ public class WorkerProfileService {
                 profile.getDistrict(),
                 profile.getServiceAreas(),
                 profile.getHourlyRate(),
-                profile.getAvailability());
+                profile.getAvailability(),
+                verificationStatus,
+                averageRating,
+                totalJobsCompleted);
     }
 }

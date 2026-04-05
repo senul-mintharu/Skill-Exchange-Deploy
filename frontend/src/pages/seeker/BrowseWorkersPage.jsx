@@ -52,14 +52,14 @@ const ratingForWorker = (worker) => {
   if (typeof worker.averageRating === 'number' && worker.averageRating > 0) {
     return worker.averageRating.toFixed(1);
   }
-  return '4.8';
+  return null;
 };
 
 const jobsCompletedForWorker = (worker) => {
   if (typeof worker.totalJobsCompleted === 'number') {
     return worker.totalJobsCompleted;
   }
-  return 12;
+  return null;
 };
 
 const bioExcerpt = (bio, maxLength = 110) => {
@@ -266,9 +266,11 @@ const BrowseWorkersPage = () => {
                         ) : (
                           <span>{worker.fullName ? worker.fullName.charAt(0).toUpperCase() : 'W'}</span>
                         )}
-                        <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-white shadow-soft">
-                          <span className="material-icons text-sm text-brand-700">verified</span>
-                        </span>
+                        {worker.verificationStatus === 'APPROVED' ? (
+                          <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-white shadow-soft" title="Verified Worker">
+                            <span className="material-icons text-sm text-brand-700">verified</span>
+                          </span>
+                        ) : null}
                       </div>
 
                       <div className="min-w-0 flex-1">
@@ -288,9 +290,11 @@ const BrowseWorkersPage = () => {
                           <span className="rounded-chip border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-900">
                             {worker.district || 'Not specified'}
                           </span>
-                          <span className="rounded-chip border border-amber-100 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900">
-                            {ratingForWorker(worker)} rating
-                          </span>
+                          {ratingForWorker(worker) !== null ? (
+                            <span className="rounded-chip border border-amber-100 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900">
+                              {ratingForWorker(worker)} ★
+                            </span>
+                          ) : null}
                         </div>
                         <p className="mt-2.5 text-sm leading-6 text-ink-muted">
                           {bioExcerpt(worker.bio)}
@@ -313,7 +317,9 @@ const BrowseWorkersPage = () => {
                         </div>
                         <div>
                           <p className="ui-stat-label">Completed Jobs</p>
-                          <p className="mt-1.5 text-base font-extrabold text-ink sm:text-lg">{jobsCompletedForWorker(worker)}</p>
+                          <p className="mt-1.5 text-base font-extrabold text-ink sm:text-lg">
+                            {jobsCompletedForWorker(worker) !== null ? jobsCompletedForWorker(worker) : '—'}
+                          </p>
                         </div>
                       </div>
                       <Link to={`/workers/${worker.id}`} className="ui-button-primary w-full justify-center sm:w-auto sm:px-4">
