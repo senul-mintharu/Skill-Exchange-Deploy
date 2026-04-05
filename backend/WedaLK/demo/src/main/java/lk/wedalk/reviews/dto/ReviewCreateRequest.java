@@ -10,7 +10,8 @@ import lombok.NoArgsConstructor;
 /**
  * ReviewCreateRequest.java — Create Review DTO
  *
- * <p>Used by seekers to leave a review for the worker after job completion.
+ * <p>
+ * Used by seekers to leave a review for the worker after job completion.
  */
 @Data
 @NoArgsConstructor
@@ -20,9 +21,10 @@ public class ReviewCreateRequest {
     @NotNull(message = "Request ID is required")
     private Long requestId;
 
+    @NotNull(message = "Please select a star rating to submit your review")
     @Min(value = 1, message = "Rating must be at least 1")
     @Max(value = 5, message = "Rating must be at most 5")
-    private int rating;
+    private Integer rating;
 
     private String comment;
 }

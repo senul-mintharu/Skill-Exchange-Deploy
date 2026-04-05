@@ -11,21 +11,23 @@ import org.springframework.stereotype.Repository;
 /**
  * ReviewRepository.java — Review Data Access Layer
  *
- * <p>Data access for reviews — supports lookup by worker, seeker, and rating calculations.
+ * <p>
+ * Data access for reviews — supports lookup by worker, seeker, and rating
+ * calculations.
  */
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
-    List<Review> findByRevieweeId(Long revieweeId);
+    List<Review> findByWorkerId(Long workerId);
 
-    List<Review> findByReviewerId(Long reviewerId);
+    List<Review> findBySeekerId(Long seekerId);
 
-    List<Review> findByReviewerIdOrderByCreatedAtDesc(Long reviewerId);
+    List<Review> findBySeekerIdOrderByCreatedAtDesc(Long seekerId);
 
-    Optional<Review> findByRequestIdAndReviewerId(Long requestId, Long reviewerId);
+    Optional<Review> findByRequestIdAndSeekerId(Long requestId, Long seekerId);
 
-    boolean existsByRequestIdAndReviewerId(Long requestId, Long reviewerId);
+    boolean existsByRequestIdAndSeekerId(Long requestId, Long seekerId);
 
-    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.reviewee.id = :revieweeId")
-    Double findAverageRatingByRevieweeId(@Param("revieweeId") Long revieweeId);
+    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.worker.id = :workerId")
+    Double findAverageRatingByWorkerId(@Param("workerId") Long workerId);
 }

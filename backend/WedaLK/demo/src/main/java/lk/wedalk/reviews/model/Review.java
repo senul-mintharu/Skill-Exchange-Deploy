@@ -12,16 +12,18 @@ import lombok.NoArgsConstructor;
 /**
  * Review.java — Review JPA Entity
  *
- * <p>Represents a review left by a seeker for a worker after job completion.
+ * <p>
+ * Represents a review left by a seeker for a worker after job completion.
  *
- * <p>Constraints:
+ * <p>
+ * Constraints:
  * - Review can only be created for COMPLETED requests
- * - One review per request per reviewer
+ * - One review per request per seeker
  * - Unique constraint on (request_id, reviewer_id)
  */
 @Entity
 @Table(name = "reviews", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"request_id", "reviewer_id"})
+        @UniqueConstraint(columnNames = { "request_id", "reviewer_id" })
 })
 @Data
 @Builder
@@ -39,11 +41,11 @@ public class Review {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reviewer_id", nullable = false)
-    private User reviewer;
+    private User seeker;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reviewee_id", nullable = false)
-    private User reviewee;
+    private User worker;
 
     @Column(nullable = false)
     private int rating;

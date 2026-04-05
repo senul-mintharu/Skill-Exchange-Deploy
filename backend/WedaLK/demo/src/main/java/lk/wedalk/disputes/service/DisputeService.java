@@ -20,13 +20,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 /**
  * DisputeService.java — Dispute Business Logic
  *
- * <p>Manages dispute lifecycle — creation when "Not Completed", admin resolution.
+ * <p>
+ * Manages dispute lifecycle — creation when "Not Completed", admin resolution.
  *
- * <p>SCRUM-94: Enforces strict ownership validation —
- * only the seeker who originally posted the service request can submit a dispute.
+ * <p>
+ * SCRUM-94: Enforces strict ownership validation —
+ * only the seeker who originally posted the service request can submit a
+ * dispute.
  * Workers are blocked from submitting disputes entirely.
  */
 @Service
@@ -40,13 +45,16 @@ public class DisputeService {
     /**
      * Creates a dispute for a service request marked as "Not Completed".
      *
-     * <p>SCRUM-94 Ownership Validation:
+     * <p>
+     * SCRUM-94 Ownership Validation:
      * <ul>
-     *   <li>AC3: Only users with role SEEKER can submit disputes</li>
-     *   <li>AC1/AC2: The authenticated seeker must be the original author of the ServiceRequest</li>
+     * <li>AC3: Only users with role SEEKER can submit disputes</li>
+     * <li>AC1/AC2: The authenticated seeker must be the original author of the
+     * ServiceRequest</li>
      * </ul>
      *
-     * @param seekerId the ID of the authenticated user attempting to submit the dispute
+     * @param seekerId the ID of the authenticated user attempting to submit the
+     *                 dispute
      * @param request  the dispute creation payload
      * @return DisputeResponse with the created dispute details
      */
@@ -65,12 +73,15 @@ public class DisputeService {
         ServiceRequest serviceRequest = serviceRequestRepository.findById(request.getRequestId())
                 .orElseThrow(() -> new NotFoundException("Service request not found"));
 
-        // AC1/AC2 — Ownership Validation: Verify the seeker is the original author of this request
+        // AC1/AC2 — Ownership Validation: Verify the seeker is the original author of
+        // this request
         if (!serviceRequest.getSeeker().getId().equals(seekerId)) {
-            throw new UnauthorizedException("You do not have permission to dispute this job. Only the seeker who posted this request can submit a dispute.");
+            throw new UnauthorizedException(
+                    "You do not have permission to dispute this job. Only the seeker who posted this request can submit a dispute.");
         }
 
-        // Validate request status — disputes can only be created for ASSIGNED or NOT_COMPLETED requests
+        // Validate request status — disputes can only be created for ASSIGNED or
+        // NOT_COMPLETED requests
         if (serviceRequest.getStatus() != RequestStatus.ASSIGNED
                 && serviceRequest.getStatus() != RequestStatus.NOT_COMPLETED) {
             throw new BadRequestException(
@@ -125,6 +136,32 @@ public class DisputeService {
     public List<DisputeResponse> getDisputesBySeeker(Long seekerId) {
         List<Dispute> disputes = disputeRepository.findBySeekerId(seekerId);
         return disputes.stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public DisputeResponse resolveDispute(Long disputeId, Long adminId, String resolution) {
+        User admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new NotFoundException("Authenticated user not found"));
+
+        if (admin.getRole() != Role.ADMIN) {
+            throw new UnauthorizedException("Only admins can resolve disputes");
+        }
+
+        Dispute dispute = disputeRepository.findById(disputeId)
+                .orElseThrow(() -> new NotFoundException("Dispute not found"));
+
+        if (dispute.getStatus() == DisputeStatus.RESOLVED) {
+            throw new BadRequestException("Dispute is already resolved");
+        }
+
+        // Status is always assigned server-side for admin resolution.
+        dispute.setStatus(DisputeStatus.RESOLVED);
+        dispute.setResolution(resolution);
+        dispute.setResolvedBy(admin);
+        dispute.setResolvedAt(LocalDateTime.now());
+
+        Dispute saved = disputeRepository.save(dispute);
+        return mapToResponse(saved);
     }
 
     private DisputeResponse mapToResponse(Dispute dispute) {
