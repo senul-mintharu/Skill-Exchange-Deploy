@@ -18,9 +18,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -49,6 +52,24 @@ public class VerificationController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(ApiResponse.success(null, "Verification submitted successfully"));
+    }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<ApiResponse<Object>> updateVerificationStatus(
+            @PathVariable Long id,
+            @RequestParam(name = "approve") boolean approve,
+            @RequestBody(required = false) Map<String, Object> requestBody) {
+        AuthenticatedUser currentUser = requireAuthenticatedUser();
+        if (currentUser.role() != Role.ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can review verification");
+        }
+
+        // Never trust client-provided status. Server assigns final decision strictly.
+        String status = approve ? "APPROVED" : "REJECTED";
+        String adminNotes = requestBody == null ? null : asString(requestBody.get("adminNotes"));
+
+        reviewWithAuthenticatedAdminId(id, currentUser.userId(), status, adminNotes);
+        return ResponseEntity.ok(ApiResponse.success(null, "Verification status updated successfully"));
     }
 
     private AuthenticatedUser requireAuthenticatedUser() {
@@ -111,6 +132,56 @@ public class VerificationController {
         payload.put("documentFile", request.getDocumentFile());
         payload.put("metadata", request.getMetadata());
         return payload;
+    }
+
+    private void reviewWithAuthenticatedAdminId(
+            Long submissionId,
+            Long adminId,
+            String status,
+            String adminNotes) {
+        Object verificationService;
+        try {
+            verificationService = applicationContext.getBean("verificationService");
+        } catch (Exception ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "Verification service is unavailable");
+        }
+
+        Method reviewMethod = null;
+        for (Method method : verificationService.getClass().getMethods()) {
+            if ("reviewSubmission".equals(method.getName()) && method.getParameterCount() == 3) {
+                reviewMethod = method;
+                break;
+            }
+        }
+
+        if (reviewMethod == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "reviewSubmission(submissionId, adminId, request) method not found");
+        }
+
+        Map<String, Object> trustedPayload = new HashMap<>();
+        trustedPayload.put("submissionId", submissionId);
+        trustedPayload.put("decision", status);
+        trustedPayload.put("adminNotes", adminNotes);
+
+        try {
+            reviewMethod.invoke(verificationService, submissionId, adminId, trustedPayload);
+        } catch (IllegalAccessException | InvocationTargetException ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to review verification submission",
+                    ex);
+        }
+    }
+
+    private String asString(Object value) {
+        if (value == null) {
+            return null;
+        }
+        return String.valueOf(value);
     }
 
     private record AuthenticatedUser(Long userId, Role role) {
