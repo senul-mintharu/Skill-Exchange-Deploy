@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
 import Breadcrumb from '../../components/common/Breadcrumb';
+import ErrorBanner from '../../components/common/ErrorBanner';
 import {
   AlertPanel,
   EmptyState,
@@ -10,7 +11,7 @@ import {
 } from '../../components/ui/PortalPrimitives';
 import { deleteRequest, getRequestById, updateRequestStatus } from '../../services/requestService';
 import { getQuotesByRequest } from '../../services/quoteService';
-import { submitReview } from '../../services/reviewService';
+import { getMyReviews, submitReview } from '../../services/reviewService';
 import { submitDispute } from '../../services/disputeService';
 import { formatBudget, formatCategoryLabel } from '../../utils/constants';
 
@@ -83,6 +84,43 @@ const previewDescription = (text) => {
   return text;
 };
 
+const StarRatingInput = ({ value, onChange, disabled }) => (
+  <div className="flex items-center gap-1">
+    {[1, 2, 3, 4, 5].map((star) => (
+      <button
+        key={star}
+        type="button"
+        onClick={() => onChange(star)}
+        disabled={disabled}
+        className={`text-3xl transition-colors ${star <= (value || 0) ? 'text-amber-400' : 'text-gray-300'} hover:text-amber-400 disabled:cursor-not-allowed disabled:opacity-60`}
+        aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
+      >
+        <span className="material-icons">star</span>
+      </button>
+    ))}
+    <span className="ml-2 text-sm font-semibold text-ink-muted">{value ? `${value} / 5` : 'Select rating'}</span>
+  </div>
+);
+
+const StarRatingDisplay = ({ rating }) => {
+  const normalized = Math.min(5, Math.max(1, Number(rating) || 0));
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex items-center gap-0.5" aria-label={`${normalized} out of 5 stars`}>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <span
+            key={i}
+            className={`material-icons text-lg ${i < normalized ? 'text-amber-400' : 'text-gray-300'}`}
+          >
+            star
+          </span>
+        ))}
+      </div>
+      <span className="text-sm font-semibold text-ink-muted">{normalized}/5</span>
+    </div>
+  );
+};
+
 const RequestDetailsPage = () => {
   const { requestId } = useParams();
   const navigate = useNavigate();
@@ -98,11 +136,11 @@ const RequestDetailsPage = () => {
   const [quotesError, setQuotesError] = useState('');
 
   // Review form state
-  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewRating, setReviewRating] = useState(null);
   const [reviewComment, setReviewComment] = useState('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
-  const [reviewMessage, setReviewMessage] = useState('');
-  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [reviewError, setReviewError] = useState('');
+  const [existingReview, setExistingReview] = useState(null);
 
   // Dispute form state
   const [disputeReason, setDisputeReason] = useState('');
@@ -154,16 +192,49 @@ const RequestDetailsPage = () => {
     fetchQuotes();
   }, [fetchQuotes]);
 
+  const loadExistingReview = useCallback(async () => {
+    if (!requestId || isWorker || String(request?.status || '').toUpperCase() !== 'COMPLETED') return;
+    try {
+      const reviews = await getMyReviews();
+      const matched = (Array.isArray(reviews) ? reviews : []).find(
+        (review) => Number(review.requestId) === Number(requestId),
+      );
+      setExistingReview(matched || null);
+      if (matched) {
+        setReviewRating(matched.rating);
+        setReviewComment(matched.comment || '');
+      }
+    } catch {
+      // Ignore lookup failures to avoid interrupting request details page load.
+    }
+  }, [isWorker, request?.status, requestId]);
+
+  useEffect(() => {
+    loadExistingReview();
+  }, [loadExistingReview]);
+
   const handleSubmitReview = async (e) => {
     e.preventDefault();
+    if (!reviewRating) {
+      setReviewError('Please select a star rating to submit your review');
+      return;
+    }
+
     setReviewSubmitting(true);
-    setReviewMessage('');
+    setReviewError('');
     try {
-      await submitReview({ requestId: Number(requestId), rating: reviewRating, comment: reviewComment });
-      setReviewMessage('Review submitted successfully! Thank you for your feedback.');
-      setReviewSubmitted(true);
+      const createdReview = await submitReview({ requestId: Number(requestId), rating: reviewRating, comment: reviewComment });
+      setExistingReview({
+        ...createdReview,
+        rating: createdReview?.rating ?? reviewRating,
+        comment: createdReview?.comment ?? reviewComment,
+      });
     } catch (err) {
-      setReviewMessage(err.response?.data?.message || 'Failed to submit review. Please try again.');
+      const message = err.response?.data?.message || 'Failed to submit review. Please try again.';
+      setReviewError(message);
+      if (err.response?.status === 409 || message.toLowerCase().includes('already submitted')) {
+        await loadExistingReview();
+      }
     } finally {
       setReviewSubmitting(false);
     }
@@ -428,30 +499,32 @@ const RequestDetailsPage = () => {
                   <span className="material-icons text-4xl text-green-500">star_rate</span>
                 </div>
 
-                {reviewSubmitted ? (
-                  <div className="mt-4">
-                    <AlertPanel tone="success" icon="check_circle" title="Review Submitted">
-                      <p>{reviewMessage}</p>
-                    </AlertPanel>
+                {existingReview ? (
+                  <div className="mt-5 space-y-4 rounded-card border border-line bg-surface-muted/70 px-4 py-4">
+                    <div>
+                      <p className="ui-stat-label mb-2 block">Your Rating</p>
+                      <StarRatingDisplay rating={existingReview.rating} />
+                    </div>
+
+                    <div>
+                      <p className="ui-stat-label mb-2 block">Your Comment</p>
+                      {existingReview.comment ? (
+                        <p className="rounded-card border border-line bg-white px-4 py-3 text-sm leading-6 text-ink">
+                          {existingReview.comment}
+                        </p>
+                      ) : (
+                        <p className="rounded-card border border-dashed border-line bg-white px-4 py-3 text-sm italic text-ink-muted">
+                          No written feedback provided.
+                        </p>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <form onSubmit={handleSubmitReview} className="mt-5 space-y-4">
                     {/* Star Rating */}
                     <div>
                       <label className="ui-stat-label mb-2 block">Rating</label>
-                      <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <button
-                            key={star}
-                            type="button"
-                            onClick={() => setReviewRating(star)}
-                            className={`text-3xl transition-colors ${star <= reviewRating ? 'text-amber-400' : 'text-gray-300'} hover:text-amber-400`}
-                          >
-                            <span className="material-icons">star</span>
-                          </button>
-                        ))}
-                        <span className="ml-2 text-sm font-semibold text-ink-muted">{reviewRating} / 5</span>
-                      </div>
+                      <StarRatingInput value={reviewRating} onChange={setReviewRating} disabled={reviewSubmitting} />
                     </div>
 
                     {/* Comment */}
@@ -469,18 +542,11 @@ const RequestDetailsPage = () => {
                       />
                     </div>
 
-                    {reviewMessage ? (
-                      <AlertPanel
-                        tone={reviewMessage.toLowerCase().includes('successfully') ? 'success' : 'danger'}
-                        icon={reviewMessage.toLowerCase().includes('successfully') ? 'check_circle' : 'error_outline'}
-                      >
-                        <p>{reviewMessage}</p>
-                      </AlertPanel>
-                    ) : null}
+                    <ErrorBanner message={reviewError} />
 
                     <button
                       type="submit"
-                      disabled={reviewSubmitting}
+                      disabled={reviewSubmitting || Boolean(existingReview)}
                       className="ui-button-primary w-full sm:w-auto"
                     >
                       {reviewSubmitting ? (
