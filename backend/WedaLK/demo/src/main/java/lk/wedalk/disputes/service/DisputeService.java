@@ -133,6 +133,29 @@ public class DisputeService {
     }
 
     @Transactional(readOnly = true)
+    public DisputeResponse getDisputeByRequestForUser(Long requestId, Long currentUserId, Role currentUserRole) {
+        Dispute dispute = disputeRepository.findByRequestId(requestId)
+                .orElseThrow(() -> new NotFoundException("Dispute not found"));
+
+        if (currentUserRole == Role.ADMIN) {
+            return mapToResponse(dispute);
+        }
+
+        boolean isSeeker = dispute.getSeeker() != null
+                && dispute.getSeeker().getId() != null
+                && dispute.getSeeker().getId().equals(currentUserId);
+        boolean isWorker = dispute.getWorker() != null
+                && dispute.getWorker().getId() != null
+                && dispute.getWorker().getId().equals(currentUserId);
+
+        if (!isSeeker && !isWorker) {
+            throw new UnauthorizedException("You do not have permission to view this dispute");
+        }
+
+        return mapToResponse(dispute);
+    }
+
+    @Transactional(readOnly = true)
     public List<DisputeResponse> getDisputesBySeeker(Long seekerId) {
         List<Dispute> disputes = disputeRepository.findBySeekerId(seekerId);
         return disputes.stream().map(this::mapToResponse).collect(Collectors.toList());

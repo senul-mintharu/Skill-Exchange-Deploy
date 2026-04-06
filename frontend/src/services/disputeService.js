@@ -38,6 +38,16 @@ export const getDisputeById = async (id) => {
 };
 
 /**
+ * Get dispute details by request ID (admin, seeker-owner, or assigned worker).
+ * @param {number} requestId - Service request ID
+ * @returns {Promise<Object>} Dispute details
+ */
+export const getDisputeByRequest = async (requestId) => {
+  const response = await apiClient.get(`/disputes/request/${requestId}`);
+  return response.data.data;
+};
+
+/**
  * Get all open disputes (admin only).
  * @returns {Promise<Array>} List of open disputes
  */

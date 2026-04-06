@@ -98,6 +98,20 @@ public class DisputeController {
     }
 
     /**
+     * GET /api/disputes/request/{requestId} — Get dispute details by request ID.
+     * Accessible by admin, the request seeker, or the assigned worker.
+     */
+    @GetMapping("/request/{requestId}")
+    public ResponseEntity<ApiResponse<DisputeResponse>> getDisputeByRequestId(@PathVariable Long requestId) {
+        AuthenticatedUser currentUser = requireAuthenticatedUser();
+        DisputeResponse dispute = disputeService.getDisputeByRequestForUser(
+                requestId,
+                currentUser.userId(),
+                currentUser.role());
+        return ResponseEntity.ok(ApiResponse.success(dispute, "Dispute retrieved successfully"));
+    }
+
+    /**
      * GET /api/disputes/open — Get all open disputes (admin).
      */
     @GetMapping("/open")
