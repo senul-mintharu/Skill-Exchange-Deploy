@@ -2,6 +2,7 @@ package lk.wedalk.disputes.service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import lk.wedalk.common.PagedResponse;
 import lk.wedalk.common.enums.DisputeStatus;
 import lk.wedalk.common.enums.RequestStatus;
 import lk.wedalk.common.exceptions.BadRequestException;
@@ -17,6 +18,9 @@ import lk.wedalk.users.model.Role;
 import lk.wedalk.users.model.User;
 import lk.wedalk.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -123,6 +127,28 @@ public class DisputeService {
     public List<DisputeResponse> getOpenDisputes() {
         List<Dispute> disputes = disputeRepository.findByStatusOrderByCreatedAtAsc(DisputeStatus.OPEN);
         return disputes.stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public PagedResponse<DisputeResponse> getOpenDisputesPaged(int page, int size) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.max(size, 1);
+
+        PageRequest pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Dispute> disputes = disputeRepository.findByStatus(DisputeStatus.OPEN, pageable);
+
+        List<DisputeResponse> content = disputes.getContent().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+
+        return PagedResponse.<DisputeResponse>builder()
+                .content(content)
+                .page(disputes.getNumber())
+                .size(disputes.getSize())
+                .totalElements(disputes.getTotalElements())
+                .totalPages(disputes.getTotalPages())
+                .last(disputes.isLast())
+                .build();
     }
 
     @Transactional(readOnly = true)
