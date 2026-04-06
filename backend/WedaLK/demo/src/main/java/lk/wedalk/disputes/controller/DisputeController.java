@@ -102,6 +102,11 @@ public class DisputeController {
      */
     @GetMapping("/open")
     public ResponseEntity<ApiResponse<List<DisputeResponse>>> getOpenDisputes() {
+        AuthenticatedUser currentUser = requireAuthenticatedUser();
+        if (currentUser.role() != Role.ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can view open disputes");
+        }
+
         List<DisputeResponse> disputes = disputeService.getOpenDisputes();
         return ResponseEntity.ok(ApiResponse.success(disputes, "Open disputes retrieved successfully"));
     }

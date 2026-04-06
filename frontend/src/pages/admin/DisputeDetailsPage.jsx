@@ -1,0 +1,189 @@
+import React, { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import ErrorBanner from '../../components/common/ErrorBanner';
+import { EmptyState, LoadingPanel, PageIntro, SectionCard, StatusPill } from '../../components/ui/PortalPrimitives';
+import { getDisputeById, resolveDispute } from '../../services/disputeService';
+
+const isResolved = (status) => String(status || '').toUpperCase() === 'RESOLVED';
+
+const formatDateTime = (value) => {
+  if (!value) return 'N/A';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'N/A';
+  return date.toLocaleString();
+};
+
+const DisputeDetailsPage = () => {
+  const { disputeId } = useParams();
+  const [dispute, setDispute] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [resolutionText, setResolutionText] = useState('');
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
+  useEffect(() => {
+    let ignore = false;
+
+    const fetchDispute = async () => {
+      setLoading(true);
+      setError('');
+
+      try {
+        const data = await getDisputeById(disputeId);
+        if (!ignore) {
+          setDispute(data);
+          setResolutionText(data?.resolution || '');
+        }
+      } catch (err) {
+        if (!ignore) {
+          setError(err?.response?.data?.message || 'Failed to load dispute details.');
+          setDispute(null);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchDispute();
+
+    return () => {
+      ignore = true;
+    };
+  }, [disputeId]);
+
+  const handleResolve = async (event) => {
+    event.preventDefault();
+    const trimmed = resolutionText.trim();
+
+    if (!trimmed) {
+      setError('Please provide resolution notes before resolving this dispute.');
+      return;
+    }
+
+    if (!dispute || isResolved(dispute.status)) {
+      return;
+    }
+
+    setSubmitting(true);
+    setError('');
+    setSuccessMessage('');
+
+    try {
+      const updated = await resolveDispute(dispute.id, trimmed);
+      setDispute(updated);
+      setResolutionText(updated?.resolution || trimmed);
+      setSuccessMessage('Dispute resolved successfully.');
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to resolve dispute.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="page-wrapper">
+      <main className="ui-shell space-y-6">
+        <PageIntro
+          eyebrow="Admin"
+          title={`Dispute #${disputeId}`}
+          subtitle="Review case context and provide a final ruling visible to both parties."
+          light
+          actions={<Link to="/admin/disputes" className="ui-button-secondary">Back to Disputes</Link>}
+        />
+
+        <ErrorBanner message={error} onClose={() => setError('')} />
+        <ErrorBanner message={successMessage} type="success" onClose={() => setSuccessMessage('')} />
+
+        {loading ? <LoadingPanel message="Loading dispute details..." /> : null}
+
+        {!loading && !dispute ? (
+          <EmptyState
+            icon="search_off"
+            title="Dispute not found"
+            text="The requested dispute could not be loaded."
+            action={<Link to="/admin/disputes" className="ui-button-primary">Return to Disputes</Link>}
+          />
+        ) : null}
+
+        {!loading && dispute ? (
+          <>
+            <SectionCard className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-xl font-bold text-ink">Case Summary</h2>
+                <StatusPill tone={isResolved(dispute.status) ? 'success' : 'warning'} icon={isResolved(dispute.status) ? 'check_circle' : 'hourglass_top'}>
+                  {String(dispute.status || 'OPEN').replaceAll('_', ' ')}
+                </StatusPill>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-card border border-line bg-surface-muted p-4">
+                  <p className="ui-stat-label">Job ID</p>
+                  <p className="mt-1 text-base font-semibold text-ink">#{dispute.requestId}</p>
+                </div>
+                <div className="rounded-card border border-line bg-surface-muted p-4">
+                  <p className="ui-stat-label">Date Raised</p>
+                  <p className="mt-1 text-base font-semibold text-ink">{formatDateTime(dispute.createdAt)}</p>
+                </div>
+                <div className="rounded-card border border-line bg-surface-muted p-4">
+                  <p className="ui-stat-label">Seeker</p>
+                  <p className="mt-1 text-base font-semibold text-ink">{dispute.seekerName || 'Unknown seeker'}</p>
+                </div>
+                <div className="rounded-card border border-line bg-surface-muted p-4">
+                  <p className="ui-stat-label">Worker</p>
+                  <p className="mt-1 text-base font-semibold text-ink">{dispute.workerName || 'Unknown worker'}</p>
+                </div>
+              </div>
+
+              <div className="rounded-card border border-line bg-white p-4">
+                <p className="ui-stat-label">Dispute Reason</p>
+                <p className="mt-2 whitespace-pre-line text-sm leading-7 text-ink-muted">
+                  {dispute.seekerReason || 'No reason provided.'}
+                </p>
+              </div>
+            </SectionCard>
+
+            <SectionCard className="space-y-4">
+              <h2 className="text-xl font-bold text-ink">Resolution</h2>
+
+              {isResolved(dispute.status) ? (
+                <div className="space-y-3 rounded-card border border-green-200 bg-green-50 p-4">
+                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-green-800">Final Decision (Read Only)</p>
+                  <p className="whitespace-pre-line text-sm leading-7 text-ink-muted">
+                    {dispute.resolution || 'No final resolution note recorded.'}
+                  </p>
+                  <p className="text-sm text-ink-muted">
+                    Resolved At: <span className="font-semibold text-ink">{formatDateTime(dispute.resolvedAt)}</span>
+                  </p>
+                </div>
+              ) : (
+                <form className="space-y-4" onSubmit={handleResolve}>
+                  <div className="ui-field">
+                    <label htmlFor="resolution-note" className="ui-label">Final ruling note</label>
+                    <textarea
+                      id="resolution-note"
+                      className="ui-textarea"
+                      value={resolutionText}
+                      onChange={(event) => setResolutionText(event.target.value)}
+                      placeholder="Explain the decision clearly for both the seeker and worker..."
+                      rows={5}
+                    />
+                    <p className="ui-helper">This note will be visible to both parties.</p>
+                  </div>
+
+                  <button type="submit" className="ui-button-primary" disabled={submitting}>
+                    {submitting ? 'Resolving...' : 'Resolve Dispute'}
+                  </button>
+                </form>
+              )}
+            </SectionCard>
+          </>
+        ) : null}
+      </main>
+    </div>
+  );
+};
+
+export default DisputeDetailsPage;

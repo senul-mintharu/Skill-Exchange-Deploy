@@ -45,3 +45,14 @@ export const getOpenDisputes = async () => {
   const response = await apiClient.get('/disputes/open');
   return response.data.data;
 };
+
+/**
+ * Resolve a dispute with a final ruling note (admin only).
+ * @param {number} id - Dispute ID
+ * @param {string} resolution - Final decision note
+ * @returns {Promise<Object>} Updated dispute
+ */
+export const resolveDispute = async (id, resolution) => {
+  const response = await apiClient.put(`/disputes/${id}/resolve`, { resolution });
+  return response.data.data;
+};
