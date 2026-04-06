@@ -133,6 +133,7 @@ const Navbar = ({ variant = 'landing' }) => {
             ) : (
               <>
                 <NavLink to={dashboardPath} end className={navLinkClass}>Dashboard</NavLink>
+                {role === 'ADMIN' ? <NavLink to="/admin/verification" className={navLinkClass}>Verifications</NavLink> : null}
                 {role === 'WORKER' ? <NavLink to="/browse-requests" className={navLinkClass}>Find Work</NavLink> : null}
                 {role === 'SEEKER' ? <NavLink to="/browse-workers" className={navLinkClass}>Browse Workers</NavLink> : null}
                 {role === 'WORKER' ? <NavLink to="/my-quotations" className={navLinkClass}>My Quotations</NavLink> : null}
@@ -203,6 +204,7 @@ const Navbar = ({ variant = 'landing' }) => {
             ) : (
               <>
                 <NavLink to={dashboardPath} end className={mobilePortalNavLinkClass} onClick={closeMobile}>Dashboard</NavLink>
+                {role === 'ADMIN' ? <NavLink to="/admin/verification" className={mobilePortalNavLinkClass} onClick={closeMobile}>Verifications</NavLink> : null}
                 {role === 'WORKER' ? <NavLink to="/browse-requests" className={mobilePortalNavLinkClass} onClick={closeMobile}>Find Work</NavLink> : null}
                 {role === 'SEEKER' ? <NavLink to="/browse-workers" className={mobilePortalNavLinkClass} onClick={closeMobile}>Browse Workers</NavLink> : null}
                 {role === 'WORKER' ? <NavLink to="/my-quotations" className={mobilePortalNavLinkClass} onClick={closeMobile}>My Quotations</NavLink> : null}

@@ -13,7 +13,12 @@ import lk.wedalk.verification.dto.VerificationSubmitResponse;
 import lk.wedalk.verification.service.VerificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -97,6 +102,41 @@ public class VerificationController {
 
         List<VerificationStatusResponse> pending = verificationService.getPendingSubmissions();
         return ResponseEntity.ok(ApiResponse.success(pending, "Pending submissions retrieved successfully"));
+    }
+
+    /**
+     * GET /api/verification/{id}/document — Retrieve a submitted verification document (ADMIN only).
+     */
+    @GetMapping("/{id}/document")
+    public ResponseEntity<Resource> getVerificationDocument(@PathVariable Long id) {
+        AuthenticatedUser currentUser = requireAuthenticatedUser();
+
+        if (currentUser.role() != Role.ADMIN) {
+            log.warn("Unauthorized verification document access attempt by '{}' with role '{}'",
+                    currentUser.email(), currentUser.role());
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can view verification documents");
+        }
+
+        VerificationService.StoredDocument document = verificationService.getSubmissionDocument(id);
+        Resource resource = new FileSystemResource(document.path());
+
+        MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
+        String contentType = document.contentType();
+        if (contentType != null && !contentType.isBlank()) {
+            try {
+                mediaType = MediaType.parseMediaType(contentType);
+            } catch (IllegalArgumentException ignored) {
+                mediaType = MediaType.APPLICATION_OCTET_STREAM;
+            }
+        }
+
+        String fileName = document.originalName() != null ? document.originalName() : "verification-document";
+
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.inline().filename(fileName).build().toString())
+                .body(resource);
     }
 
     /**

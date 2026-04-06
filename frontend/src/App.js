@@ -29,6 +29,7 @@ import VerificationPage from './pages/worker/VerificationPage';
 import EditWorkerProfilePage from './pages/worker/EditWorkerProfilePage';
 import WorkerProfilePage from './pages/worker/WorkerProfilePage';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import VerificationReviewPage from './pages/admin/VerificationReviewPage';
 import AccountProfilePage from './pages/account/AccountProfilePage';
 import RequireWorkerProfile from './components/common/RequireWorkerProfile';
 
@@ -76,6 +77,7 @@ function App() {
 
           <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/verification" element={<VerificationReviewPage />} />
           </Route>
 
           {/* Any authenticated user */}
