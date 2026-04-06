@@ -55,6 +55,13 @@ const formatDate = (dateString) => {
   });
 };
 
+const formatDateTime = (value) => {
+  if (!value) return 'N/A';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'N/A';
+  return date.toLocaleString();
+};
+
 const buildTimeline = (request, quoteCount) => {
   const status = String(request.status || '').toUpperCase();
   const hasAssignment = status === 'ASSIGNED' || status === 'IN_PROGRESS' || status === 'COMPLETED';
@@ -563,6 +570,12 @@ const RequestDetailsPage = () => {
                       ? disputeOutcome.resolution || 'No final ruling note available.'
                       : 'This dispute is under review. Final decision will appear here once resolved.'}
                   </p>
+
+                  {disputeOutcome.status === 'RESOLVED' ? (
+                    <p className="mt-2 text-sm text-ink-muted">
+                      Resolved At: <span className="font-semibold text-ink">{formatDateTime(disputeOutcome.resolvedAt)}</span>
+                    </p>
+                  ) : null}
                 </div>
               ) : null}
             </SectionCard>
