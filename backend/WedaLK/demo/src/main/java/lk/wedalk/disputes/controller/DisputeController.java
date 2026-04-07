@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import lk.wedalk.common.ApiResponse;
+import lk.wedalk.common.PagedResponse;
 import lk.wedalk.common.exceptions.NotFoundException;
 import lk.wedalk.disputes.dto.DisputeCreateRequest;
 import lk.wedalk.disputes.dto.DisputeResponse;
@@ -115,13 +116,15 @@ public class DisputeController {
      * GET /api/disputes/open — Get all open disputes (admin).
      */
     @GetMapping("/open")
-    public ResponseEntity<ApiResponse<List<DisputeResponse>>> getOpenDisputes() {
+    public ResponseEntity<ApiResponse<PagedResponse<DisputeResponse>>> getOpenDisputes(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
         AuthenticatedUser currentUser = requireAuthenticatedUser();
         if (currentUser.role() != Role.ADMIN) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can view open disputes");
         }
 
-        List<DisputeResponse> disputes = disputeService.getOpenDisputes();
+        PagedResponse<DisputeResponse> disputes = disputeService.getOpenDisputesPaged(page, size);
         return ResponseEntity.ok(ApiResponse.success(disputes, "Open disputes retrieved successfully"));
     }
 

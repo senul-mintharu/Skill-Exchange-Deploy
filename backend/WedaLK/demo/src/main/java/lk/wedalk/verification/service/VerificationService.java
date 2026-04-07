@@ -26,6 +26,7 @@ import lk.wedalk.verification.repository.VerificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -109,6 +110,23 @@ public class VerificationService {
                 .collect(Collectors.toList());
     }
 
+    public StoredDocument getSubmissionDocument(Long submissionId) {
+        VerificationSubmission submission = verificationRepository.findById(submissionId)
+                .orElseThrow(() -> new NotFoundException("Verification submission not found"));
+
+        String documentPath = submission.getDocumentPath();
+        if (!StringUtils.hasText(documentPath)) {
+            throw new NotFoundException("Verification document could not be retrieved");
+        }
+
+        Path path = Paths.get(documentPath);
+        if (!Files.exists(path) || !Files.isRegularFile(path) || !Files.isReadable(path)) {
+            throw new NotFoundException("Verification document could not be retrieved");
+        }
+
+        return new StoredDocument(path, submission.getDocumentName(), submission.getDocumentContentType());
+    }
+
     public void reviewVerification(Long submissionId, Long adminId, String status, String adminNotes) {
         VerificationSubmission submission = verificationRepository.findById(submissionId)
                 .orElseThrow(() -> new NotFoundException("Verification submission not found"));
@@ -117,6 +135,18 @@ public class VerificationService {
                 .orElseThrow(() -> new NotFoundException("Admin user not found"));
 
         VerificationStatus newStatus = VerificationStatus.valueOf(status);
+
+        if (submission.getStatus() != VerificationStatus.PENDING) {
+            throw new BadRequestException("Only pending submissions can be reviewed");
+        }
+
+        if (newStatus != VerificationStatus.APPROVED && newStatus != VerificationStatus.REJECTED) {
+            throw new BadRequestException("Invalid verification decision");
+        }
+
+        if (newStatus == VerificationStatus.REJECTED && !StringUtils.hasText(adminNotes)) {
+            throw new BadRequestException("Rejection reason is required");
+        }
 
         submission.setStatus(newStatus);
         submission.setReviewedAt(LocalDateTime.now());
@@ -220,4 +250,10 @@ public class VerificationService {
             String contentType,
             Long sizeBytes) {
     }
+
+        public record StoredDocument(
+            Path path,
+            String originalName,
+            String contentType) {
+        }
 }

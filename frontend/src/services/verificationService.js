@@ -37,6 +37,17 @@ export const getPendingSubmissions = async () => {
 };
 
 /**
+ * Download/open a verification document for a specific submission (ADMIN only).
+ * Returns a Blob payload that can be opened in a new tab.
+ */
+export const getSubmissionDocumentBlob = async (submissionId) => {
+	const response = await apiClient.get(`/verification/${submissionId}/document`, {
+		responseType: 'blob',
+	});
+	return response.data;
+};
+
+/**
  * Approve or reject a verification submission (ADMIN only).
  *
  * @param {number} submissionId  - The ID of the VerificationSubmission to review

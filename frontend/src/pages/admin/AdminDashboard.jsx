@@ -15,6 +15,8 @@ const AdminDashboard = () => (
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard label="Verification Queue" value="Pending" icon="fact_check" />
         <StatCard label="Disputes" value="Open Cases" icon="gavel" />
+        <StatCard label="Verification Queue" value="Review Now" icon="fact_check" />
+        <StatCard label="Disputes" value="Active Monitoring" icon="gavel" />
         <StatCard label="User Controls" value="Coming Soon" icon="manage_accounts" />
       </div>
 
@@ -24,6 +26,13 @@ const AdminDashboard = () => (
           Access active moderation workflows directly from the dashboard.
         </p>
         <div className="grid gap-3 md:grid-cols-2">
+          Open admin workflows directly from this dashboard.
+        </p>
+        <div className="grid gap-3 md:grid-cols-2">
+          <Link to="/admin/verification" className="ui-button-secondary w-full justify-center">
+            <span className="material-icons text-base">fact_check</span>
+            Open Verification Review
+          </Link>
           <Link to="/admin/disputes" className="ui-button-secondary w-full justify-center">
             <span className="material-icons text-base">gavel</span>
             Open Disputes Management

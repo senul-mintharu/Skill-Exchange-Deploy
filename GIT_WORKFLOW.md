@@ -14,7 +14,8 @@ git checkout -b feature/worker-profiles
 ```
 # Safest workflow for Jira-created branch
 git fetch --all
-git branch -a | findstr SCRUM-63
+
+
 git checkout -b feature/SCRUM-63-worker-submit-quotation origin/feature/SCRUM-63-worker-submit-quotation
 
 # later simply run

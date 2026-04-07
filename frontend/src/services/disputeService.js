@@ -57,12 +57,15 @@ export const getOpenDisputes = async () => {
 };
 
 /**
- * Resolve a dispute with a final ruling note (admin only).
- * @param {number} id - Dispute ID
- * @param {string} resolution - Final decision note
- * @returns {Promise<Object>} Updated dispute
+ * Get paginated open disputes (admin only).
+ * @param {Object} params - { page, size }
+ * @returns {Promise<Object>} Paged response { content, page, size, totalElements, totalPages, last }
  */
-export const resolveDispute = async (id, resolution) => {
-  const response = await apiClient.put(`/disputes/${id}/resolve`, { resolution });
+export const getOpenDisputesPaged = async (params = {}) => {
+  const query = new URLSearchParams();
+  if (params.page !== undefined) query.append('page', params.page);
+  if (params.size !== undefined) query.append('size', params.size);
+
+  const response = await apiClient.get(`/disputes/open?${query.toString()}`);
   return response.data.data;
 };
