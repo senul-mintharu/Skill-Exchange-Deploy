@@ -14,6 +14,7 @@ import { getQuotesByRequest } from '../../services/quoteService';
 import { getMyReviews, submitReview } from '../../services/reviewService';
 import { getDisputeByRequest, submitDispute } from '../../services/disputeService';
 import { formatBudget, formatCategoryLabel } from '../../utils/constants';
+import { resolveHttpError } from '../../utils/httpErrors';
 
 const getJobStatusLabel = (status) => {
   if (status === 'ASSIGNED') return 'Assigned';
@@ -266,7 +267,7 @@ const RequestDetailsPage = () => {
         comment: createdReview?.comment ?? reviewComment,
       });
     } catch (err) {
-      const message = err.response?.data?.message || 'Failed to submit review. Please try again.';
+      const message = resolveHttpError(err, 'Failed to submit review. Please try again.');
       setReviewError(message);
       if (err.response?.status === 409 || message.toLowerCase().includes('already submitted')) {
         await loadExistingReview();
@@ -294,7 +295,7 @@ const RequestDetailsPage = () => {
       await fetchRequestDetails(false);
       await fetchDisputeOutcome();
     } catch (err) {
-      setNotCompletedReasonError(err.response?.data?.message || 'Failed to submit. Please try again.');
+      setNotCompletedReasonError(resolveHttpError(err, 'Failed to submit. Please try again.'));
     } finally {
       setNotCompletedSubmitting(false);
     }
