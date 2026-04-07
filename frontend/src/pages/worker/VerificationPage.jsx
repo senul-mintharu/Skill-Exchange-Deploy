@@ -3,6 +3,7 @@ import ErrorBanner from '../../components/common/ErrorBanner';
 import { PageIntro, SectionCard, StatusPill } from '../../components/ui/PortalPrimitives';
 import { getCurrentUser } from '../../services/authService';
 import { getMyVerification, submitVerification } from '../../services/verificationService';
+import { resolveHttpError } from '../../utils/httpErrors';
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'pdf']);
@@ -72,7 +73,7 @@ const VerificationPage = () => {
           return;
         }
         if (!ignore) {
-          setError(err?.response?.data?.message || 'Failed to load verification status.');
+          setError(resolveHttpError(err, 'Failed to load verification status.'));
         }
       }
     };
@@ -163,7 +164,7 @@ const VerificationPage = () => {
       localStorage.setItem(getStoredFileKey(currentUser?.id), documentName);
       showTemporarySuccess('Verification submitted successfully.');
     } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to submit verification. Please try again.');
+      setError(resolveHttpError(err, 'Failed to submit verification. Please try again.'));
     } finally {
       setSubmitting(false);
     }
