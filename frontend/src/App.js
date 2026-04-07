@@ -30,6 +30,8 @@ import EditWorkerProfilePage from './pages/worker/EditWorkerProfilePage';
 import WorkerProfilePage from './pages/worker/WorkerProfilePage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import VerificationReviewPage from './pages/admin/VerificationReviewPage';
+import DisputeReviewPage from './pages/admin/DisputeReviewPage';
+import AdminJobDetailsPage from './pages/admin/AdminJobDetailsPage';
 import AccountProfilePage from './pages/account/AccountProfilePage';
 import RequireWorkerProfile from './components/common/RequireWorkerProfile';
 
@@ -78,6 +80,8 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/verification" element={<VerificationReviewPage />} />
+            <Route path="/admin/disputes" element={<DisputeReviewPage />} />
+            <Route path="/admin/jobs/:requestId" element={<AdminJobDetailsPage />} />
           </Route>
 
           {/* Any authenticated user */}

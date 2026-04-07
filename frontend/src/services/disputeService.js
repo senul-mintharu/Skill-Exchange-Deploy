@@ -45,3 +45,17 @@ export const getOpenDisputes = async () => {
   const response = await apiClient.get('/disputes/open');
   return response.data.data;
 };
+
+/**
+ * Get paginated open disputes (admin only).
+ * @param {Object} params - { page, size }
+ * @returns {Promise<Object>} Paged response { content, page, size, totalElements, totalPages, last }
+ */
+export const getOpenDisputesPaged = async (params = {}) => {
+  const query = new URLSearchParams();
+  if (params.page !== undefined) query.append('page', params.page);
+  if (params.size !== undefined) query.append('size', params.size);
+
+  const response = await apiClient.get(`/disputes/open?${query.toString()}`);
+  return response.data.data;
+};
