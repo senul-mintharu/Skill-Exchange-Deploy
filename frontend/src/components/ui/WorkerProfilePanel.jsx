@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { FaCheckCircle } from 'react-icons/fa';
 
 const serviceMap = {
   Plumbing: { icon: 'plumbing', title: 'Plumbing Services', desc: 'Pipe repairs, installations, and maintenance' },
@@ -147,16 +148,18 @@ export const WorkerProfilePanel = ({ profile, notice, actions, backLink, reviews
                   ) : (
                     <span>{profile.fullName ? profile.fullName.charAt(0).toUpperCase() : 'W'}</span>
                   )}
-                  {isVerified ? (
-                    <span className="absolute bottom-1 right-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-brand-700 text-white" title="Verified Worker">
-                      <span className="material-icons text-sm">verified</span>
-                    </span>
-                  ) : null}
                 </div>
 
                 <div className="min-w-0">
-                  <h1 className="font-display text-2xl font-extrabold tracking-snugger text-ink sm:text-3xl">
-                    {profile.fullName || 'Worker'}
+                  <h1 className="flex items-center gap-2 font-display text-2xl font-extrabold tracking-snugger text-ink sm:text-3xl">
+                    <span>{profile.fullName || 'Worker'}</span>
+                    {isVerified ? (
+                      <FaCheckCircle
+                        className="text-xl text-brand-700"
+                        title="Identity verified by platform administrators."
+                        aria-label="Identity verified by platform administrators."
+                      />
+                    ) : null}
                   </h1>
                   <p className="mt-2 text-base font-medium text-brand-800">
                     {isVerified ? `Verified Skilled ${getPrimarySkill(profile.skills)}` : `Skilled ${getPrimarySkill(profile.skills)}`}
