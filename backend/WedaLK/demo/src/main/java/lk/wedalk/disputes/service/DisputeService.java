@@ -187,6 +187,24 @@ public class DisputeService {
         return disputes.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
+    /**
+     * SCRUM-92: Returns all disputes where the authenticated user is the assigned worker.
+     * Ordered newest-first so the most recent disputes appear at the top.
+     */
+    @Transactional(readOnly = true)
+    public List<DisputeResponse> getDisputesByWorker(Long workerId) {
+        List<Dispute> disputes = disputeRepository.findByWorkerId(workerId);
+        disputes.sort((a, b) -> {
+            var ta = a.getCreatedAt();
+            var tb = b.getCreatedAt();
+            if (ta == null && tb == null) return 0;
+            if (ta == null) return 1;
+            if (tb == null) return -1;
+            return tb.compareTo(ta);
+        });
+        return disputes.stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+
     @Transactional
     public DisputeResponse resolveDispute(Long disputeId, Long adminId, String resolution) {
         User admin = userRepository.findById(adminId)

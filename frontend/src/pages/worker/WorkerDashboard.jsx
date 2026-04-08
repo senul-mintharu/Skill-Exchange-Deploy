@@ -4,6 +4,7 @@ import { getCurrentUser } from '../../services/authService';
 import { getProfileByUserId } from '../../services/profileService';
 import { getMyQuotes } from '../../services/quoteService';
 import { getMyAssignedJobs } from '../../services/requestService';
+import { getMyWorkerDisputes } from '../../services/disputeService';
 import {
   AlertPanel,
   EmptyState,
@@ -56,6 +57,8 @@ const WorkerDashboard = () => {
   const [profile, setProfile] = useState(null);
   const [quotes, setQuotes] = useState([]);
   const [jobs, setJobs] = useState([]);
+  const [disputes, setDisputes] = useState([]);
+  const [expandedDisputeId, setExpandedDisputeId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [needsProfile, setNeedsProfile] = useState(false);
@@ -65,10 +68,11 @@ const WorkerDashboard = () => {
     setError('');
 
     try {
-      const [profileResult, quotesResult, jobsResult] = await Promise.allSettled([
+      const [profileResult, quotesResult, jobsResult, disputesResult] = await Promise.allSettled([
         currentUser?.id ? getProfileByUserId(currentUser.id) : Promise.resolve(null),
         getMyQuotes(),
         getMyAssignedJobs(),
+        getMyWorkerDisputes(),
       ]);
 
       if (profileResult.status === 'fulfilled') {
@@ -92,11 +96,19 @@ const WorkerDashboard = () => {
       } else {
         throw jobsResult.reason;
       }
+
+      // SCRUM-92: Load worker disputes — non-fatal, silently empty on failure
+      if (disputesResult.status === 'fulfilled') {
+        setDisputes(Array.isArray(disputesResult.value) ? disputesResult.value : []);
+      } else {
+        setDisputes([]);
+      }
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to load your dashboard. Please try again.');
       setProfile(null);
       setQuotes([]);
       setJobs([]);
+      setDisputes([]);
     } finally {
       setLoading(false);
     }
@@ -557,6 +569,99 @@ const WorkerDashboard = () => {
                     </div>
                   </div>
                 ) : null}
+              </SectionCard>
+
+              {/* SCRUM-92 — Disputes section */}
+              <SectionCard className="overflow-hidden !p-0">
+                <div className="border-b border-line bg-surface-muted/70 px-6 py-5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="ui-stat-label">Dispute History</p>
+                      <h2 className="mt-2 text-2xl font-bold text-ink">Your Disputes</h2>
+                    </div>
+                    {disputes.filter((d) => String(d.status).toUpperCase() === 'OPEN').length > 0 ? (
+                      <StatusPill tone="danger" icon="gavel">
+                        {disputes.filter((d) => String(d.status).toUpperCase() === 'OPEN').length} Open
+                      </StatusPill>
+                    ) : null}
+                  </div>
+                </div>
+
+                {disputes.length === 0 ? (
+                  <div className="px-6 py-8">
+                    <EmptyState
+                      icon="verified"
+                      title="You have no active or past disputes."
+                      text="Jobs completed without issues will not appear here. Keep delivering great work!"
+                      className="max-w-full border-none bg-transparent px-0 py-0 shadow-none"
+                    />
+                  </div>
+                ) : (
+                  <div className="divide-y divide-line">
+                    {disputes.map((dispute) => {
+                      const isOpen = String(dispute.status).toUpperCase() === 'OPEN';
+                      const isExpanded = expandedDisputeId === dispute.id;
+                      return (
+                        <article key={dispute.id} className="bg-white px-6 py-5 transition hover:bg-brand-50/30">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="space-y-1">
+                              <h3 className="text-base font-bold text-ink">
+                                {dispute.requestTitle || `Request #${dispute.requestId}`}
+                              </h3>
+                              <p className="text-xs text-ink-muted">
+                                Raised by <span className="font-semibold">{dispute.seekerName || 'Seeker'}</span>
+                                {dispute.createdAt ? ` · ${new Date(dispute.createdAt).toLocaleDateString()}` : ''}
+                              </p>
+                            </div>
+                            <StatusPill tone={isOpen ? 'danger' : 'success'}>
+                              {isOpen ? 'Open Dispute' : 'Resolved'}
+                            </StatusPill>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => setExpandedDisputeId(isExpanded ? null : dispute.id)}
+                            className="mt-3 flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline"
+                          >
+                            <span className="material-icons text-sm">
+                              {isExpanded ? 'expand_less' : 'expand_more'}
+                            </span>
+                            {isExpanded ? 'Hide details' : 'View complaint'}
+                          </button>
+
+                          {isExpanded ? (
+                            <div className="mt-4 space-y-3 rounded-card border border-line bg-surface-muted/70 px-4 py-4">
+                              <div>
+                                <p className="ui-stat-label mb-1">Seeker's Reason</p>
+                                <p className="text-sm leading-6 text-ink">
+                                  {dispute.seekerReason || 'No reason provided.'}
+                                </p>
+                              </div>
+                              {!isOpen && dispute.resolution ? (
+                                <div className="border-t border-line pt-3">
+                                  <p className="ui-stat-label mb-1">Admin Resolution</p>
+                                  <p className="text-sm leading-6 text-ink">{dispute.resolution}</p>
+                                  {dispute.resolvedAt ? (
+                                    <p className="mt-1 text-xs text-ink-muted">
+                                      Resolved on {new Date(dispute.resolvedAt).toLocaleDateString()}
+                                    </p>
+                                  ) : null}
+                                </div>
+                              ) : null}
+                              {isOpen ? (
+                                <div className="border-t border-line pt-3">
+                                  <p className="text-xs text-ink-muted">
+                                    This dispute is under admin review. You will be notified once a decision is made.
+                                  </p>
+                                </div>
+                              ) : null}
+                            </div>
+                          ) : null}
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
               </SectionCard>
 
               <SectionCard className="border-brand-100 bg-white shadow-card">

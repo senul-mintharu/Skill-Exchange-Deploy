@@ -129,12 +129,26 @@ public class DisputeController {
     }
 
     /**
-     * GET /api/disputes/my — Get current user's disputes.
+     * GET /api/disputes/my — Get current user's disputes (seeker view).
      */
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<List<DisputeResponse>>> getMyDisputes() {
         List<DisputeResponse> disputes = disputeService.getDisputesBySeeker(requireCurrentUserId());
         return ResponseEntity.ok(ApiResponse.success(disputes, "Your disputes retrieved successfully"));
+    }
+
+    /**
+     * GET /api/disputes/worker — Get disputes for jobs the current worker is assigned to (SCRUM-92).
+     * Returns OPEN and RESOLVED disputes so the worker can track both states.
+     */
+    @GetMapping("/worker")
+    public ResponseEntity<ApiResponse<List<DisputeResponse>>> getMyWorkerDisputes() {
+        AuthenticatedUser currentUser = requireAuthenticatedUser();
+        if (currentUser.role() != Role.WORKER) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only workers can access worker disputes");
+        }
+        List<DisputeResponse> disputes = disputeService.getDisputesByWorker(currentUser.userId());
+        return ResponseEntity.ok(ApiResponse.success(disputes, "Worker disputes retrieved successfully"));
     }
 
     /**

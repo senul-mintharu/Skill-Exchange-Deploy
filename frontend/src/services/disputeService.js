@@ -28,6 +28,15 @@ export const getMyDisputes = async () => {
 };
 
 /**
+ * Get all disputes related to jobs where the current user is the assigned worker (SCRUM-92).
+ * @returns {Promise<Array>} List of disputes on the worker's jobs
+ */
+export const getMyWorkerDisputes = async () => {
+  const response = await apiClient.get('/disputes/worker');
+  return response.data.data;
+};
+
+/**
  * Get a specific dispute by ID.
  * @param {number} id - Dispute ID
  * @returns {Promise<Object>} Dispute details
