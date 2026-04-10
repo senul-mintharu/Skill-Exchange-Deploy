@@ -26,6 +26,7 @@ const CompareQuotesPage = () => {
   const [actionError, setActionError] = useState('');
   const [confirmingQuote, setConfirmingQuote] = useState(null);
   const [acceptingId, setAcceptingId] = useState(null);
+  const [acceptedQuote, setAcceptedQuote] = useState(null);
 
   const sortedQuotes = useMemo(() => {
     const list = Array.isArray(quotes) ? [...quotes] : [];
@@ -63,6 +64,7 @@ const CompareQuotesPage = () => {
     setAcceptingId(confirmingQuote.id);
     try {
       await acceptQuote(confirmingQuote.id);
+      setAcceptedQuote(confirmingQuote);
       setConfirmingQuote(null);
       await loadQuotes();
     } catch (err) {
@@ -98,6 +100,24 @@ const CompareQuotesPage = () => {
         {!loading && !error && actionError ? (
           <AlertPanel tone="danger" icon="error_outline" title="Couldn’t accept quotation">
             <p>{actionError}</p>
+          </AlertPanel>
+        ) : null}
+
+        {acceptedQuote ? (
+          <AlertPanel
+            tone="success"
+            icon="check_circle"
+            title="Quotation accepted"
+            action={(
+              <Link to={`/my-requests/${requestId}`} className="ui-button-primary w-full sm:w-auto">
+                Continue as Seeker
+              </Link>
+            )}
+          >
+            <p>
+              You accepted <strong>{acceptedQuote.workerName || `Worker #${acceptedQuote.workerId}`}</strong>&apos;s quotation.
+              Open the request details to track the job, mark it completed, and leave a review when the work is done.
+            </p>
           </AlertPanel>
         ) : null}
 

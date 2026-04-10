@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getCurrentUser } from '../../services/authService';
 import { getProfileByUserId } from '../../services/profileService';
+import { getMyVerification } from '../../services/verificationService';
 import { getMyQuotes } from '../../services/quoteService';
 import { getMyAssignedJobs } from '../../services/requestService';
 import { getMyWorkerDisputes } from '../../services/disputeService';
@@ -59,6 +60,7 @@ const WorkerDashboard = () => {
   const [jobs, setJobs] = useState([]);
   const [disputes, setDisputes] = useState([]);
   const [expandedDisputeId, setExpandedDisputeId] = useState(null);
+  const [verificationStatus, setVerificationStatus] = useState('NONE');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [needsProfile, setNeedsProfile] = useState(false);
@@ -68,11 +70,12 @@ const WorkerDashboard = () => {
     setError('');
 
     try {
-      const [profileResult, quotesResult, jobsResult, disputesResult] = await Promise.allSettled([
+      const [profileResult, quotesResult, jobsResult, disputesResult, verificationResult] = await Promise.allSettled([
         currentUser?.id ? getProfileByUserId(currentUser.id) : Promise.resolve(null),
         getMyQuotes(),
         getMyAssignedJobs(),
         getMyWorkerDisputes(),
+        getMyVerification(),
       ]);
 
       if (profileResult.status === 'fulfilled') {
@@ -103,12 +106,24 @@ const WorkerDashboard = () => {
       } else {
         setDisputes([]);
       }
+
+      if (verificationResult.status === 'fulfilled') {
+        setVerificationStatus(String(verificationResult.value?.verificationStatus || 'NONE').toUpperCase());
+      } else {
+        const fallbackStatus = String(
+          profileResult.status === 'fulfilled'
+            ? profileResult.value?.verificationStatus || profileResult.value?.verification?.status || 'NONE'
+            : 'NONE',
+        ).toUpperCase();
+        setVerificationStatus(fallbackStatus);
+      }
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to load your dashboard. Please try again.');
       setProfile(null);
       setQuotes([]);
       setJobs([]);
       setDisputes([]);
+      setVerificationStatus('NONE');
     } finally {
       setLoading(false);
     }
@@ -158,10 +173,6 @@ const WorkerDashboard = () => {
       return rightTime - leftTime;
     }).slice(0, 4)
   ), [jobs]);
-
-  const verificationStatus = String(
-    profile?.verificationStatus || profile?.verification?.status || profile?.verification || 'NONE',
-  ).toUpperCase();
 
   const averageRating = Number(profile?.averageRating || 0);
   const skills = Array.isArray(profile?.skills) ? profile.skills.slice(0, 4) : [];
@@ -308,13 +319,13 @@ const WorkerDashboard = () => {
                   ? 'Verification needs another look'
                   : 'Verification has not been submitted yet'
             }
-            action={<Link to={profile?.id ? `/edit-profile/${profile.id}` : '/create-profile'} className="ui-button-primary">Update Profile</Link>}
+            action={<Link to="/worker/verification" className="ui-button-primary">Open Verification</Link>}
           >
             <p>
               {verificationStatus === 'PENDING'
                 ? 'Your profile is live, but seekers will trust you faster once verification is approved.'
                 : verificationStatus === 'REJECTED'
-                  ? 'Please review your profile details and supporting information before resubmitting.'
+                  ? 'Please upload a corrected verification document to resubmit for review.'
                   : 'Adding the right profile information now will help you stand out when seekers compare workers.'}
             </p>
           </AlertPanel>

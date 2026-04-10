@@ -74,6 +74,10 @@ const WorkerProfilePage = () => {
       ) : null}
       actions={(
         <>
+          <button className="ui-button-primary w-full sm:w-auto" type="button" onClick={() => navigate('/worker/verification')}>
+            <span className="material-icons text-base">verified_user</span>
+            Verification
+          </button>
           <button className="ui-button-primary w-full sm:w-auto" type="button" onClick={() => navigate('/browse-requests')}>
             <span className="material-icons text-base">travel_explore</span>
             Find Work
