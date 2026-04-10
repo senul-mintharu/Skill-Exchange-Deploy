@@ -164,6 +164,7 @@ const RequestDetailsPage = () => {
   const [notCompletedReasonError, setNotCompletedReasonError] = useState('');
   const [notCompletedSubmitting, setNotCompletedSubmitting] = useState(false);
   const [notCompletedSuccess, setNotCompletedSuccess] = useState(false);
+  const [disputeMode, setDisputeMode] = useState('not_completed');
   const [disputeOutcome, setDisputeOutcome] = useState(null);
 
   const fetchRequestDetails = useCallback(async (showLoading = true) => {
@@ -356,6 +357,17 @@ const RequestDetailsPage = () => {
 
   const tone = statusTone(request.status);
   const accentClass = metricAccent(tone);
+  const canManageRequest = request.status === 'OPEN';
+  const canRaiseDispute = request.status === 'ASSIGNED' || request.status === 'IN_PROGRESS';
+  const disputeModalTitle = disputeMode === 'general' ? 'Raise Dispute' : 'Mark as Not Completed';
+  const disputeModalMessage = disputeMode === 'general'
+    ? 'Use this when you need to raise a dispute about the work, even if the job is already underway.'
+    : 'This action will flag the job for admin review if the work was not completed as expected.';
+  const disputeModalSubmitLabel = disputeMode === 'general' ? 'Submit Dispute' : 'Confirm & Raise Dispute';
+  const disputeSuccessTitle = disputeMode === 'general' ? 'Dispute Raised' : 'Dispute Raised';
+  const disputeSuccessMessage = disputeMode === 'general'
+    ? 'Your dispute has been submitted. Platform administrators will review the case.'
+    : 'The job has been marked as not completed and a dispute has been raised. Platform administrators will review the case.';
 
   return (
     <div className="page-wrapper">
@@ -392,7 +404,7 @@ const RequestDetailsPage = () => {
                     <StatusPill tone={tone} className="w-fit">
                       {getJobStatusLabel(request.status)}
                     </StatusPill>
-                    {!isWorker ? (
+                    {!isWorker && canManageRequest ? (
                       <>
                         <button
                           className="ui-button-secondary w-full sm:w-auto"
@@ -419,11 +431,11 @@ const RequestDetailsPage = () => {
                           Delete
                         </button>
                       </>
-                    ) : (
+                    ) : isWorker ? (
                       <button className="ui-button-primary w-full sm:w-auto" onClick={() => navigate(`/requests/${request.id}/quote`)} type="button">
                         Send Quote
                       </button>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -510,8 +522,34 @@ const RequestDetailsPage = () => {
                     Mark as Completed
                   </button>
                   {/* SCRUM-89: Opens modal with reason textarea instead of direct status update */}
-                  <button className="ui-button-secondary flex-1" onClick={() => { setShowNotCompletedModal(true); setNotCompletedReasonError(''); setNotCompletedReason(''); }} type="button">
+                  <button
+                    className="ui-button-secondary flex-1"
+                    onClick={() => {
+                      setDisputeMode('not_completed');
+                      setShowNotCompletedModal(true);
+                      setNotCompletedReasonError('');
+                      setNotCompletedReason('');
+                    }}
+                    type="button"
+                  >
                     Mark as Not Completed
+                  </button>
+                </div>
+              ) : null}
+
+              {canRaiseDispute ? (
+                <div className="mt-3 flex flex-col gap-3 border-t border-line pt-4 sm:flex-row">
+                  <button
+                    className="ui-button-secondary flex-1"
+                    onClick={() => {
+                      setDisputeMode('general');
+                      setShowNotCompletedModal(true);
+                      setNotCompletedReasonError('');
+                      setNotCompletedReason('');
+                    }}
+                    type="button"
+                  >
+                    Raise Dispute
                   </button>
                 </div>
               ) : null}
@@ -534,8 +572,8 @@ const RequestDetailsPage = () => {
               {/* SCRUM-89: AC3 — Success banner after modal submission */}
               {notCompletedSuccess ? (
                 <div className="mt-4">
-                  <AlertPanel tone="success" icon="check_circle" title="Dispute Raised">
-                    <p>The job has been marked as not completed and a dispute has been raised. Platform administrators will review the case.</p>
+                  <AlertPanel tone="success" icon="check_circle" title={disputeSuccessTitle}>
+                    <p>{disputeSuccessMessage}</p>
                   </AlertPanel>
                 </div>
               ) : null}
@@ -670,11 +708,11 @@ const RequestDetailsPage = () => {
                     <p className="ui-stat-label">Responses</p>
                     <h2 className="mt-2 text-xl font-bold text-ink">Quotes Received</h2>
                     <p className="mt-2 text-sm leading-6 text-ink-muted">
-                      Scan the latest quotations here, then open the compare view for the full decision workflow.
+                      Scan the latest quotations here, then select a worker to continue with completion and review.
                     </p>
                   </div>
-                  <Link to={`/my-requests/${requestId}/quotations`} className="ui-button-secondary w-full sm:w-auto">
-                    View All Quotations
+                  <Link to={`/my-requests/${requestId}/quotations`} className="ui-button-primary w-full sm:w-auto">
+                    Select Worker
                   </Link>
                 </div>
 
@@ -805,9 +843,9 @@ const RequestDetailsPage = () => {
                 </span>
                 <div>
                   <h2 id="not-completed-modal-title" className="text-lg font-bold text-ink">
-                    Mark as Not Completed
+                    {disputeModalTitle}
                   </h2>
-                  <p className="mt-0.5 text-sm text-ink-muted">This action will flag the job for admin review.</p>
+                  <p className="mt-0.5 text-sm text-ink-muted">{disputeModalMessage}</p>
                 </div>
               </div>
               <button
@@ -824,7 +862,9 @@ const RequestDetailsPage = () => {
             <form onSubmit={handleNotCompletedSubmit} className="px-6 py-5 space-y-4">
               <div className="rounded-card border border-amber-100 bg-amber-50/80 px-4 py-3">
                 <p className="text-sm leading-6 text-amber-900">
-                  <strong>Please note:</strong> Marking this job as not completed will automatically raise a dispute and notify our admin team. This action cannot be undone.
+                  <strong>Please note:</strong> {disputeMode === 'general'
+                    ? 'This will create a dispute and notify our admin team. This action cannot be undone.'
+                    : 'Marking this job as not completed will automatically raise a dispute and notify our admin team. This action cannot be undone.'}
                 </p>
               </div>
 
@@ -874,7 +914,7 @@ const RequestDetailsPage = () => {
                   ) : (
                     <span className="flex items-center justify-center gap-2">
                       <span className="material-icons text-base">report</span>
-                      Confirm & Raise Dispute
+                      {disputeModalSubmitLabel}
                     </span>
                   )}
                 </button>
