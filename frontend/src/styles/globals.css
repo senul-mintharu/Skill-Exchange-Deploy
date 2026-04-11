@@ -7,58 +7,70 @@
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --font-display: 'Outfit', 'Inter', sans-serif;
 
-    --color-brand-950: #14363a;
-    --color-brand-900: #1a4a52;
-    --color-brand-800: #245a62;
-    --color-brand-700: #2c666e;
-    --color-brand-600: #35838d;
-    --color-brand-500: #45b7aa;
-    --color-brand-400: #4ecdc4;
-    --color-brand-300: #80d9d2;
-    --color-brand-200: #a8edea;
-    --color-brand-100: #d7f7f4;
-    --color-brand-50: #eefcfb;
+    /* TROPICAL TRUST: Primary Deep Teal Green Scale */
+    --color-brand-950: #00363a;
+    --color-brand-900: #004d4f;
+    --color-brand-800: #006064; /* Primary #006064 */
+    --color-brand-700: #00838f;
+    --color-brand-600: #00acc1;
+    --color-brand-500: #26c6da;
+    --color-brand-400: #4dd0e1;
+    --color-brand-300: #80deea;
+    --color-brand-200: #b2ebf2; /* Highlight #B2EBF2 */
+    --color-brand-100: #e0f7fa;
+    --color-brand-50:  #f2fdfd;
 
-    --color-canvas: #f4fbfa;
+    /* TROPICAL TRUST: Warm Saffron Orange Accent */
+    --color-accent-600: #e69524;
+    --color-accent-500: #f7a731; /* Secondary Action #F7A731 */
+    --color-accent-400: #f8b653;
+
+    /* TROPICAL TRUST: Soft Sand White Canvas */
+    --color-canvas: #f8f6f1;     /* Main Canvas #F8F6F1 */
     --color-surface: #ffffff;
-    --color-surface-muted: #f8fafc;
+    --color-surface-muted: #f0eee7;
     --color-surface-raised: rgba(255, 255, 255, 0.96);
-    --color-ink: #0f172a;
-    --color-ink-soft: #1e293b;
-    --color-ink-muted: #64748b;
-    --color-ink-subtle: #94a3b8;
-    --color-line: #e2e8f0;
-    --color-line-strong: #cbd5e1;
+    
+    /* TROPICAL TRUST: Charcoal Blue Ink */
+    --color-ink: #263238;        /* Headings & Body #263238 */
+    --color-ink-soft: #37474f;
+    --color-ink-muted: #546e7a;
+    --color-ink-subtle: #78909c;
+    --color-line: #cfd8dc;
+    --color-line-strong: #b0bec5;
 
+    /* Semantic Status Colors */
     --color-success: #15803d;
     --color-success-soft: rgba(34, 197, 94, 0.12);
-    --color-warning: #d97706;
-    --color-warning-soft: rgba(251, 191, 36, 0.16);
+    --color-warning: #f7a731;
+    --color-warning-soft: rgba(247, 167, 49, 0.16);
     --color-danger: #dc2626;
     --color-danger-soft: rgba(239, 68, 68, 0.12);
-    --color-info: #2563eb;
-    --color-info-soft: rgba(37, 99, 235, 0.12);
-    --color-gold: #fbbf24;
+    --color-info: #00838f;
+    --color-info-soft: rgba(0, 131, 143, 0.12);
+    --color-gold: #f7a731;
 
-    --gradient-page: linear-gradient(135deg, #2c666e 0%, #35838d 50%, #45b7aa 100%);
-    --gradient-page-glow: radial-gradient(circle at top left, rgba(168, 237, 234, 0.32), transparent 42%),
-      radial-gradient(circle at bottom right, rgba(78, 205, 196, 0.2), transparent 30%);
-    --gradient-brand: linear-gradient(135deg, #2c666e 0%, #45b7aa 100%);
-    --gradient-brand-strong: linear-gradient(135deg, #1a4a52 0%, #2c666e 55%, #45b7aa 100%);
-    --gradient-highlight: linear-gradient(135deg, #4ecdc4 0%, #a8edea 100%);
-    --gradient-chip: linear-gradient(135deg, rgba(224, 242, 241, 1) 0%, rgba(178, 223, 219, 1) 100%);
-    --gradient-chip-muted: linear-gradient(135deg, rgba(241, 245, 249, 1) 0%, rgba(226, 232, 240, 1) 100%);
-    --gradient-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.94));
+    /* Gradients adapted to the Tropical Trust Teal */
+    --gradient-page: linear-gradient(135deg, #004d4f 0%, #006064 50%, #00838f 100%);
+    --gradient-page-glow: radial-gradient(circle at top left, rgba(178, 235, 242, 0.32), transparent 42%),
+      radial-gradient(circle at bottom right, rgba(0, 172, 193, 0.2), transparent 30%);
+    --gradient-brand: linear-gradient(135deg, #006064 0%, #00838f 100%);
+    --gradient-brand-strong: linear-gradient(135deg, #00363a 0%, #006064 55%, #00acc1 100%);
+    --gradient-highlight: linear-gradient(135deg, #4dd0e1 0%, #b2ebf2 100%);
+    --gradient-chip: linear-gradient(135deg, rgba(224, 247, 250, 1) 0%, rgba(178, 235, 242, 1) 100%);
+    --gradient-chip-muted: linear-gradient(135deg, rgba(248, 246, 241, 1) 0%, rgba(240, 238, 231, 1) 100%);
+    --gradient-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 246, 241, 0.94));
 
     --radius-card: 1.25rem;
     --radius-panel: 1.75rem;
     --radius-chip: 999px;
     --radius-field: 1rem;
 
-    --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.06);
-    --shadow-card: 0 20px 55px rgba(15, 23, 42, 0.08);
-    --shadow-panel: 0 24px 64px rgba(15, 23, 42, 0.12);
-    --shadow-brand: 0 16px 40px rgba(44, 102, 110, 0.24);
+    /* Shadows tinted with Charcoal Blue (RGB: 38, 50, 56) instead of slate */
+    --shadow-soft: 0 10px 30px rgba(38, 50, 56, 0.06);
+    --shadow-card: 0 20px 55px rgba(38, 50, 56, 0.08);
+    --shadow-panel: 0 24px 64px rgba(38, 50, 56, 0.12);
+    --shadow-brand: 0 16px 40px rgba(0, 96, 100, 0.24);
 
     --page-shell-y: 2rem;
   }
@@ -262,6 +274,11 @@
     @apply ui-button border-brand-700 bg-brand-gradient text-white shadow-brand hover:-translate-y-0.5 hover:shadow-panel;
   }
 
+  /* Added specifically for the Warm Saffron Orange */
+  .ui-button-accent {
+    @apply ui-button border-accent-600 bg-accent-500 text-white shadow-soft hover:-translate-y-0.5 hover:shadow-panel hover:bg-accent-600;
+  }
+
   .ui-button-secondary {
     @apply ui-button border-brand-200 bg-white text-brand-800 hover:border-brand-300 hover:bg-brand-50;
   }
@@ -343,11 +360,7 @@
   }
 }
 
-/* ── Material Icons fix ─────────────────────────────────────────────────────
-   Tailwind's preflight resets font-family on all elements, which breaks the
-   Material Icons ligature rendering. These rules force the correct font
-   settings so the icons always display as glyphs, never as raw text.
-   ──────────────────────────────────────────────────────────────────────── */
+/* ── Material Icons fix ───────────────────────────────────────────────────── */
 .material-icons {
   font-family: 'Material Icons' !important;
   font-weight: normal !important;

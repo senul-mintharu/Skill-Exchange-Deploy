@@ -117,7 +117,28 @@ const Navbar = ({ variant = 'landing' }) => {
                 <a href="#hero" className={navLinkBase}>Home</a>
                 <a href="#how-it-works" className={navLinkBase}>How It Works</a>
                 <a href="#services" className={navLinkBase}>Services</a>
-                <Link to="/login" className={navLinkBase}>Sign up / Log in</Link>
+                <Link
+                  to="/register"
+                  className={cn(
+                    'rounded-2xl border px-5 py-2.5 text-sm font-semibold transition',
+                    showLightDesktop
+                      ? 'border-slate-900 bg-slate-900 text-white hover:bg-slate-800'
+                      : 'border-slate-900 bg-slate-900 text-white hover:bg-slate-800'
+                  )}
+                >
+                  Sign up
+                </Link>
+                <Link
+                  to="/login"
+                  className={cn(
+                    'rounded-2xl border px-5 py-2.5 text-sm font-semibold transition',
+                    showLightDesktop
+                      ? 'border-white/45 bg-white/14 text-white hover:bg-white/24'
+                      : 'border-slate-300 bg-white text-slate-900 hover:bg-slate-50'
+                  )}
+                >
+                  Sign in
+                </Link>
                 <Link
                   to="/create-profile"
                   className={cn(
@@ -200,7 +221,20 @@ const Navbar = ({ variant = 'landing' }) => {
                 <a href="#hero" className="block rounded-2xl px-4 py-3 text-base font-medium text-ink-soft hover:bg-brand-50 hover:text-brand-800" onClick={closeMobile}>Home</a>
                 <a href="#how-it-works" className="block rounded-2xl px-4 py-3 text-base font-medium text-ink-soft hover:bg-brand-50 hover:text-brand-800" onClick={closeMobile}>How It Works</a>
                 <a href="#services" className="block rounded-2xl px-4 py-3 text-base font-medium text-ink-soft hover:bg-brand-50 hover:text-brand-800" onClick={closeMobile}>Services</a>
-                <Link to="/login" className="block rounded-2xl px-4 py-3 text-base font-medium text-ink-soft hover:bg-brand-50 hover:text-brand-800" onClick={closeMobile}>Sign up / Log in</Link>
+                <Link
+                  to="/register"
+                  className="block rounded-2xl border border-slate-900 bg-slate-900 px-4 py-3 text-center text-base font-semibold text-white transition hover:bg-slate-800"
+                  onClick={closeMobile}
+                >
+                  Sign up
+                </Link>
+                <Link
+                  to="/login"
+                  className="block rounded-2xl border border-slate-300 bg-white px-4 py-3 text-center text-base font-semibold text-slate-900 transition hover:bg-slate-50"
+                  onClick={closeMobile}
+                >
+                  Sign in
+                </Link>
               </>
             ) : (
               <>

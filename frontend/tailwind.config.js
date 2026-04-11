@@ -17,6 +17,12 @@ module.exports = {
           100: 'var(--color-brand-100)',
           50: 'var(--color-brand-50)',
         },
+        /* Added the Saffron Orange Accent Scale */
+        accent: {
+          600: 'var(--color-accent-600)',
+          500: 'var(--color-accent-500)',
+          400: 'var(--color-accent-400)',
+        },
         canvas: 'var(--color-canvas)',
         surface: {
           DEFAULT: 'var(--color-surface)',

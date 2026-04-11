@@ -358,7 +358,7 @@ const RequestDetailsPage = () => {
   const tone = statusTone(request.status);
   const accentClass = metricAccent(tone);
   const canManageRequest = request.status === 'OPEN';
-  const canRaiseDispute = request.status === 'ASSIGNED' || request.status === 'IN_PROGRESS';
+  const canRaiseDispute = request.status === 'IN_PROGRESS';
   const disputeModalTitle = disputeMode === 'general' ? 'Raise Dispute' : 'Mark as Not Completed';
   const disputeModalMessage = disputeMode === 'general'
     ? 'Use this when you need to raise a dispute about the work, even if the job is already underway.'
@@ -521,18 +521,18 @@ const RequestDetailsPage = () => {
                   <button className="ui-button-primary flex-1" onClick={() => handleUpdateJobOutcome('COMPLETED')} disabled={isUpdatingStatus} type="button">
                     Mark as Completed
                   </button>
-                  {/* SCRUM-89: Opens modal with reason textarea instead of direct status update */}
+                  {/* Raises a general dispute from the same action row */}
                   <button
                     className="ui-button-secondary flex-1"
                     onClick={() => {
-                      setDisputeMode('not_completed');
+                      setDisputeMode('general');
                       setShowNotCompletedModal(true);
                       setNotCompletedReasonError('');
                       setNotCompletedReason('');
                     }}
                     type="button"
                   >
-                    Mark as Not Completed
+                    Raise Dispute
                   </button>
                 </div>
               ) : null}

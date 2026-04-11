@@ -4,11 +4,12 @@ import Navbar from '../components/common/Navbar';
 
 const MainLayout = () => {
   const location = useLocation();
-  const isLanding = ['/', '/login', '/register'].includes(location.pathname);
+  const isLanding = location.pathname === '/';
+  const hideNavbar = ['/login', '/register'].includes(location.pathname);
 
   return (
     <div className="min-h-screen">
-      <Navbar variant={isLanding ? 'landing' : 'portal'} />
+      {!hideNavbar ? <Navbar variant={isLanding ? 'landing' : 'portal'} /> : null}
       <main className="content">
         <Outlet />
       </main>

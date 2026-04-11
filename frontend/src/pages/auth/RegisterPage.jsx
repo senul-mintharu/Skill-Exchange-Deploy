@@ -69,14 +69,14 @@ const RegisterPage = () => {
 
   return (
     <AuthShell
-      title="Create Account"
-      subtitle="Join LankaFix as a service seeker or skilled worker and start using the marketplace today."
+      title="Sign up"
+      subtitle="Create your account and start posting requests or finding work."
       className="max-w-2xl"
       footer={(
         <p className="text-sm text-ink-muted">
           Already have an account?{' '}
-          <Link to="/login" state={location.state} className="font-semibold text-brand-800 hover:text-brand-900">
-            Login
+          <Link to="/login" state={location.state} className="font-semibold text-slate-900 hover:text-slate-700">
+            Sign in
           </Link>
         </p>
       )}
@@ -125,9 +125,22 @@ const RegisterPage = () => {
             </div>
           </div>
 
-          <button type="submit" className="ui-button-primary flex w-full" disabled={loading}>
-            {loading ? 'Creating account...' : 'Register'}
-          </button>
+          <div className="space-y-3">
+            <button
+              type="submit"
+              className="flex w-full items-center justify-center rounded-2xl border border-slate-900 bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={loading}
+            >
+              {loading ? 'Creating account...' : 'Sign up'}
+            </button>
+            <Link
+              to="/login"
+              state={location.state}
+              className="flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+            >
+              Sign in instead
+            </Link>
+          </div>
         </form>
       </div>
     </AuthShell>

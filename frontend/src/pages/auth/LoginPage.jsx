@@ -50,13 +50,13 @@ const LoginPage = () => {
 
   return (
     <AuthShell
-      title="Welcome Back"
-      subtitle="Sign in to manage requests, compare quotes, and keep your work moving."
+      title="Sign in"
+      subtitle="Welcome back. Continue to your requests, quotes, and dashboard."
       footer={(
         <p className="text-sm text-ink-muted">
-          Don&apos;t have an account?{' '}
-          <Link to="/register" state={location.state} className="font-semibold text-brand-800 hover:text-brand-900">
-            Register here
+          New to Skill Exchange?{' '}
+          <Link to="/register" state={location.state} className="font-semibold text-slate-900 hover:text-slate-700">
+            Create an account
           </Link>
         </p>
       )}
@@ -93,7 +93,11 @@ const LoginPage = () => {
             />
           </div>
 
-          <button type="submit" className="ui-button-primary flex w-full" disabled={loading}>
+          <button
+            type="submit"
+            className="flex w-full items-center justify-center rounded-2xl border border-slate-900 bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={loading}
+          >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>

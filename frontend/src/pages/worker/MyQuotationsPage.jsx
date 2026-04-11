@@ -151,7 +151,7 @@ const MyQuotationsPage = () => {
         ) : null}
 
         {!loading && !error && quotes.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2">
+          <ul className="overflow-hidden rounded-panel border border-line bg-white shadow-card divide-y divide-line">
             {quotes.map((quote) => {
               const meta = statusMeta(quote.status);
               const isPending = meta.label.toUpperCase() === 'PENDING';
@@ -164,8 +164,8 @@ const MyQuotationsPage = () => {
                   : null;
 
               return (
-                <article key={quote.id} className="ui-card flex flex-col gap-4 overflow-hidden p-5">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <li key={quote.id} className="p-4 sm:p-5">
+                  <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="ui-badge-muted">Quote #{quote.id}</span>
@@ -173,16 +173,20 @@ const MyQuotationsPage = () => {
                           {meta.label}
                         </StatusPill>
                       </div>
-                      <h3 className="text-xl font-bold text-ink">
+                      <h3 className="text-lg font-bold text-ink">
                         {quote.requestTitle || `Request #${quote.requestId}`}
                       </h3>
                       <p className="text-sm leading-6 text-ink-muted">
                         Keep this quotation clear and current so you can react quickly if the seeker follows up.
                       </p>
                     </div>
+                    <div className="text-right">
+                      <p className="text-xl font-extrabold tracking-tight text-ink">LKR {Number(quote.price).toLocaleString()}</p>
+                      <p className="ui-stat-label">Quoted Price</p>
+                    </div>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <div className="rounded-card border border-brand-100 bg-brand-50/50 px-4 py-3">
                       <p className="ui-stat-label">Price</p>
                       <p className="mt-2 text-lg font-extrabold text-brand-800">
@@ -197,7 +201,7 @@ const MyQuotationsPage = () => {
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-3 sm:flex-row">
+                  <div className="mt-3 flex flex-col gap-3 border-t border-line/70 pt-3 sm:flex-row">
                     <Link className="ui-button-ghost flex-1" to={`/requests/${quote.requestId}`}>
                       <span className="material-icons text-base">visibility</span>
                       View Request
@@ -233,10 +237,10 @@ const MyQuotationsPage = () => {
                       )}
                     </button>
                   </div>
-                </article>
+                </li>
               );
             })}
-          </div>
+          </ul>
         ) : null}
       </main>
     </div>
