@@ -130,7 +130,8 @@ const DisputeReviewPage = () => {
 
 					{!loading && hasDisputes ? (
 						<>
-							<div className="overflow-x-auto rounded-card border border-line">
+							<div className="overflow-hidden rounded-panel border border-line bg-white shadow-card">
+								<div className="overflow-x-auto">
 								<table className="min-w-full bg-white">
 									<thead className="bg-surface-muted">
 										<tr>
@@ -172,6 +173,7 @@ const DisputeReviewPage = () => {
 										))}
 									</tbody>
 								</table>
+								</div>
 							</div>
 
 							<div className="flex flex-wrap items-center justify-between gap-3 pt-2">

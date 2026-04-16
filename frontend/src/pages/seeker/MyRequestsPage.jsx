@@ -6,6 +6,7 @@ import {
   AlertPanel,
   EmptyState,
   LoadingPanel,
+  PageIntro,
   StatusPill,
 } from '../../components/ui/PortalPrimitives';
 
@@ -208,24 +209,18 @@ const MyRequestsPage = () => {
   return (
     <div className="page-wrapper">
       <main className="ui-shell space-y-4">
-        <section className="ui-panel p-5 sm:p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="ui-eyebrow">Seeker Requests</p>
-              <h1 className="mt-3 text-3xl font-extrabold tracking-snugger text-ink sm:text-4xl">
-                My Requests
-              </h1>
-              <p className="mt-2 max-w-2xl text-sm leading-7 text-ink-soft sm:text-base">
-                Track open jobs, monitor active work, and jump into the request that needs you next.
-              </p>
-            </div>
-
+        <PageIntro
+          eyebrow="Seeker Requests"
+          title="My Requests"
+          subtitle="Track open jobs, monitor active work, and jump into the request that needs you next."
+          light
+          actions={(
             <Link to="/create-request" className="ui-button-primary w-full sm:w-auto">
               <span className="material-icons text-base">add</span>
               Create Request
             </Link>
-          </div>
-        </section>
+          )}
+        />
 
         {loading ? <LoadingPanel message="Loading requests..." /> : null}
 

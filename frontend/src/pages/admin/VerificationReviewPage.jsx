@@ -193,10 +193,10 @@ const VerificationReviewPage = () => {
 												</p>
 											</div>
 
-											<div className="flex flex-wrap items-center gap-2">
+										<div className="flex flex-wrap items-center gap-2">
 												<button
 													type="button"
-													className="ui-button-secondary"
+													className="ui-button-ghost"
 													onClick={() => handleViewDocument(submission.submissionId)}
 													disabled={isProcessing}
 												>

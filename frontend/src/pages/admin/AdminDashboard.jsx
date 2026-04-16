@@ -8,16 +8,14 @@ const AdminDashboard = () => (
       <PageIntro
         eyebrow="Admin"
         title="Admin Dashboard"
-        subtitle="Platform moderation and operational tools will expand here in future sprints."
+        subtitle="Review moderation queues, resolve disputes quickly, and keep marketplace quality high."
         light
       />
 
       <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="Verification Queue" value="Pending" icon="fact_check" />
-        <StatCard label="Disputes" value="Open Cases" icon="gavel" />
-        <StatCard label="Verification Queue" value="Review Now" icon="fact_check" />
-        <StatCard label="Disputes" value="Active Monitoring" icon="gavel" />
-        <StatCard label="User Controls" value="Coming Soon" icon="manage_accounts" />
+        <StatCard label="Verification Queue" value="Review Now" icon="fact_check" tone="warning" />
+        <StatCard label="Disputes" value="Active Cases" icon="gavel" tone="danger" />
+        <StatCard label="User Controls" value="Coming Soon" icon="manage_accounts" tone="neutral" />
       </div>
 
       <SectionCard className="space-y-4">
@@ -26,7 +24,7 @@ const AdminDashboard = () => (
           Access active moderation workflows directly from the dashboard.
         </p>
         <div className="grid gap-3 md:grid-cols-2">
-          <Link to="/admin/verification" className="ui-button-secondary w-full justify-center">
+          <Link to="/admin/verification" className="ui-button-primary w-full justify-center">
             <span className="material-icons text-base">fact_check</span>
             Open Verification Review
           </Link>

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { browseRequests } from '../../services/requestService';
 import { getProfileByUserId } from '../../services/profileService';
@@ -43,6 +43,22 @@ const prettyLabel = (value) => String(value || 'Unknown').replaceAll('_', ' ');
 const excerpt = (text, maxLength = 128) => (!text
   ? 'Open this request to view full details.'
   : (text.length > maxLength ? `${text.slice(0, maxLength).trim()}...` : text));
+const formatDate = (dateString) => {
+  if (!dateString) return 'Recently';
+  return new Date(dateString).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
+
+const requestMetaBadge = (request) => {
+  const normalized = String(request.status || '').toUpperCase();
+  if (normalized === 'COMPLETED') return { icon: 'check_circle', text: 'Done', className: 'text-green-700' };
+  if (normalized === 'ASSIGNED' || normalized === 'IN_PROGRESS') return { icon: 'radio_button_checked', text: 'Active Job', className: 'text-amber-700' };
+  if (normalized === 'CANCELLED' || normalized === 'NOT_COMPLETED') return { icon: 'error_outline', text: 'Needs Review', className: 'text-red-700' };
+  return { icon: 'pending', text: 'Open', className: 'text-cyan-700' };
+};
 
 const SkeletonCard = () => (
   <div className="ui-card p-5">
@@ -77,6 +93,26 @@ const BrowseRequestsPage = () => {
   const [sortBy, setSortBy] = useState('newest');
 
   const hasActiveFilters = Boolean(keyword || selectedCategory || locationSearch || sortBy !== 'newest');
+  const stats = useMemo(() => {
+    const summary = {
+      visible: requests.length,
+      total: totalElements,
+      open: 0,
+      active: 0,
+      completed: 0,
+      attention: 0,
+    };
+
+    requests.forEach((request) => {
+      const status = String(request.status || '').toUpperCase();
+      if (status === 'OPEN') summary.open += 1;
+      else if (status === 'ASSIGNED' || status === 'IN_PROGRESS') summary.active += 1;
+      else if (status === 'COMPLETED') summary.completed += 1;
+      else if (status === 'CANCELLED' || status === 'NOT_COMPLETED') summary.attention += 1;
+    });
+
+    return summary;
+  }, [requests, totalElements]);
 
   const fetchRequests = useCallback(async (page = 0) => {
     setLoading(true);
@@ -189,14 +225,12 @@ const BrowseRequestsPage = () => {
   return (
     <div className="page-wrapper">
       <main className="ui-shell space-y-6">
-        <section className="ui-panel p-5 sm:p-6">
-          <PageIntro
-            eyebrow="Worker Discovery"
-            title="Find Work"
-            subtitle="Browse open requests, scan the essentials quickly, and open the jobs that match your skill set best."
-            className="mb-0"
-          />
-        </section>
+        <PageIntro
+          eyebrow="Worker Discovery"
+          title="Find Work"
+          subtitle="Browse open requests, scan the essentials quickly, and open the jobs that match your skill set best."
+          light
+        />
 
         {needsProfile ? (
           <AlertPanel
@@ -309,70 +343,137 @@ const BrowseRequestsPage = () => {
               <strong className="text-white">{totalElements}</strong> {totalElements === 1 ? 'job' : 'jobs'} {hasActiveFilters ? 'found' : 'available'}
             </div>
 
-            <ul className="overflow-hidden rounded-panel border border-line bg-white shadow-card divide-y divide-line">
-              {requests.map((request) => (
-                <li key={request.id} className="p-4 sm:p-5">
-                  <div className="flex items-start gap-3 sm:gap-4">
-                    <span className={`mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${categoryMeta(request.category).iconShell}`}>
-                      <span className="material-icons text-[1.45rem]">{categoryMeta(request.category).icon}</span>
+            <div className="grid gap-4 xl:grid-cols-[260px_minmax(0,1fr)]">
+              <aside className="space-y-4">
+                <section className="rounded-panel border border-line bg-white p-4 shadow-card sm:p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="ui-stat-label">Overview</p>
+                      <h2 className="mt-2 text-lg font-bold text-ink">Request Summary</h2>
+                    </div>
+                    <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-brand-800">
+                      {stats.total} Total
                     </span>
+                  </div>
 
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="min-w-0 space-y-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="rounded-chip bg-cyan-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-cyan-800">
-                              {formatCategoryLabel(request.category)}
-                            </span>
-                            <span className="rounded-chip bg-slate-200 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-700">
-                              {prettyLabel(request.urgency || 'Medium')}
-                            </span>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                    {[
+                      { label: 'Open', count: stats.open, icon: 'assignment', className: 'border-blue-100 bg-blue-50/80 text-blue-900', iconClassName: 'bg-blue-100 text-blue-900', countClassName: 'bg-blue-600 text-white' },
+                      { label: 'In Progress', count: stats.active, icon: 'construction', className: 'border-amber-100 bg-amber-50/80 text-amber-900', iconClassName: 'bg-amber-100 text-amber-900', countClassName: 'bg-amber-500 text-white' },
+                      { label: 'Completed', count: stats.completed, icon: 'task_alt', className: 'border-green-100 bg-green-50/80 text-green-900', iconClassName: 'bg-green-100 text-green-900', countClassName: 'bg-green-600 text-white' },
+                      { label: 'Needs Attention', count: stats.attention, icon: 'rule', className: 'border-slate-200 bg-slate-50 text-slate-700', iconClassName: 'bg-white text-slate-500', countClassName: 'bg-white text-slate-700 border border-slate-200' },
+                    ].map((item) => (
+                      <div key={item.label} className={`rounded-2xl border px-3 py-3 ${item.className}`}>
+                        <div className="flex items-center gap-3">
+                          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${item.iconClassName}`}>
+                            <span className="material-icons text-[1.15rem]">{item.icon}</span>
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold leading-5">{item.label}</p>
                           </div>
-                          <h3 className="truncate text-lg font-bold text-ink">
-                            {request.title || formatCategoryLabel(request.category)}
-                          </h3>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <StatusPill tone={statusTone(request.status)} className="w-fit">
-                            {prettyLabel(request.status || 'OPEN')}
-                          </StatusPill>
-                          <div className="text-right">
-                            <p className="text-xl font-extrabold tracking-tight text-ink">{formatBudget(request.budget)}</p>
-                            <p className="ui-stat-label">Estimated Budget</p>
-                          </div>
+                          <span className={`inline-flex min-w-[2.25rem] items-center justify-center rounded-full px-2.5 py-1 text-sm font-bold ${item.countClassName}`}>
+                            {item.count}
+                          </span>
                         </div>
                       </div>
+                    ))}
+                  </div>
+                </section>
 
-                      <p className="mt-2 text-sm leading-7 text-ink-muted">
-                        {excerpt(request.description)}
-                      </p>
-
-                      <div className="mt-3 flex flex-col gap-3 border-t border-line/70 pt-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-ink-muted">
-                          <span className="inline-flex items-center gap-1.5">
-                            <span className="material-icons text-base text-brand-600">calendar_today</span>
-                            {request.postedDate}
-                          </span>
-                          <span className="inline-flex items-center gap-1.5">
-                            <span className="material-icons text-base text-brand-600">location_on</span>
-                            {request.locationArea}
-                          </span>
-                          <span className="rounded-chip bg-cyan-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-cyan-800">
-                            Open
-                          </span>
-                        </div>
-                        <Link to={`/requests/${request.id}`} state={{ from: 'browse-requests' }} className="ui-button-primary w-full justify-center sm:w-auto sm:px-5">
-                          <span className="material-icons text-base">description</span>
-                          View Details
-                        </Link>
-                      </div>
+                <section className="rounded-panel border border-line bg-white p-4 shadow-card sm:p-5">
+                  <p className="ui-stat-label">Quick Stats</p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+                    <div className="rounded-2xl border border-line bg-slate-50 px-4 py-3.5">
+                      <p className="text-sm text-ink-muted">Visible on Page</p>
+                      <p className="mt-2 text-xl font-extrabold tracking-tight text-ink sm:text-2xl">{stats.visible}</p>
+                    </div>
+                    <div className="rounded-2xl border border-line bg-slate-50 px-4 py-3.5">
+                      <p className="text-sm text-ink-muted">Total Matches</p>
+                      <p className="mt-2 text-xl font-extrabold tracking-tight text-brand-900 sm:text-2xl">{stats.total}</p>
+                    </div>
+                    <div className="rounded-2xl border border-line bg-slate-50 px-4 py-3.5">
+                      <p className="text-sm text-ink-muted">Active Filters</p>
+                      <p className="mt-2 text-xl font-extrabold tracking-tight text-ink sm:text-2xl">{hasActiveFilters ? 'Yes' : 'No'}</p>
                     </div>
                   </div>
-                </li>
-              ))}
-            </ul>
+                </section>
+              </aside>
 
-            {renderPagination()}
+              <section>
+                <ul className="overflow-hidden rounded-panel border border-line bg-white shadow-card divide-y divide-line">
+                  {requests.map((request) => {
+                    const category = categoryMeta(request.category);
+                    const metaBadge = requestMetaBadge(request);
+
+                    return (
+                      <li key={request.id} className="p-4 sm:p-5">
+                        <div className="flex items-start gap-3 sm:gap-4">
+                          <span className={`mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${category.iconShell}`}>
+                            <span className="material-icons text-[1.45rem]">{category.icon}</span>
+                          </span>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+                              <div className="min-w-0 space-y-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="rounded-chip bg-cyan-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-cyan-800">
+                                    {formatCategoryLabel(request.category)}
+                                  </span>
+                                  <span className="rounded-chip bg-slate-200 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-700">
+                                    {prettyLabel(request.urgency || 'Medium')}
+                                  </span>
+                                </div>
+                                <h3 className="truncate text-lg font-bold text-ink">
+                                  {request.title || formatCategoryLabel(request.category)}
+                                </h3>
+                              </div>
+                              <div className="flex items-start gap-3">
+                                <StatusPill tone={statusTone(request.status)} className="w-fit">
+                                  {prettyLabel(request.status || 'OPEN')}
+                                </StatusPill>
+                                <div className="text-right">
+                                  <p className="text-xl font-extrabold tracking-tight text-ink">{formatBudget(request.budget)}</p>
+                                  <p className="ui-stat-label">Estimated Budget</p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <p className="mt-2 text-sm leading-7 text-ink-soft">
+                              {excerpt(request.description)}
+                            </p>
+
+                            <div className="mt-3 border-t border-line/70 pt-3">
+                              <div className="flex flex-col gap-2 text-sm text-ink-muted sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex flex-wrap items-center gap-4">
+                                  <span className="inline-flex items-center gap-1.5">
+                                    <span className="material-icons text-base text-brand-600">calendar_today</span>
+                                    {formatDate(request.createdAt)}
+                                  </span>
+                                  <span className="inline-flex items-center gap-1.5">
+                                    <span className="material-icons text-base text-brand-600">location_on</span>
+                                    {request.locationArea || 'Not set'}
+                                  </span>
+                                  <span className={`inline-flex items-center gap-1.5 text-sm font-semibold ${metaBadge.className}`}>
+                                    <span className="material-icons text-base">{metaBadge.icon}</span>
+                                    {metaBadge.text}
+                                  </span>
+                                </div>
+                                <Link to={`/requests/${request.id}`} state={{ from: 'browse-requests' }} className="ui-button-primary w-full justify-center sm:w-auto">
+                                  View Details
+                                  <span className="material-icons text-base">arrow_forward</span>
+                                </Link>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+
+                <div className="mt-4">{renderPagination()}</div>
+              </section>
+            </div>
           </>
         )}
       </main>
