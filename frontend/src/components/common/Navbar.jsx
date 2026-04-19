@@ -33,7 +33,7 @@ const Navbar = ({ variant = 'landing' }) => {
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth > 768) {
+      if (window.innerWidth > 1024) {
         setMobileOpen(false);
       }
     };
@@ -109,7 +109,7 @@ const Navbar = ({ variant = 'landing' }) => {
             </span>
           </Link>
 
-          <div className="hidden items-center gap-2 md:flex">
+          <div className="hidden items-center gap-2 lg:flex">
             {!isPortal ? (
               <>
                 <a href="#hero" className={navLinkBase}>Home</a>
@@ -183,10 +183,10 @@ const Navbar = ({ variant = 'landing' }) => {
             aria-label="Toggle navigation menu"
             onClick={() => setMobileOpen((value) => !value)}
             className={cn(
-              'flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-2xl border md:hidden',
-              isPortal || showLightDesktop
-                ? 'border-white/25 bg-white/10 text-white'
-                : 'border-line bg-white text-ink'
+                'flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-2xl border lg:hidden',
+                isPortal || showLightDesktop
+                  ? 'border-white/25 bg-white/10 text-white'
+                  : 'border-line bg-white text-ink'
             )}
           >
             <span className={cn('block h-0.5 w-5 rounded-full bg-current transition', mobileOpen && 'translate-y-2 rotate-45')} />
@@ -253,7 +253,11 @@ const Navbar = ({ variant = 'landing' }) => {
                 Become a Tasker
               </Link>
             ) : (
-              <div className="rounded-card border border-line bg-surface-muted p-4">
+              <Link
+                to="/account/profile"
+                className="block rounded-card border border-line bg-surface-muted p-4 transition hover:border-brand-200 hover:bg-brand-50/40"
+                onClick={closeMobile}
+              >
                 <div className="flex items-center gap-3">
                   <div className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-gradient text-sm font-bold text-white">
                     {avatarText}
@@ -263,7 +267,7 @@ const Navbar = ({ variant = 'landing' }) => {
                     <p className="text-xs uppercase tracking-[0.16em] text-ink-subtle">{role || 'Guest'}</p>
                   </div>
                 </div>
-              </div>
+              </Link>
             )}
           </div>
         </div>
