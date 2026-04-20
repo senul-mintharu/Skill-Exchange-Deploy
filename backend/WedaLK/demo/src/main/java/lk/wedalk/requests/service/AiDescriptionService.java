@@ -2,6 +2,7 @@ package lk.wedalk.requests.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
@@ -12,12 +13,15 @@ import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import lk.wedalk.common.exceptions.AiGenerationException;
 import lk.wedalk.requests.dto.AiDescriptionRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AiDescriptionService {
 
+  private static final Logger log = LoggerFactory.getLogger(AiDescriptionService.class);
   private static final int DESCRIPTION_LIMIT = 2000;
   private static final String UNAVAILABLE_MESSAGE =
       "AI generation is currently unavailable. Please write your description manually or try again later.";
@@ -25,19 +29,19 @@ public class AiDescriptionService {
   private final ObjectMapper objectMapper;
   private final HttpClient httpClient;
   private final String apiKey;
-  private final String apiUrl;
+  private final String baseUrl;
   private final String model;
   private final int timeoutMs;
 
   public AiDescriptionService(
       ObjectMapper objectMapper,
-      @Value("${app.ai.openai.api-key:}") String apiKey,
-      @Value("${app.ai.openai.api-url:https://api.openai.com/v1/responses}") String apiUrl,
-      @Value("${app.ai.openai.model:gpt-4o-mini}") String model,
+      @Value("${app.ai.gemini.api-key:}") String apiKey,
+      @Value("${app.ai.gemini.base-url:https://generativelanguage.googleapis.com/v1beta/models}") String baseUrl,
+      @Value("${app.ai.gemini.model:gemini-2.5-flash}") String model,
       @Value("${app.ai.timeout-ms:10000}") int timeoutMs) {
     this.objectMapper = objectMapper;
     this.apiKey = apiKey;
-    this.apiUrl = apiUrl;
+    this.baseUrl = baseUrl;
     this.model = model;
     this.timeoutMs = timeoutMs;
     this.httpClient = HttpClient.newBuilder()
@@ -51,23 +55,21 @@ public class AiDescriptionService {
     }
 
     try {
-      ObjectNode payload = objectMapper.createObjectNode();
-      payload.put("model", model);
-      payload.put("instructions", buildInstructions());
-      payload.put("input", buildUserPrompt(request));
-      payload.put("max_output_tokens", 650);
+      ObjectNode payload = buildGeminiPayload(request);
 
       HttpRequest httpRequest = HttpRequest.newBuilder()
-          .uri(URI.create(apiUrl))
+          .uri(URI.create(buildGeminiUrl()))
           .timeout(Duration.ofMillis(timeoutMs))
-          .header("Authorization", "Bearer " + apiKey)
+          .header("x-goog-api-key", apiKey)
           .header("Content-Type", "application/json")
           .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
           .build();
 
       HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
       if (response.statusCode() < 200 || response.statusCode() >= 300) {
-        throw unavailable("AI provider returned status " + response.statusCode(), null);
+        throw unavailable(
+            "AI provider returned status " + response.statusCode() + ": " + summarize(response.body()),
+            null);
       }
 
       String draft = extractDraft(response.body()).trim();
@@ -99,6 +101,28 @@ public class AiDescriptionService {
         """;
   }
 
+  private ObjectNode buildGeminiPayload(AiDescriptionRequest request) {
+    ObjectNode payload = objectMapper.createObjectNode();
+
+    ObjectNode systemInstruction = payload.putObject("system_instruction");
+    systemInstruction.putArray("parts")
+        .addObject()
+        .put("text", buildInstructions());
+
+    ArrayNode contents = payload.putArray("contents");
+    ObjectNode userContent = contents.addObject();
+    userContent.put("role", "user");
+    userContent.putArray("parts")
+        .addObject()
+        .put("text", buildUserPrompt(request));
+
+    ObjectNode generationConfig = payload.putObject("generationConfig");
+    generationConfig.put("temperature", 0.35);
+    generationConfig.put("maxOutputTokens", 700);
+
+    return payload;
+  }
+
   private String buildUserPrompt(AiDescriptionRequest request) {
     return String.format(
         """
@@ -117,24 +141,20 @@ public class AiDescriptionService {
 
   private String extractDraft(String responseBody) throws IOException {
     JsonNode root = objectMapper.readTree(responseBody);
-    String outputText = root.path("output_text").asText("");
-    if (!outputText.isBlank()) {
-      return outputText;
-    }
 
-    StringBuilder fallbackText = new StringBuilder();
-    for (JsonNode output : root.path("output")) {
-      for (JsonNode content : output.path("content")) {
-        String text = content.path("text").asText("");
+    StringBuilder draft = new StringBuilder();
+    for (JsonNode candidate : root.path("candidates")) {
+      for (JsonNode part : candidate.path("content").path("parts")) {
+        String text = part.path("text").asText("");
         if (!text.isBlank()) {
-          if (!fallbackText.isEmpty()) {
-            fallbackText.append("\n");
+          if (!draft.isEmpty()) {
+            draft.append("\n");
           }
-          fallbackText.append(text);
+          draft.append(text);
         }
       }
     }
-    return fallbackText.toString();
+    return draft.toString();
   }
 
   private String truncateToLimit(String text) {
@@ -148,7 +168,30 @@ public class AiDescriptionService {
     return value == null || value.isBlank() ? "Not provided" : value.trim();
   }
 
+  private String buildGeminiUrl() {
+    String normalizedBaseUrl = baseUrl.endsWith("/")
+        ? baseUrl.substring(0, baseUrl.length() - 1)
+        : baseUrl;
+    String normalizedModel = model.startsWith("models/") ? model.substring("models/".length()) : model;
+    return normalizedBaseUrl + "/" + normalizedModel + ":generateContent";
+  }
+
+  private String summarize(String responseBody) {
+    if (responseBody == null || responseBody.isBlank()) {
+      return "empty response body";
+    }
+
+    String compact = responseBody.replaceAll("\\s+", " ").trim();
+    return compact.length() <= 500 ? compact : compact.substring(0, 500) + "...";
+  }
+
   private AiGenerationException unavailable(String detail, Throwable cause) {
-    return new AiGenerationException(UNAVAILABLE_MESSAGE, cause == null ? new RuntimeException(detail) : cause);
+    if (cause == null) {
+      log.warn("AI description generation unavailable: {}", detail);
+      return new AiGenerationException(UNAVAILABLE_MESSAGE);
+    }
+
+    log.warn("AI description generation unavailable: {}", detail, cause);
+    return new AiGenerationException(UNAVAILABLE_MESSAGE, cause);
   }
 }
