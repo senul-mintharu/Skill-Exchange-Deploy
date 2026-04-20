@@ -15,6 +15,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * PaymentController — handles bank transfer payment slip uploads for:
  * - Service requests (SEEKER uploads slip to publish their request)
@@ -46,6 +49,30 @@ public class PaymentController {
         WorkerProfileResponse response = workerProfileService.uploadProfilePaymentSlip(
                 profileId, requireCurrentUserId(), slip);
         return ResponseEntity.ok(ApiResponse.success(response, "Payment slip uploaded. Your worker profile is now active."));
+    }
+
+    // -------------------------------------------------------------------------
+    // Admin — Payment slip review endpoints (SCRUM-106)
+    // -------------------------------------------------------------------------
+
+    @GetMapping("/admin/payment-slips/pending")
+    public ResponseEntity<ApiResponse<List<RequestResponse>>> getPendingPaymentSlips() {
+        List<RequestResponse> slips = serviceRequestService.getPendingPaymentSlips();
+        return ResponseEntity.ok(ApiResponse.success(slips, "Pending payment slips retrieved successfully"));
+    }
+
+    @PostMapping("/admin/requests/{requestId}/payment-approve")
+    public ResponseEntity<ApiResponse<RequestResponse>> approvePaymentSlip(@PathVariable Long requestId) {
+        RequestResponse response = serviceRequestService.approvePaymentSlip(requestId, requireCurrentUserId());
+        return ResponseEntity.ok(ApiResponse.success(response, "Payment approved. Request is now published."));
+    }
+
+    @PostMapping("/admin/requests/{requestId}/payment-reject")
+    public ResponseEntity<ApiResponse<RequestResponse>> rejectPaymentSlip(
+            @PathVariable Long requestId,
+            @RequestBody(required = false) Map<String, String> body) {
+        RequestResponse response = serviceRequestService.rejectPaymentSlip(requestId, requireCurrentUserId());
+        return ResponseEntity.ok(ApiResponse.success(response, "Payment rejected. Seeker must re-upload a valid slip."));
     }
 
     private Long requireCurrentUserId() {

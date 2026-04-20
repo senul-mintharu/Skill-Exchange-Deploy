@@ -129,7 +129,7 @@ export const deleteRequest = async (id) => {
 
 /**
  * Upload a bank transfer payment slip for a service request.
- * Transitions the request from PENDING_PAYMENT → OPEN.
+ * Transitions the request from PENDING_PAYMENT → PAYMENT_UNDER_REVIEW.
  * @param {number} requestId - Request ID
  * @param {File} slipFile - The payment slip image or PDF
  * @returns {Promise<Object>} Updated request
@@ -140,5 +140,36 @@ export const uploadRequestPaymentSlip = async (requestId, slipFile) => {
     const response = await apiClient.post(`/requests/${requestId}/payment-slip`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     });
+    return response.data.data;
+};
+
+// ---- Admin: payment slip review (SCRUM-106) ----
+
+/**
+ * Admin: get all requests with PAYMENT_UNDER_REVIEW status
+ * @returns {Promise<Array>} List of requests pending payment review
+ */
+export const getAdminPendingPaymentSlips = async () => {
+    const response = await apiClient.get('/admin/payment-slips/pending');
+    return response.data.data;
+};
+
+/**
+ * Admin: approve a payment slip — transitions request to OPEN
+ * @param {number} requestId
+ * @returns {Promise<Object>} Updated request
+ */
+export const adminApprovePaymentSlip = async (requestId) => {
+    const response = await apiClient.post(`/admin/requests/${requestId}/payment-approve`);
+    return response.data.data;
+};
+
+/**
+ * Admin: reject a payment slip — transitions request back to PENDING_PAYMENT
+ * @param {number} requestId
+ * @returns {Promise<Object>} Updated request
+ */
+export const adminRejectPaymentSlip = async (requestId) => {
+    const response = await apiClient.post(`/admin/requests/${requestId}/payment-reject`);
     return response.data.data;
 };

@@ -15,7 +15,7 @@ const AdminDashboard = () => (
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard label="Verification Queue" value="Review Now" icon="fact_check" tone="warning" />
         <StatCard label="Disputes" value="Active Cases" icon="gavel" tone="danger" />
-        <StatCard label="User Controls" value="Coming Soon" icon="manage_accounts" tone="neutral" />
+        <StatCard label="Payment Slips" value="Review Now" icon="receipt_long" tone="warning" />
       </div>
 
       <SectionCard className="space-y-4">
@@ -23,14 +23,18 @@ const AdminDashboard = () => (
         <p className="text-sm leading-7 text-ink-muted">
           Access active moderation workflows directly from the dashboard.
         </p>
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           <Link to="/admin/verification" className="ui-button-primary w-full justify-center">
             <span className="material-icons text-base">fact_check</span>
-            Open Verification Review
+            Verification Review
           </Link>
           <Link to="/admin/disputes" className="ui-button-secondary w-full justify-center">
             <span className="material-icons text-base">gavel</span>
-            Open Disputes Management
+            Disputes Management
+          </Link>
+          <Link to="/admin/payment-slips" className="ui-button-secondary w-full justify-center">
+            <span className="material-icons text-base">receipt_long</span>
+            Payment Slip Review
           </Link>
         </div>
       </SectionCard>

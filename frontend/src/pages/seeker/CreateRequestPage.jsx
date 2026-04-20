@@ -213,7 +213,7 @@ const CreateRequestPage = () => {
 
         {success ? (
           <AlertPanel tone="success" icon="check_circle" title="Request saved">
-            <p>Request {isEditMode ? 'updated' : 'created'} successfully. Redirecting...</p>
+            <p>{isEditMode ? 'Request updated successfully.' : 'Payment slip submitted. Your request is under review.'} Redirecting...</p>
           </AlertPanel>
         ) : null}
 
@@ -630,9 +630,9 @@ const CreateRequestPage = () => {
                 <div className="rounded-card border border-line bg-surface-muted/60 px-4 py-4">
                   <div className="flex items-start gap-3">
                     <span className="material-icons mt-0.5 text-brand-700">info</span>
-                    <p className="text-sm leading-6 text-ink-muted">
-                      Your request will be published immediately after slip upload. Our team may verify the payment in case of any discrepancy.
-                    </p>
+                  <p className="text-sm leading-6 text-ink-muted">
+                    After uploading your slip, our team will review the payment. Your request will go live once the payment is verified — usually within a few hours.
+                  </p>
                   </div>
                 </div>
               </div>
@@ -666,7 +666,7 @@ const CreateRequestPage = () => {
                 </button>
               ) : (
                 <button type="button" className="ui-button-primary w-full sm:w-auto" onClick={handleSubmit} disabled={loading || success}>
-                  {loading ? 'Publishing...' : success ? 'Published!' : 'Pay & Publish Request'}
+                  {loading ? 'Submitting...' : success ? 'Submitted for Review!' : 'Submit Payment Slip'}
                 </button>
               )}
             </div>

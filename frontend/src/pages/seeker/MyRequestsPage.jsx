@@ -13,6 +13,7 @@ import {
 const statusTone = (status) => {
   const normalized = String(status || '').toUpperCase();
   if (normalized === 'PENDING_PAYMENT') return 'warning';
+  if (normalized === 'PAYMENT_UNDER_REVIEW') return 'warning';
   if (normalized === 'OPEN') return 'info';
   if (normalized === 'ASSIGNED' || normalized === 'IN_PROGRESS') return 'warning';
   if (normalized === 'COMPLETED') return 'success';
@@ -23,6 +24,7 @@ const statusTone = (status) => {
 const statusLabel = (status) => {
   const normalized = String(status || '').toUpperCase();
   if (normalized === 'PENDING_PAYMENT') return 'Awaiting Payment';
+  if (normalized === 'PAYMENT_UNDER_REVIEW') return 'Under Review';
   return String(status || 'Unknown').replaceAll('_', ' ');
 };
 
@@ -92,6 +94,7 @@ const getQuoteCount = (request) => (
 const actionLabel = (status) => {
   const normalized = String(status || '').toUpperCase();
   if (normalized === 'PENDING_PAYMENT') return 'Complete Payment';
+  if (normalized === 'PAYMENT_UNDER_REVIEW') return 'View Details';
   if (normalized === 'ASSIGNED' || normalized === 'IN_PROGRESS') return 'Track Progress';
   if (normalized === 'COMPLETED') return 'View Summary';
   return 'View Details';
@@ -106,6 +109,14 @@ const requestMetaBadge = (request) => {
       icon: 'payment',
       text: 'Payment Pending',
       className: 'text-amber-700',
+    };
+  }
+
+  if (normalized === 'PAYMENT_UNDER_REVIEW') {
+    return {
+      icon: 'hourglass_top',
+      text: 'Under Review',
+      className: 'text-amber-600',
     };
   }
 
@@ -178,7 +189,7 @@ const MyRequestsPage = () => {
       const status = String(request.status || '').toUpperCase();
       const budgetValue = Number(request.budget || 0);
 
-      if (status === 'PENDING_PAYMENT' || status === 'OPEN' || status === 'ASSIGNED' || status === 'IN_PROGRESS') {
+      if (status === 'PENDING_PAYMENT' || status === 'PAYMENT_UNDER_REVIEW' || status === 'OPEN' || status === 'ASSIGNED' || status === 'IN_PROGRESS') {
         summary.active += 1;
       }
 

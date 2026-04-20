@@ -115,7 +115,45 @@ public class ServiceRequestService {
     }
 
     request.setPaymentSlipPath(dest.toString());
+    request.setStatus(RequestStatus.PAYMENT_UNDER_REVIEW);
+    ServiceRequest saved = serviceRequestRepository.save(request);
+    return mapToResponse(saved);
+  }
+
+  @Transactional(readOnly = true)
+  public List<RequestResponse> getPendingPaymentSlips() {
+    return serviceRequestRepository
+        .findByStatusOrderByCreatedAtDesc(RequestStatus.PAYMENT_UNDER_REVIEW)
+        .stream()
+        .map(this::mapToResponse)
+        .collect(Collectors.toList());
+  }
+
+  @Transactional
+  public RequestResponse approvePaymentSlip(Long requestId, Long adminId) {
+    ServiceRequest request = serviceRequestRepository.findById(requestId)
+        .orElseThrow(() -> new NotFoundException("Service request not found"));
+
+    if (request.getStatus() != RequestStatus.PAYMENT_UNDER_REVIEW) {
+      throw new BadRequestException("Only requests under payment review can be approved. Current status: " + request.getStatus());
+    }
+
     request.setStatus(RequestStatus.OPEN);
+    ServiceRequest saved = serviceRequestRepository.save(request);
+    return mapToResponse(saved);
+  }
+
+  @Transactional
+  public RequestResponse rejectPaymentSlip(Long requestId, Long adminId) {
+    ServiceRequest request = serviceRequestRepository.findById(requestId)
+        .orElseThrow(() -> new NotFoundException("Service request not found"));
+
+    if (request.getStatus() != RequestStatus.PAYMENT_UNDER_REVIEW) {
+      throw new BadRequestException("Only requests under payment review can be rejected. Current status: " + request.getStatus());
+    }
+
+    request.setStatus(RequestStatus.PENDING_PAYMENT);
+    request.setPaymentSlipPath(null);
     ServiceRequest saved = serviceRequestRepository.save(request);
     return mapToResponse(saved);
   }
@@ -284,6 +322,7 @@ public class ServiceRequestService {
         .assignedWorkerId(assignedWorkerId)
         .assignedWorkerName(request.getAssignedWorker() != null ? request.getAssignedWorker().getFullName() : null)
         .assignedWorkerProfileId(assignedWorkerProfileId)
+        .paymentSlipUploaded(request.getPaymentSlipPath() != null && !request.getPaymentSlipPath().isBlank())
         .build();
   }
 
