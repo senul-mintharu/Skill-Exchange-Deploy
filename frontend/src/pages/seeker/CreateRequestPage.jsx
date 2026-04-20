@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { createRequest, updateRequest } from '../../services/requestService';
+import { createRequest, generateRequestDescription, updateRequest } from '../../services/requestService';
 import { CATEGORIES, formatBudget } from '../../utils/constants';
 import { AlertPanel, PageIntro, SectionCard, StatusPill } from '../../components/ui/PortalPrimitives';
+import ErrorBanner from '../../components/common/ErrorBanner';
 
 const urgencyOptions = [
   { value: 'LOW', label: 'Low', subtitle: 'Within a week', icon: '📅', tone: 'info', hint: 'Flexible timing' },
@@ -32,6 +33,10 @@ const stepDetails = [
   { step: 3, title: 'Review & Submit', description: 'Double-check the final details before posting.' },
 ];
 
+const DESCRIPTION_LIMIT = 2000;
+const AI_CONTEXT_MESSAGE = 'Please enter a Job Title and Category first so the AI understands your needs.';
+const AI_FAILURE_MESSAGE = 'AI generation is currently unavailable. Please write your description manually or try again later.';
+
 const previewText = (text) => {
   if (!text) return 'A clear description helps workers understand the issue and quote accurately.';
   return text;
@@ -44,6 +49,8 @@ const CreateRequestPage = () => {
   const requestToEdit = isEditMode ? location.state.requestToEdit : null;
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiBanner, setAiBanner] = useState({ message: '', type: 'error' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [errors, setErrors] = useState({});
@@ -80,11 +87,36 @@ const CreateRequestPage = () => {
     if (step === 2) {
       if (!formData.description.trim()) nextErrors.description = 'Description is required';
       else if (formData.description.trim().length < 20) nextErrors.description = 'Description must be at least 20 characters';
-      else if (formData.description.length > 2000) nextErrors.description = 'Description must not exceed 2000 characters';
+      else if (formData.description.length > DESCRIPTION_LIMIT) nextErrors.description = 'Description must not exceed 2000 characters';
     }
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleAiAssist = async () => {
+    if (!formData.title.trim() || !formData.category) {
+      setAiBanner({ message: AI_CONTEXT_MESSAGE, type: 'warning' });
+      return;
+    }
+
+    setAiBanner({ message: '', type: 'error' });
+    setAiLoading(true);
+
+    try {
+      const response = await generateRequestDescription({
+        title: formData.title.trim(),
+        category: formData.category,
+        locationArea: formData.locationArea.trim(),
+        urgency: formData.urgency,
+        existingDescription: formData.description.trim(),
+      });
+      handleChange('description', (response?.draft || '').slice(0, DESCRIPTION_LIMIT));
+    } catch (err) {
+      setAiBanner({ message: AI_FAILURE_MESSAGE, type: 'error' });
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -327,8 +359,26 @@ const CreateRequestPage = () => {
                 <div className="ui-field">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <label className="ui-label" htmlFor="description">Task Description</label>
-                    <span className="text-xs font-semibold text-ink-subtle">{formData.description.length} / 2000</span>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="text-xs font-semibold text-ink-subtle">{formData.description.length} / {DESCRIPTION_LIMIT}</span>
+                      <button
+                        type="button"
+                        onClick={handleAiAssist}
+                        disabled={aiLoading}
+                        className="inline-flex min-h-[36px] items-center gap-2 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-brand-900 transition hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-70"
+                      >
+                        <span className={`material-icons text-base ${aiLoading ? 'animate-spin' : ''}`}>
+                          {aiLoading ? 'progress_activity' : 'auto_awesome'}
+                        </span>
+                        {aiLoading ? 'Drafting...' : 'AI Assist'}
+                      </button>
+                    </div>
                   </div>
+                  <ErrorBanner
+                    message={aiBanner.message}
+                    type={aiBanner.type}
+                    onClose={() => setAiBanner({ message: '', type: 'error' })}
+                  />
                   <textarea
                     id="description"
                     value={formData.description}
@@ -336,6 +386,8 @@ const CreateRequestPage = () => {
                     placeholder="Example: I need a leaking tap fixed in the kitchen. It seems to be dripping from the handle..."
                     rows="6"
                     className="ui-textarea"
+                    maxLength={DESCRIPTION_LIMIT}
+                    disabled={aiLoading}
                   />
                   {errors.description ? <p className="ui-error-text">{errors.description}</p> : null}
                   <div className="grid gap-3 sm:grid-cols-3">

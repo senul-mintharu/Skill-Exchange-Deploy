@@ -20,6 +20,7 @@ This repository is a full-stack Sri Lankan services marketplace (LankaFIX / Weda
 - Frontend routes are role-guarded in `frontend\src\App.js` using `ProtectedRoute` and `RequireWorkerProfile`.
 - Frontend API calls are centralized under `frontend\src\services\*` and use `apiClient.js` with auth header interceptor.
 - Backend responses commonly use `common\ApiResponse` wrapper; frontend services usually consume `response.data.data`.
+- AI-assisted request drafting is exposed through `POST /api/requests/ai-description` and the frontend request form shows the `AI Assist` action plus `ErrorBanner` feedback.
 
 ## Run, Build, and Test
 Use these commands from repo root:
@@ -41,6 +42,7 @@ Use these commands from repo root:
 - Default backend port: `8081`
 - Frontend API URL env: `REACT_APP_API_URL` (defaults to `http://localhost:8081/api`)
 - Backend expects PostgreSQL (`spring.datasource.*`) and JWT env values (`JWT_SECRET`, `JWT_EXPIRATION_MS`).
+- AI assist backend config uses Gemini environment values: `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_BASE_URL`, and `AI_TIMEOUT_MS`. Do not commit API keys into `application.properties`.
 
 ## Coding Conventions
 
@@ -55,6 +57,7 @@ Use these commands from repo root:
 - Keep API logic in `src\services\` (avoid direct axios calls inside page components).
 - Reuse shared UI/components in `src\components\common` and `src\components\ui`.
 - Keep auth/token behavior consistent with `src\utils\storage.js` and `src\services\apiClient.js`.
+- For SCRUM-98, keep the request creation AI assist flow aligned with the backend contract: the frontend should block generation without a job title and category, disable the description field while generating, and show `ErrorBanner` on provider failure.
 
 ## Project-Specific Guardrails
 - Do not replace or bypass JWT + role checks to “simplify” flows.
