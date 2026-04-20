@@ -84,12 +84,12 @@ public class DisputeService {
                     "You do not have permission to dispute this job. Only the seeker who posted this request can submit a dispute.");
         }
 
-        // Validate request status — disputes can only be created for ASSIGNED or
-        // NOT_COMPLETED requests
+        // Validate request status — disputes can be raised while job is active or worker has marked done
         if (serviceRequest.getStatus() != RequestStatus.ASSIGNED
+                && serviceRequest.getStatus() != RequestStatus.WORKER_COMPLETED
                 && serviceRequest.getStatus() != RequestStatus.NOT_COMPLETED) {
             throw new BadRequestException(
-                    "Disputes can only be created for ASSIGNED or NOT_COMPLETED requests. Current status: "
+                    "Disputes can only be raised for active or recently completed jobs. Current status: "
                             + serviceRequest.getStatus());
         }
 

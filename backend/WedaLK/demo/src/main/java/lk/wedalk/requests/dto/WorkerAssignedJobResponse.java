@@ -18,5 +18,8 @@ public class WorkerAssignedJobResponse {
     private Long requestId;
     private String requestTitle;
     private String seekerName;
+    private String seekerPhone;
+    private String locationArea;
+    private Double budget;
     private RequestStatus status;
 }

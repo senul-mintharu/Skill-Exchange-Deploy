@@ -302,19 +302,37 @@ public class ServiceRequestService {
       throw new UnauthorizedException("You can only update status for your own requests.");
     }
 
-    if (request.getStatus() != RequestStatus.ASSIGNED) {
+    if (request.getStatus() != RequestStatus.WORKER_COMPLETED) {
       throw new BadRequestException(
-          "Request status can only be updated from ASSIGNED. Current status: " + request.getStatus());
+          "You can only confirm completion after the worker has marked the job as done. Current status: " + request.getStatus());
     }
 
     RequestStatus targetStatus = requestData.getStatus();
-    if (targetStatus != RequestStatus.COMPLETED && targetStatus != RequestStatus.NOT_COMPLETED) {
-      throw new BadRequestException("Status must be COMPLETED or NOT_COMPLETED.");
+    if (targetStatus != RequestStatus.COMPLETED) {
+      throw new BadRequestException("Status must be COMPLETED. To report an issue, use Raise Dispute.");
     }
 
     request.setStatus(targetStatus);
     ServiceRequest updatedRequest = serviceRequestRepository.save(request);
     return mapToResponse(updatedRequest);
+  }
+
+  @Transactional
+  public RequestResponse workerMarkJobDone(Long requestId, Long workerId) {
+    ServiceRequest request = serviceRequestRepository.findById(requestId)
+        .orElseThrow(() -> new NotFoundException("Service request not found"));
+
+    if (request.getAssignedWorker() == null || !request.getAssignedWorker().getId().equals(workerId)) {
+      throw new UnauthorizedException("You are not the assigned worker for this request");
+    }
+
+    if (request.getStatus() != RequestStatus.ASSIGNED) {
+      throw new BadRequestException(
+          "You can only mark a job as done when it is ASSIGNED. Current status: " + request.getStatus());
+    }
+
+    request.setStatus(RequestStatus.WORKER_COMPLETED);
+    return mapToResponse(serviceRequestRepository.save(request));
   }
 
   @Transactional
@@ -362,6 +380,9 @@ public class ServiceRequestService {
         .requestId(request.getId())
         .requestTitle(request.getTitle())
         .seekerName(request.getSeeker().getFullName())
+        .seekerPhone(request.getSeeker().getPhoneNumber())
+        .locationArea(request.getLocationArea())
+        .budget(request.getBudget())
         .status(request.getStatus())
         .build();
   }

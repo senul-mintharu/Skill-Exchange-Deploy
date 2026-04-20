@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { getRequestById } from '../../services/requestService';
+import { getRequestById, workerMarkJobDone } from '../../services/requestService';
 import { getDisputeByRequest } from '../../services/disputeService';
+import { getUser } from '../../utils/storage';
 import { formatBudget, formatCategoryLabel, getCategoryIcon } from '../../utils/constants';
 import { AlertPanel, EmptyState, LoadingPanel, PageIntro, StatusPill } from '../../components/ui/PortalPrimitives';
 
@@ -29,11 +30,15 @@ const disputeTone = (status) => {
 const WorkerRequestDetailsPage = () => {
   const { requestId } = useParams();
   const navigate = useNavigate();
+  const currentUser = getUser();
   const [request, setRequest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [is404, setIs404] = useState(false);
   const [disputeOutcome, setDisputeOutcome] = useState(null);
+  const [markingDone, setMarkingDone] = useState(false);
+  const [markDoneError, setMarkDoneError] = useState('');
+  const [markDoneSuccess, setMarkDoneSuccess] = useState(false);
 
   useEffect(() => {
     const fetchRequest = async () => {
@@ -77,6 +82,21 @@ const WorkerRequestDetailsPage = () => {
       fetchDisputeOutcome();
     }
   }, [requestId]);
+
+  const handleMarkDone = async () => {
+    if (!window.confirm('Mark this job as completed? Only do this after the seeker has paid you in cash and all work is done.')) return;
+    setMarkingDone(true);
+    setMarkDoneError('');
+    try {
+      const updated = await workerMarkJobDone(requestId);
+      setRequest((prev) => ({ ...prev, status: updated.status }));
+      setMarkDoneSuccess(true);
+    } catch (err) {
+      setMarkDoneError(err.response?.data?.message || 'Failed to mark job as done. Please try again.');
+    } finally {
+      setMarkingDone(false);
+    }
+  };
 
   const getTimeAgo = (date) => {
     const now = new Date();
@@ -238,13 +258,71 @@ const WorkerRequestDetailsPage = () => {
             <section className="ui-panel p-6">
               <p className="ui-stat-label">Estimated Budget</p>
               <p className="mt-2 text-3xl font-extrabold text-brand-800">{formatBudget(request.budget)}</p>
-              <button className="ui-button-primary mt-6 flex w-full" onClick={() => navigate(`/requests/${request.id}/quote`)} type="button">
-                <span className="material-icons text-base">send</span>
-                Send Quote
-              </button>
-              <p className="mt-3 text-sm leading-6 text-ink-muted">
-                Submit your price and proposal to the seeker with a realistic timeline.
-              </p>
+              {request.status === 'OPEN' ? (
+                <>
+                  <button className="ui-button-primary mt-6 flex w-full" onClick={() => navigate(`/requests/${request.id}/quote`)} type="button">
+                    <span className="material-icons text-base">send</span>
+                    Send Quote
+                  </button>
+                  <p className="mt-3 text-sm leading-6 text-ink-muted">
+                    Submit your price and proposal to the seeker with a realistic timeline.
+                  </p>
+                </>
+              ) : request.status === 'ASSIGNED' && Number(request.assignedWorkerId) === Number(currentUser?.id) ? (
+                <div className="mt-6 space-y-3">
+                  <div className="rounded-card border border-brand-200 bg-brand-50 px-4 py-3">
+                    <div className="flex items-start gap-2">
+                      <span className="material-icons text-base text-brand-700">work</span>
+                      <p className="text-sm text-brand-800 font-semibold">
+                        You are assigned to this job. Go complete the work and collect payment in cash from the seeker.
+                      </p>
+                    </div>
+                  </div>
+                  {markDoneSuccess ? (
+                    <div className="rounded-card border border-amber-200 bg-amber-50 px-4 py-3">
+                      <p className="text-sm font-semibold text-amber-900">Marked as done — waiting for seeker confirmation.</p>
+                    </div>
+                  ) : (
+                    <>
+                      {markDoneError ? <p className="text-sm text-red-700">{markDoneError}</p> : null}
+                      <button
+                        type="button"
+                        className="ui-button-primary flex w-full"
+                        onClick={handleMarkDone}
+                        disabled={markingDone}
+                      >
+                        {markingDone
+                          ? <><span className="material-icons animate-spin text-base">refresh</span> Marking done...</>
+                          : <><span className="material-icons text-base">task_alt</span> Mark as Done</>}
+                      </button>
+                      <p className="text-sm leading-6 text-ink-muted">
+                        Only click after the seeker has paid you in cash and all work is complete.
+                      </p>
+                    </>
+                  )}
+                </div>
+              ) : request.status === 'WORKER_COMPLETED' ? (
+                <div className="mt-6 rounded-card border border-amber-200 bg-amber-50 px-4 py-3">
+                  <div className="flex items-start gap-2">
+                    <span className="material-icons text-base text-amber-700">hourglass_top</span>
+                    <div>
+                      <p className="text-sm font-semibold text-amber-900">Awaiting seeker confirmation</p>
+                      <p className="mt-1 text-sm text-amber-800">The seeker will confirm or raise a dispute.</p>
+                    </div>
+                  </div>
+                </div>
+              ) : request.status === 'COMPLETED' ? (
+                <div className="mt-6 rounded-card border border-green-200 bg-green-50 px-4 py-3">
+                  <div className="flex items-start gap-2">
+                    <span className="material-icons text-base text-green-700">check_circle</span>
+                    <p className="text-sm font-semibold text-green-900">Job completed successfully.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-6 rounded-card border border-line bg-surface-muted px-4 py-3">
+                  <p className="text-sm text-ink-muted">Status: {String(request.status || '').replaceAll('_', ' ')}</p>
+                </div>
+              )}
             </section>
 
             <section className="ui-card p-5">

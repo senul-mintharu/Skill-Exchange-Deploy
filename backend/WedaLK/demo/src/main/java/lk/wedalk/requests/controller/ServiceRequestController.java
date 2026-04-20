@@ -120,6 +120,12 @@ public class ServiceRequestController {
     return ResponseEntity.ok(ApiResponse.success(response, "Request status updated successfully"));
   }
 
+  @PatchMapping("/{requestId}/worker-complete")
+  public ResponseEntity<ApiResponse<RequestResponse>> workerMarkJobDone(@PathVariable Long requestId) {
+    RequestResponse response = serviceRequestService.workerMarkJobDone(requestId, requireCurrentUserId());
+    return ResponseEntity.ok(ApiResponse.success(response, "Job marked as done. Awaiting seeker confirmation."));
+  }
+
   @DeleteMapping("/{id}")
   public ResponseEntity<ApiResponse<Void>> deleteRequest(@PathVariable Long id) {
     serviceRequestService.deleteRequest(id, requireCurrentUserId());
