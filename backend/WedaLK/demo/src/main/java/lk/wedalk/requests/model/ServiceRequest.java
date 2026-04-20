@@ -55,6 +55,9 @@ public class ServiceRequest {
   @Column(nullable = false, length = 20)
   private RequestStatus status;
 
+  @Column(length = 500)
+  private String paymentSlipPath;
+
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "seeker_id", nullable = false)
   private User seeker;
@@ -74,7 +77,7 @@ public class ServiceRequest {
     createdAt = LocalDateTime.now();
     updatedAt = LocalDateTime.now();
     if (status == null) {
-      status = RequestStatus.OPEN;
+      status = RequestStatus.PENDING_PAYMENT;
     }
   }
 

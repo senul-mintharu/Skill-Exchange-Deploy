@@ -14,15 +14,33 @@ import lk.wedalk.users.model.Role;
 import lk.wedalk.users.model.User;
 import lk.wedalk.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class WorkerProfileService {
+
+    private static final long MAX_SLIP_SIZE_BYTES = 5L * 1024L * 1024L;
+    private static final Set<String> ALLOWED_SLIP_TYPES = Set.of("image/jpeg", "image/png", "application/pdf");
+    private static final Set<String> ALLOWED_SLIP_EXTENSIONS = Set.of("jpg", "jpeg", "png", "pdf");
+
+    @Value("${app.upload.dir:./uploads}")
+    private String uploadDir;
 
     private final WorkerProfileRepository workerProfileRepository;
     private final UserRepository userRepository;
@@ -117,6 +135,36 @@ public class WorkerProfileService {
     }
 
     @Transactional
+    public WorkerProfileResponse uploadProfilePaymentSlip(Long profileId, Long userId, MultipartFile slip) {
+        WorkerProfile profile = workerProfileRepository.findById(profileId)
+                .orElseThrow(() -> new NotFoundException("Worker profile not found"));
+
+        if (!profile.getUser().getId().equals(userId)) {
+            throw new UnauthorizedException("You can only upload payment for your own profile");
+        }
+
+        validateSlip(slip);
+
+        String extension = getExtension(slip.getOriginalFilename());
+        String storedName = "profile-" + profileId + "-" + UUID.randomUUID() + "." + extension;
+        Path dir = Paths.get(uploadDir, "payment-slips");
+        Path dest = dir.resolve(storedName);
+
+        try {
+            Files.createDirectories(dir);
+            try (InputStream in = slip.getInputStream()) {
+                Files.copy(in, dest, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException ex) {
+            throw new BadRequestException("Failed to store payment slip", ex);
+        }
+
+        profile.setPaymentSlipPath(dest.toString());
+        WorkerProfile saved = workerProfileRepository.save(profile);
+        return mapToResponse(saved);
+    }
+
+    @Transactional
     public void deleteProfile(Long id, Long currentUserId) {
         WorkerProfile profile = workerProfileRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Profile not found"));
@@ -151,6 +199,29 @@ public class WorkerProfileService {
                 verificationStatus,
                 averageRating,
                 totalJobsCompleted);
+    }
+
+    private void validateSlip(MultipartFile slip) {
+        if (slip == null || slip.isEmpty()) {
+            throw new BadRequestException("Payment slip file is required");
+        }
+        if (slip.getSize() > MAX_SLIP_SIZE_BYTES) {
+            throw new BadRequestException("Payment slip file must not exceed 5 MB");
+        }
+        String ext = getExtension(slip.getOriginalFilename());
+        String contentType = slip.getContentType();
+        if (!ALLOWED_SLIP_EXTENSIONS.contains(ext)
+                || contentType == null
+                || !ALLOWED_SLIP_TYPES.contains(contentType.toLowerCase(Locale.ROOT))) {
+            throw new BadRequestException("Only JPG, PNG, or PDF files are accepted for payment slips");
+        }
+    }
+
+    private String getExtension(String fileName) {
+        if (fileName == null) return "";
+        int dot = fileName.lastIndexOf('.');
+        if (dot < 0 || dot == fileName.length() - 1) return "";
+        return fileName.substring(dot + 1).toLowerCase(Locale.ROOT);
     }
 
     private String resolveVerificationStatus(Long userId, User user) {

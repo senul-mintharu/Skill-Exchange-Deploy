@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { createRequest, updateRequest } from '../../services/requestService';
+import { createRequest, updateRequest, uploadRequestPaymentSlip } from '../../services/requestService';
 import { CATEGORIES, formatBudget } from '../../utils/constants';
 import { AlertPanel, PageIntro, SectionCard, StatusPill } from '../../components/ui/PortalPrimitives';
 
@@ -26,10 +26,19 @@ const categoryHints = {
   OTHER: 'Custom work not covered above',
 };
 
+const PAYMENT_DETAILS = {
+  amount: 500,
+  bank: 'Bank of Ceylon',
+  accountNumber: '76221736',
+  branch: 'Colombo Fort',
+  accountName: 'WedaLK Platform (Pvt) Ltd',
+};
+
 const stepDetails = [
   { step: 1, title: 'Title & Category', description: 'Define the job and where it is located.' },
   { step: 2, title: 'Details & Timing', description: 'Explain the problem, urgency, and budget.' },
   { step: 3, title: 'Review & Submit', description: 'Double-check the final details before posting.' },
+  { step: 4, title: 'Payment', description: 'Upload your bank transfer slip to publish.' },
 ];
 
 const previewText = (text) => {
@@ -47,6 +56,9 @@ const CreateRequestPage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [errors, setErrors] = useState({});
+  const [paymentSlip, setPaymentSlip] = useState(null);
+  const [paymentSlipPreview, setPaymentSlipPreview] = useState('');
+  const slipInputRef = useRef(null);
   const [formData, setFormData] = useState({
     title: requestToEdit?.title || '',
     category: requestToEdit?.category || '',
@@ -87,19 +99,71 @@ const CreateRequestPage = () => {
     return Object.keys(nextErrors).length === 0;
   };
 
+  const handleSlipChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setPaymentSlip(file);
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = () => setPaymentSlipPreview(reader.result);
+      reader.readAsDataURL(file);
+    } else {
+      setPaymentSlipPreview('pdf');
+    }
+    if (errors.paymentSlip) setErrors((prev) => ({ ...prev, paymentSlip: '' }));
+  };
+
   const handleSubmit = async () => {
-    if (!formData.title || !formData.description || !formData.locationArea || !formData.category || !formData.urgency) {
-      setError('Please fill in all required details before submitting.');
+    if (isEditMode) {
+      if (!formData.title || !formData.description || !formData.locationArea || !formData.category || !formData.urgency) {
+        setError('Please fill in all required details before submitting.');
+        return;
+      }
+      setError('');
+      setLoading(true);
+      try {
+        const payload = {
+          title: formData.title,
+          category: formData.category,
+          locationArea: formData.locationArea,
+          description: formData.description,
+          urgency: formData.urgency,
+          budget: formData.budget,
+        };
+        await updateRequest(requestToEdit.id, payload);
+        setSuccess(true);
+        setTimeout(() => navigate(`/my-requests/${requestToEdit.id}`), 1800);
+      } catch (err) {
+        setError(err.response?.data?.message || 'Failed to update request. Please try again.');
+      } finally {
+        setLoading(false);
+      }
       return;
     }
-    if (!formData.budget && formData.budget !== 0) {
-      setError('Please provide a budget for your request.');
+
+    // New request: Step 3 submit advances to payment step
+    if (currentStep === 3) {
+      if (!formData.title || !formData.description || !formData.locationArea || !formData.category || !formData.urgency) {
+        setError('Please fill in all required details before submitting.');
+        return;
+      }
+      if (!formData.budget && formData.budget !== 0) {
+        setError('Please provide a budget for your request.');
+        return;
+      }
+      setCurrentStep(4);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // Step 4: create request then upload slip
+    if (!paymentSlip) {
+      setErrors((prev) => ({ ...prev, paymentSlip: 'Please upload your bank transfer slip to continue.' }));
       return;
     }
 
     setError('');
     setLoading(true);
-
     try {
       const payload = {
         title: formData.title,
@@ -109,18 +173,12 @@ const CreateRequestPage = () => {
         urgency: formData.urgency,
         budget: formData.budget,
       };
-
-      if (isEditMode) {
-        await updateRequest(requestToEdit.id, payload);
-        setSuccess(true);
-        setTimeout(() => navigate(`/my-requests/${requestToEdit.id}`), 1800);
-      } else {
-        await createRequest(payload);
-        setSuccess(true);
-        setTimeout(() => navigate('/my-requests'), 1800);
-      }
+      const created = await createRequest(payload);
+      await uploadRequestPaymentSlip(created.id, paymentSlip);
+      setSuccess(true);
+      setTimeout(() => navigate('/my-requests'), 1800);
     } catch (err) {
-      setError(err.response?.data?.message || `Failed to ${isEditMode ? 'update' : 'create'} request. Please try again.`);
+      setError(err.response?.data?.message || 'Failed to submit request. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -480,6 +538,106 @@ const CreateRequestPage = () => {
               </div>
             ) : null}
 
+            {currentStep === 4 ? (
+              <div className="space-y-5">
+                <div className="border-b border-line pb-4">
+                  <h2 className="text-xl font-bold text-ink sm:text-2xl">Complete Payment</h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-muted">
+                    Make a bank transfer using the details below, then upload your payment slip to publish your request.
+                  </p>
+                </div>
+
+                <div className="rounded-card border border-amber-200 bg-amber-50 px-5 py-5">
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white">
+                      <span className="material-icons text-xl">account_balance</span>
+                    </span>
+                    <div>
+                      <p className="text-base font-bold text-amber-900">Bank Transfer Required</p>
+                      <p className="mt-1 text-sm leading-6 text-amber-800">
+                        Transfer the exact amount shown below before uploading your slip.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {[
+                      { label: 'Amount', value: `Rs. ${PAYMENT_DETAILS.amount.toLocaleString()}.00`, highlight: true },
+                      { label: 'Account Name', value: PAYMENT_DETAILS.accountName },
+                      { label: 'Account Number', value: PAYMENT_DETAILS.accountNumber },
+                      { label: 'Bank', value: PAYMENT_DETAILS.bank },
+                      { label: 'Branch', value: PAYMENT_DETAILS.branch },
+                    ].map((item) => (
+                      <div
+                        key={item.label}
+                        className={`rounded-card border px-4 py-3 ${item.highlight ? 'border-amber-300 bg-white' : 'border-amber-100 bg-white/70'}`}
+                      >
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-700">{item.label}</p>
+                        <p className={`mt-1 font-bold text-ink ${item.highlight ? 'text-xl text-amber-900' : 'text-base'}`}>{item.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="ui-field">
+                  <p className="ui-label">Upload Payment Slip</p>
+                  <p className="mt-1 text-sm text-ink-muted">Accepted formats: JPG, PNG, or PDF — max 5 MB</p>
+
+                  <div
+                    className={`mt-3 flex flex-col items-center justify-center rounded-card border-2 border-dashed px-6 py-8 transition cursor-pointer ${paymentSlip ? 'border-green-300 bg-green-50' : 'border-brand-200 bg-brand-50/50 hover:bg-brand-50'}`}
+                    onClick={() => slipInputRef.current?.click()}
+                    onKeyDown={(e) => e.key === 'Enter' && slipInputRef.current?.click()}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    {paymentSlip ? (
+                      <div className="flex flex-col items-center gap-3 text-center">
+                        {paymentSlipPreview && paymentSlipPreview !== 'pdf' ? (
+                          <img src={paymentSlipPreview} alt="Slip preview" className="max-h-40 rounded-card object-contain shadow-soft" />
+                        ) : (
+                          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+                            <span className="material-icons text-3xl text-green-700">picture_as_pdf</span>
+                          </span>
+                        )}
+                        <div>
+                          <p className="text-sm font-bold text-green-800">{paymentSlip.name}</p>
+                          <p className="mt-1 text-xs text-green-700">{(paymentSlip.size / 1024).toFixed(1)} KB — Click to change</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-3 text-center">
+                        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-100">
+                          <span className="material-icons text-3xl text-brand-700">upload_file</span>
+                        </span>
+                        <div>
+                          <p className="text-sm font-bold text-brand-800">Click to upload your slip</p>
+                          <p className="mt-1 text-xs text-ink-muted">JPG, PNG or PDF up to 5 MB</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <input
+                    ref={slipInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,application/pdf"
+                    onChange={handleSlipChange}
+                    className="hidden"
+                  />
+                  {errors.paymentSlip ? <p className="mt-2 ui-error-text">{errors.paymentSlip}</p> : null}
+                </div>
+
+                <div className="rounded-card border border-line bg-surface-muted/60 px-4 py-4">
+                  <div className="flex items-start gap-3">
+                    <span className="material-icons mt-0.5 text-brand-700">info</span>
+                    <p className="text-sm leading-6 text-ink-muted">
+                      Your request will be published immediately after slip upload. Our team may verify the payment in case of any discrepancy.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
             <div className="mt-6 flex flex-col gap-3 border-t border-line pt-4 sm:flex-row sm:items-center sm:justify-between">
               {currentStep > 1 ? (
                 <button type="button" className="ui-button-ghost w-full sm:w-auto" onClick={() => setCurrentStep((step) => step - 1)}>
@@ -500,9 +658,15 @@ const CreateRequestPage = () => {
                 >
                   Next Step
                 </button>
+              ) : currentStep === 3 ? (
+                <button type="button" className="ui-button-primary w-full sm:w-auto" onClick={handleSubmit} disabled={isEditMode && (loading || success)}>
+                  {isEditMode
+                    ? (loading ? 'Updating...' : success ? 'Updated!' : 'Update Request')
+                    : 'Continue to Payment'}
+                </button>
               ) : (
                 <button type="button" className="ui-button-primary w-full sm:w-auto" onClick={handleSubmit} disabled={loading || success}>
-                  {loading ? (isEditMode ? 'Updating...' : 'Posting...') : success ? (isEditMode ? 'Updated!' : 'Posted!') : (isEditMode ? 'Update Request' : 'Post Request')}
+                  {loading ? 'Publishing...' : success ? 'Published!' : 'Pay & Publish Request'}
                 </button>
               )}
             </div>
