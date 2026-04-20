@@ -6,10 +6,13 @@ import lk.wedalk.common.ApiResponse;
 import lk.wedalk.common.PagedResponse;
 import lk.wedalk.common.exceptions.NotFoundException;
 import lk.wedalk.common.enums.ServiceCategory;
+import lk.wedalk.requests.dto.AiDescriptionRequest;
+import lk.wedalk.requests.dto.AiDescriptionResponse;
 import lk.wedalk.requests.dto.RequestCreateRequest;
 import lk.wedalk.requests.dto.RequestResponse;
 import lk.wedalk.requests.dto.RequestStatusUpdateRequest;
 import lk.wedalk.requests.dto.WorkerAssignedJobResponse;
+import lk.wedalk.requests.service.AiDescriptionService;
 import lk.wedalk.requests.service.ServiceRequestService;
 import lk.wedalk.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +37,7 @@ import org.springframework.web.bind.annotation.*;
 public class ServiceRequestController {
 
   private final ServiceRequestService serviceRequestService;
+  private final AiDescriptionService aiDescriptionService;
   private final UserRepository userRepository;
 
   private Long requireCurrentUserId() {
@@ -50,6 +54,15 @@ public class ServiceRequestController {
     RequestResponse response = serviceRequestService.createRequest(requireCurrentUserId(), request);
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(ApiResponse.success(response, "Service request created successfully"));
+  }
+
+  @PostMapping("/ai-description")
+  public ResponseEntity<ApiResponse<AiDescriptionResponse>> generateAiDescription(
+      @Valid @RequestBody AiDescriptionRequest request) {
+    String draft = aiDescriptionService.generateDescription(request);
+    return ResponseEntity.ok(ApiResponse.success(
+        new AiDescriptionResponse(draft),
+        "AI description generated successfully"));
   }
 
   @GetMapping("/my")

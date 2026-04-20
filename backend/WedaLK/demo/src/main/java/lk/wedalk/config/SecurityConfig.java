@@ -66,6 +66,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.PATCH, "/api/quotes/*/accept", "/api/quotes/*/reject")
             .hasRole("SEEKER")
             .requestMatchers(HttpMethod.GET, "/api/quotes/request/**").hasRole("SEEKER")
+            .requestMatchers(HttpMethod.POST, "/api/requests/ai-description").hasRole("SEEKER")
             .requestMatchers(HttpMethod.POST, "/api/requests").hasRole("SEEKER")
             .requestMatchers(HttpMethod.GET, "/api/requests/my").hasRole("SEEKER")
             .requestMatchers(HttpMethod.PUT, "/api/requests/*").hasRole("SEEKER")

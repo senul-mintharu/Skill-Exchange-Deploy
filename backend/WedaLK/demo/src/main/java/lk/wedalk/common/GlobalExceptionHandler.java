@@ -1,6 +1,7 @@
 package lk.wedalk.common;
 
 import lk.wedalk.common.exceptions.BadRequestException;
+import lk.wedalk.common.exceptions.AiGenerationException;
 import lk.wedalk.common.exceptions.NotFoundException;
 import lk.wedalk.common.exceptions.UnauthorizedException;
 import org.springframework.http.HttpStatus;
@@ -28,6 +29,12 @@ public class GlobalExceptionHandler {
         @ExceptionHandler(BadRequestException.class)
         public ResponseEntity<ApiResponse<Void>> handleBadRequest(BadRequestException ex) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                .body(ApiResponse.error(ex.getMessage()));
+        }
+
+        @ExceptionHandler(AiGenerationException.class)
+        public ResponseEntity<ApiResponse<Void>> handleAiGeneration(AiGenerationException ex) {
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                                 .body(ApiResponse.error(ex.getMessage()));
         }
 
