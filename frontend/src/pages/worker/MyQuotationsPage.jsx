@@ -94,20 +94,18 @@ const MyQuotationsPage = () => {
   return (
     <div className="page-wrapper">
       <main className="ui-shell space-y-5">
-        <section className="ui-panel p-5 sm:p-6">
-          <PageIntro
-            eyebrow="Worker Quotations"
-            title="My Quotations"
-            subtitle="Review every submitted offer, keep an eye on pending decisions, and withdraw only when it still makes sense."
-            actions={(
-              <Link to="/browse-requests" className="ui-button-primary w-full sm:w-auto">
-                <span className="material-icons text-base">travel_explore</span>
-                Find Work
-              </Link>
-            )}
-            className="mb-0"
-          />
-        </section>
+        <PageIntro
+          eyebrow="Worker Quotations"
+          title="My Quotations"
+          subtitle="Review every submitted offer, keep an eye on pending decisions, and withdraw only when it still makes sense."
+          light
+          actions={(
+            <Link to="/browse-requests" className="ui-button-primary w-full sm:w-auto">
+              <span className="material-icons text-base">travel_explore</span>
+              Find Work
+            </Link>
+          )}
+        />
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <StatCard label="Total" value={counts.total} icon="request_quote" tone="brand" compact />

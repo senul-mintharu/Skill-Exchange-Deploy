@@ -268,7 +268,7 @@ const CreateRequestPage = () => {
                     <p className="ui-label">Service Category</p>
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-subtle">Select one</p>
                   </div>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="mt-3 grid auto-rows-fr grid-cols-2 gap-3 lg:grid-cols-4">
                     {CATEGORIES.map((category) => {
                       const active = formData.category === category.value;
                       return (
@@ -276,17 +276,17 @@ const CreateRequestPage = () => {
                           key={category.value}
                           type="button"
                           onClick={() => handleChange('category', category.value)}
-                          className={`min-h-[96px] rounded-card border px-4 py-3 text-left transition ${active
+                          className={`h-full min-h-[124px] rounded-card border px-3 py-2.5 text-left transition ${active
                             ? 'border-brand-200 bg-brand-50 text-brand-900 shadow-soft'
                             : 'border-line bg-white text-ink hover:border-brand-100 hover:bg-brand-50/40'}`}
                         >
-                          <div className="flex items-start gap-3">
-                            <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-xl ${active ? 'bg-brand-gradient text-white' : 'bg-brand-50 text-brand-800'}`}>
+                          <div className="flex h-full items-start gap-2.5">
+                            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg ${active ? 'bg-brand-gradient text-white' : 'bg-brand-50 text-brand-800'}`}>
                               {category.icon}
                             </span>
                             <span className="min-w-0">
-                              <span className="block text-base font-bold">{category.label}</span>
-                              <span className="mt-1 block text-sm leading-6 text-ink-muted">
+                              <span className="block text-sm font-bold sm:text-base">{category.label}</span>
+                              <span className="mt-0.5 block text-xs leading-5 text-ink-muted sm:text-sm">
                                 {categoryHints[category.value] || 'General service work'}
                               </span>
                             </span>
