@@ -66,3 +66,18 @@ export const deleteProfile = async (id) => {
     await apiClient.delete(`/profiles/${id}`);
     return true;
 };
+
+/**
+ * Upload a bank transfer payment slip to complete worker profile registration.
+ * @param {number} profileId - Worker profile ID
+ * @param {File} slipFile - The payment slip image or PDF
+ * @returns {Promise<Object>} Updated profile response
+ */
+export const uploadProfilePaymentSlip = async (profileId, slipFile) => {
+    const formData = new FormData();
+    formData.append('slip', slipFile);
+    const response = await apiClient.post(`/profiles/${profileId}/payment-slip`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data.data;
+};

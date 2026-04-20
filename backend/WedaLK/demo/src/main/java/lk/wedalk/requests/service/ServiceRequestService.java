@@ -1,7 +1,16 @@
 package lk.wedalk.requests.service;
 
 import lk.wedalk.common.PagedResponse;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import lk.wedalk.common.enums.QuoteStatus;
 import lk.wedalk.common.enums.RequestStatus;
@@ -21,12 +30,14 @@ import lk.wedalk.requests.repository.ServiceRequestRepository;
 import lk.wedalk.users.model.User;
 import lk.wedalk.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * ServiceRequestService.java — Service Request Business Logic
@@ -37,6 +48,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class ServiceRequestService {
+
+  private static final long MAX_SLIP_SIZE_BYTES = 5L * 1024L * 1024L;
+  private static final Set<String> ALLOWED_SLIP_TYPES = Set.of("image/jpeg", "image/png", "application/pdf");
+  private static final Set<String> ALLOWED_SLIP_EXTENSIONS = Set.of("jpg", "jpeg", "png", "pdf");
+
+  @Value("${app.upload.dir:./uploads}")
+  private String uploadDir;
 
   private final ServiceRequestRepository serviceRequestRepository;
   private final UserRepository userRepository;
@@ -65,6 +83,79 @@ public class ServiceRequestService {
 
     ServiceRequest savedRequest = serviceRequestRepository.save(serviceRequest);
     return mapToResponse(savedRequest);
+  }
+
+  @Transactional
+  public RequestResponse uploadRequestPaymentSlip(Long requestId, Long seekerId, MultipartFile slip) {
+    ServiceRequest request = serviceRequestRepository.findById(requestId)
+        .orElseThrow(() -> new NotFoundException("Service request not found"));
+
+    if (!request.getSeeker().getId().equals(seekerId)) {
+      throw new UnauthorizedException("You can only upload payment for your own requests");
+    }
+
+    if (request.getStatus() != RequestStatus.PENDING_PAYMENT) {
+      throw new BadRequestException("Payment slip can only be uploaded for requests awaiting payment. Current status: " + request.getStatus());
+    }
+
+    validateSlip(slip);
+
+    String extension = getExtension(slip.getOriginalFilename());
+    String storedName = "request-" + requestId + "-" + UUID.randomUUID() + "." + extension;
+    Path dir = Paths.get(uploadDir, "payment-slips");
+    Path dest = dir.resolve(storedName);
+
+    try {
+      Files.createDirectories(dir);
+      try (InputStream in = slip.getInputStream()) {
+        Files.copy(in, dest, StandardCopyOption.REPLACE_EXISTING);
+      }
+    } catch (IOException ex) {
+      throw new BadRequestException("Failed to store payment slip", ex);
+    }
+
+    request.setPaymentSlipPath(dest.toString());
+    request.setStatus(RequestStatus.PAYMENT_UNDER_REVIEW);
+    ServiceRequest saved = serviceRequestRepository.save(request);
+    return mapToResponse(saved);
+  }
+
+  @Transactional(readOnly = true)
+  public List<RequestResponse> getPendingPaymentSlips() {
+    return serviceRequestRepository
+        .findByStatusOrderByCreatedAtDesc(RequestStatus.PAYMENT_UNDER_REVIEW)
+        .stream()
+        .map(this::mapToResponse)
+        .collect(Collectors.toList());
+  }
+
+  @Transactional
+  public RequestResponse approvePaymentSlip(Long requestId, Long adminId) {
+    ServiceRequest request = serviceRequestRepository.findById(requestId)
+        .orElseThrow(() -> new NotFoundException("Service request not found"));
+
+    if (request.getStatus() != RequestStatus.PAYMENT_UNDER_REVIEW) {
+      throw new BadRequestException("Only requests under payment review can be approved. Current status: " + request.getStatus());
+    }
+
+    request.setStatus(RequestStatus.OPEN);
+    ServiceRequest saved = serviceRequestRepository.save(request);
+    return mapToResponse(saved);
+  }
+
+  @Transactional
+  public RequestResponse rejectPaymentSlip(Long requestId, Long adminId) {
+    ServiceRequest request = serviceRequestRepository.findById(requestId)
+        .orElseThrow(() -> new NotFoundException("Service request not found"));
+
+    if (request.getStatus() != RequestStatus.PAYMENT_UNDER_REVIEW) {
+      throw new BadRequestException("Only requests under payment review can be rejected. Current status: " + request.getStatus());
+    }
+
+    request.setStatus(RequestStatus.PENDING_PAYMENT);
+    request.setPaymentSlipPath(null);
+    ServiceRequest saved = serviceRequestRepository.save(request);
+    return mapToResponse(saved);
   }
 
   @Transactional(readOnly = true)
@@ -231,6 +322,7 @@ public class ServiceRequestService {
         .assignedWorkerId(assignedWorkerId)
         .assignedWorkerName(request.getAssignedWorker() != null ? request.getAssignedWorker().getFullName() : null)
         .assignedWorkerProfileId(assignedWorkerProfileId)
+        .paymentSlipUploaded(request.getPaymentSlipPath() != null && !request.getPaymentSlipPath().isBlank())
         .build();
   }
 
@@ -241,5 +333,28 @@ public class ServiceRequestService {
         .seekerName(request.getSeeker().getFullName())
         .status(request.getStatus())
         .build();
+  }
+
+  private void validateSlip(MultipartFile slip) {
+    if (slip == null || slip.isEmpty()) {
+      throw new BadRequestException("Payment slip file is required");
+    }
+    if (slip.getSize() > MAX_SLIP_SIZE_BYTES) {
+      throw new BadRequestException("Payment slip file must not exceed 5 MB");
+    }
+    String ext = getExtension(slip.getOriginalFilename());
+    String contentType = slip.getContentType();
+    if (!ALLOWED_SLIP_EXTENSIONS.contains(ext)
+        || contentType == null
+        || !ALLOWED_SLIP_TYPES.contains(contentType.toLowerCase(Locale.ROOT))) {
+      throw new BadRequestException("Only JPG, PNG, or PDF files are accepted for payment slips");
+    }
+  }
+
+  private String getExtension(String fileName) {
+    if (fileName == null) return "";
+    int dot = fileName.lastIndexOf('.');
+    if (dot < 0 || dot == fileName.length() - 1) return "";
+    return fileName.substring(dot + 1).toLowerCase(Locale.ROOT);
   }
 }

@@ -1,8 +1,16 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { createProfile, getProfileById, updateProfile } from '../../services/profileService';
+import { createProfile, getProfileById, updateProfile, uploadProfilePaymentSlip } from '../../services/profileService';
 import { CATEGORIES, DISTRICTS, SERVING_AREAS } from '../../utils/constants';
 import { AlertPanel, LoadingPanel, PageIntro } from '../../components/ui/PortalPrimitives';
+
+const PAYMENT_DETAILS = {
+  amount: 500,
+  bank: 'Bank of Ceylon',
+  accountNumber: '76221736',
+  branch: 'Colombo Fort',
+  accountName: 'WedaLK Platform (Pvt) Ltd',
+};
 
 const EditWorkerProfilePage = () => {
   const { id } = useParams();
@@ -10,6 +18,10 @@ const EditWorkerProfilePage = () => {
   const [loading, setLoading] = useState(false);
   const [fetchingProfile, setFetchingProfile] = useState(false);
   const [error, setError] = useState('');
+  const [paymentSlip, setPaymentSlip] = useState(null);
+  const [paymentSlipPreview, setPaymentSlipPreview] = useState('');
+  const [slipError, setSlipError] = useState('');
+  const slipInputRef = useRef(null);
   const [skillInput, setSkillInput] = useState('');
   const [formData, setFormData] = useState({
     fullName: '',
@@ -115,10 +127,25 @@ const EditWorkerProfilePage = () => {
     reader.readAsDataURL(file);
   };
 
+  const handleSlipChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setPaymentSlip(file);
+    setSlipError('');
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = () => setPaymentSlipPreview(reader.result);
+      reader.readAsDataURL(file);
+    } else {
+      setPaymentSlipPreview('pdf');
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);
     setError('');
+    setSlipError('');
 
     if (formData.primaryCategories.length === 0) {
       setError('Please select at least one primary service category');
@@ -129,6 +156,14 @@ const EditWorkerProfilePage = () => {
     if (formData.serviceAreas.length === 0) {
       setError('Please select at least one service area');
       setLoading(false);
+      return;
+    }
+
+    // Require payment slip for new profile creation
+    if (!id && !paymentSlip) {
+      setSlipError('Please upload your bank transfer slip to complete profile registration.');
+      setLoading(false);
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
       return;
     }
 
@@ -150,6 +185,7 @@ const EditWorkerProfilePage = () => {
         navigate(`/profile/${id}`);
       } else {
         const data = await createProfile(payload);
+        await uploadProfilePaymentSlip(data.id, paymentSlip);
         navigate(`/profile/${data.id}`, { state: { profileCreated: true } });
       }
     } catch (err) {
@@ -364,12 +400,106 @@ const EditWorkerProfilePage = () => {
             </div>
           </section>
 
+          {!id ? (
+            <section className="ui-card p-6">
+              <div className="flex items-start gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white">
+                  <span className="material-icons text-xl">account_balance</span>
+                </span>
+                <div>
+                  <h2 className="text-2xl font-bold text-ink">Registration Payment</h2>
+                  <p className="mt-2 text-sm leading-6 text-ink-muted">
+                    Make a one-time bank transfer of <strong>Rs. {PAYMENT_DETAILS.amount.toLocaleString()}.00</strong> to complete your worker registration. Upload the transfer slip below.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 rounded-card border border-amber-200 bg-amber-50 px-5 py-4">
+                <p className="text-sm font-bold uppercase tracking-[0.14em] text-amber-800">Bank Transfer Details</p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {[
+                    { label: 'Amount', value: `Rs. ${PAYMENT_DETAILS.amount.toLocaleString()}.00`, highlight: true },
+                    { label: 'Account Name', value: PAYMENT_DETAILS.accountName },
+                    { label: 'Account Number', value: PAYMENT_DETAILS.accountNumber },
+                    { label: 'Bank', value: PAYMENT_DETAILS.bank },
+                    { label: 'Branch', value: PAYMENT_DETAILS.branch },
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      className={`rounded-card border px-4 py-3 bg-white ${item.highlight ? 'border-amber-300' : 'border-amber-100'}`}
+                    >
+                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-700">{item.label}</p>
+                      <p className={`mt-1 font-bold text-ink ${item.highlight ? 'text-xl text-amber-900' : 'text-base'}`}>{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-5 ui-field">
+                <p className="ui-label">Upload Transfer Slip</p>
+                <p className="mt-1 text-sm text-ink-muted">Accepted: JPG, PNG, or PDF — max 5 MB</p>
+
+                <div
+                  className={`mt-3 flex flex-col items-center justify-center rounded-card border-2 border-dashed px-6 py-8 transition cursor-pointer ${paymentSlip ? 'border-green-300 bg-green-50' : 'border-brand-200 bg-brand-50/50 hover:bg-brand-50'}`}
+                  onClick={() => slipInputRef.current?.click()}
+                  onKeyDown={(e) => e.key === 'Enter' && slipInputRef.current?.click()}
+                  role="button"
+                  tabIndex={0}
+                >
+                  {paymentSlip ? (
+                    <div className="flex flex-col items-center gap-3 text-center">
+                      {paymentSlipPreview && paymentSlipPreview !== 'pdf' ? (
+                        <img src={paymentSlipPreview} alt="Slip preview" className="max-h-40 rounded-card object-contain shadow-soft" />
+                      ) : (
+                        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+                          <span className="material-icons text-3xl text-green-700">picture_as_pdf</span>
+                        </span>
+                      )}
+                      <div>
+                        <p className="text-sm font-bold text-green-800">{paymentSlip.name}</p>
+                        <p className="mt-1 text-xs text-green-700">{(paymentSlip.size / 1024).toFixed(1)} KB — Click to change</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-3 text-center">
+                      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-100">
+                        <span className="material-icons text-3xl text-brand-700">upload_file</span>
+                      </span>
+                      <div>
+                        <p className="text-sm font-bold text-brand-800">Click to upload your slip</p>
+                        <p className="mt-1 text-xs text-ink-muted">JPG, PNG or PDF up to 5 MB</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <input
+                  ref={slipInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,application/pdf"
+                  onChange={handleSlipChange}
+                  className="hidden"
+                />
+                {slipError ? <p className="mt-2 ui-error-text">{slipError}</p> : null}
+              </div>
+
+              <div className="mt-4 rounded-card border border-line bg-surface-muted/60 px-4 py-3">
+                <div className="flex items-start gap-3">
+                  <span className="material-icons mt-0.5 text-brand-700">info</span>
+                  <p className="text-sm leading-6 text-ink-muted">
+                    Your profile will go live immediately after slip upload. Our team may verify the payment if needed.
+                  </p>
+                </div>
+              </div>
+            </section>
+          ) : null}
+
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
             <button type="button" className="ui-button-ghost" onClick={() => navigate(-1)}>
               Cancel
             </button>
             <button type="submit" className="ui-button-primary" disabled={loading}>
-              {loading ? 'Saving...' : id ? 'Update Profile' : 'Complete Registration'}
+              {loading ? 'Saving...' : id ? 'Update Profile' : 'Pay & Complete Registration'}
             </button>
           </div>
         </form>

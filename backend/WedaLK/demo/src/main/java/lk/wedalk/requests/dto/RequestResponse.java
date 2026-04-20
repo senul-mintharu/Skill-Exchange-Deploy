@@ -41,4 +41,7 @@ public class RequestResponse {
   private Long assignedWorkerId;
   private String assignedWorkerName;
   private Long assignedWorkerProfileId;
+
+  // Payment info (SCRUM-106)
+  private boolean paymentSlipUploaded;
 }

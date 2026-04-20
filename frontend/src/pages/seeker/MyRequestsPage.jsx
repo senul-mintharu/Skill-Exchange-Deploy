@@ -12,11 +12,20 @@ import {
 
 const statusTone = (status) => {
   const normalized = String(status || '').toUpperCase();
+  if (normalized === 'PENDING_PAYMENT') return 'warning';
+  if (normalized === 'PAYMENT_UNDER_REVIEW') return 'warning';
   if (normalized === 'OPEN') return 'info';
   if (normalized === 'ASSIGNED' || normalized === 'IN_PROGRESS') return 'warning';
   if (normalized === 'COMPLETED') return 'success';
   if (normalized === 'CANCELLED' || normalized === 'NOT_COMPLETED') return 'danger';
   return 'neutral';
+};
+
+const statusLabel = (status) => {
+  const normalized = String(status || '').toUpperCase();
+  if (normalized === 'PENDING_PAYMENT') return 'Awaiting Payment';
+  if (normalized === 'PAYMENT_UNDER_REVIEW') return 'Under Review';
+  return String(status || 'Unknown').replaceAll('_', ' ');
 };
 
 const categoryMeta = (category) => {
@@ -84,6 +93,8 @@ const getQuoteCount = (request) => (
 
 const actionLabel = (status) => {
   const normalized = String(status || '').toUpperCase();
+  if (normalized === 'PENDING_PAYMENT') return 'Complete Payment';
+  if (normalized === 'PAYMENT_UNDER_REVIEW') return 'View Details';
   if (normalized === 'ASSIGNED' || normalized === 'IN_PROGRESS') return 'Track Progress';
   if (normalized === 'COMPLETED') return 'View Summary';
   return 'View Details';
@@ -92,6 +103,22 @@ const actionLabel = (status) => {
 const requestMetaBadge = (request) => {
   const normalized = String(request.status || '').toUpperCase();
   const quoteCount = getQuoteCount(request);
+
+  if (normalized === 'PENDING_PAYMENT') {
+    return {
+      icon: 'payment',
+      text: 'Payment Pending',
+      className: 'text-amber-700',
+    };
+  }
+
+  if (normalized === 'PAYMENT_UNDER_REVIEW') {
+    return {
+      icon: 'hourglass_top',
+      text: 'Under Review',
+      className: 'text-amber-600',
+    };
+  }
 
   if (normalized === 'COMPLETED') {
     return {
@@ -162,7 +189,7 @@ const MyRequestsPage = () => {
       const status = String(request.status || '').toUpperCase();
       const budgetValue = Number(request.budget || 0);
 
-      if (status === 'OPEN' || status === 'ASSIGNED' || status === 'IN_PROGRESS') {
+      if (status === 'PENDING_PAYMENT' || status === 'PAYMENT_UNDER_REVIEW' || status === 'OPEN' || status === 'ASSIGNED' || status === 'IN_PROGRESS') {
         summary.active += 1;
       }
 
@@ -341,7 +368,7 @@ const MyRequestsPage = () => {
                             </div>
                             <div className="flex items-start gap-3">
                               <StatusPill tone={statusTone(request.status)} className="w-fit">
-                                {prettyLabel(request.status)}
+                                {statusLabel(request.status)}
                               </StatusPill>
                               <div className="text-right">
                                 <p className="text-xl font-extrabold tracking-tight text-ink">{formatBudget(request.budget)}</p>
