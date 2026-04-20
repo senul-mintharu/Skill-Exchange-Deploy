@@ -450,7 +450,7 @@ public class ServiceRequestService {
 
     RequestStatus targetStatus = requestData.getStatus();
     if (targetStatus != RequestStatus.COMPLETED) {
-      throw new BadRequestException("Status must be COMPLETED. To report an issue, use the Raise Dispute option.");
+      throw new BadRequestException("Status must be COMPLETED. To report an issue, use Raise Dispute.");
     }
 
     request.setStatus(targetStatus);
@@ -460,6 +460,24 @@ public class ServiceRequestService {
   // -------------------------------------------------------------------------
   // SEEKER: delete request
   // -------------------------------------------------------------------------
+
+  @Transactional
+  public RequestResponse workerMarkJobDone(Long requestId, Long workerId) {
+    ServiceRequest request = serviceRequestRepository.findById(requestId)
+        .orElseThrow(() -> new NotFoundException("Service request not found"));
+
+    if (request.getAssignedWorker() == null || !request.getAssignedWorker().getId().equals(workerId)) {
+      throw new UnauthorizedException("You are not the assigned worker for this request");
+    }
+
+    if (request.getStatus() != RequestStatus.ASSIGNED) {
+      throw new BadRequestException(
+          "You can only mark a job as done when it is ASSIGNED. Current status: " + request.getStatus());
+    }
+
+    request.setStatus(RequestStatus.WORKER_COMPLETED);
+    return mapToResponse(serviceRequestRepository.save(request));
+  }
 
   @Transactional
   public void deleteRequest(Long requestId, Long seekerId) {

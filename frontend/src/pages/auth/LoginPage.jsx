@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { getDefaultRouteForRole, login } from '../../services/authService';
+import { useNavigate, Link, useLocation, Navigate } from 'react-router-dom';
+import { getCurrentUser, getDefaultRouteForRole, isAuthenticated, login } from '../../services/authService';
 import AuthShell from '../../components/ui/AuthShell';
 import ErrorBanner from '../../components/common/ErrorBanner';
 
@@ -47,6 +47,10 @@ const LoginPage = () => {
       setLoading(false);
     }
   };
+
+  if (isAuthenticated()) {
+    return <Navigate to={getDefaultRouteForRole(getCurrentUser()?.role)} replace />;
+  }
 
   return (
     <AuthShell

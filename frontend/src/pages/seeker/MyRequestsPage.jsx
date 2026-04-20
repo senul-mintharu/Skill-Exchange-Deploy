@@ -27,6 +27,7 @@ const statusLabel = (status) => {
   if (normalized === 'PENDING_PAYMENT') return 'Awaiting Payment';
   if (normalized === 'PAYMENT_UNDER_REVIEW') return 'Under Review';
   if (normalized === 'WORKER_COMPLETED') return 'Confirm Completion';
+  if (normalized === 'NOT_COMPLETED') return 'Not Completed';
   return String(status || 'Unknown').replaceAll('_', ' ');
 };
 
@@ -119,8 +120,21 @@ const requestMetaBadge = (request) => {
   if (normalized === 'COMPLETED') {
     return { icon: 'check_circle', text: 'Done', className: 'text-green-700' };
   }
+
   if (normalized === 'ASSIGNED') {
-    return { icon: 'radio_button_checked', text: 'Active Job', className: 'text-amber-700' };
+    return {
+      icon: 'radio_button_checked',
+      text: 'Active Job',
+      className: 'text-amber-700',
+    };
+  }
+
+  if (normalized === 'WORKER_COMPLETED') {
+    return {
+      icon: 'task_alt',
+      text: 'Needs Your Confirmation',
+      className: 'text-amber-700',
+    };
   }
 
   return {

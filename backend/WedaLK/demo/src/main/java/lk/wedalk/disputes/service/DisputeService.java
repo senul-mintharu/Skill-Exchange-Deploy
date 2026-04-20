@@ -84,7 +84,7 @@ public class DisputeService {
                     "You do not have permission to dispute this job. Only the seeker who posted this request can submit a dispute.");
         }
 
-        // Validate request status — disputes can be created when job is active or worker has marked done
+        // Validate request status — disputes can be raised while job is active or worker has marked done
         if (serviceRequest.getStatus() != RequestStatus.ASSIGNED
                 && serviceRequest.getStatus() != RequestStatus.WORKER_COMPLETED
                 && serviceRequest.getStatus() != RequestStatus.NOT_COMPLETED) {

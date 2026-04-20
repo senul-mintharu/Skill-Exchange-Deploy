@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { getDefaultRouteForRole, register } from '../../services/authService';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { getCurrentUser, getDefaultRouteForRole, isAuthenticated, register } from '../../services/authService';
 import AuthShell from '../../components/ui/AuthShell';
 import ErrorBanner from '../../components/common/ErrorBanner';
 
@@ -66,6 +66,10 @@ const RegisterPage = () => {
       setLoading(false);
     }
   };
+
+  if (isAuthenticated()) {
+    return <Navigate to={getDefaultRouteForRole(getCurrentUser()?.role)} replace />;
+  }
 
   return (
     <AuthShell

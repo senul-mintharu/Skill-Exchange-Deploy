@@ -287,36 +287,39 @@ const WorkerRequestDetailsPage = () => {
                     Submit your price and proposal to the seeker with a realistic timeline.
                   </p>
                 </>
-              ) : request.status === 'ASSIGNED' && request.assignedWorkerId === currentUser?.id ? (
-                <>
+              ) : request.status === 'ASSIGNED' && Number(request.assignedWorkerId) === Number(currentUser?.id) ? (
+                <div className="mt-6 space-y-3">
+                  <div className="rounded-card border border-brand-200 bg-brand-50 px-4 py-3">
+                    <div className="flex items-start gap-2">
+                      <span className="material-icons text-base text-brand-700">work</span>
+                      <p className="text-sm text-brand-800 font-semibold">
+                        You are assigned to this job. Go complete the work and collect payment in cash from the seeker.
+                      </p>
+                    </div>
+                  </div>
                   {markDoneSuccess ? (
-                    <div className="mt-6 rounded-card border border-amber-200 bg-amber-50 px-4 py-3">
-                      <p className="text-sm font-semibold text-amber-900">Job marked as done!</p>
-                      <p className="mt-1 text-sm text-amber-800">Waiting for the seeker to confirm completion.</p>
+                    <div className="rounded-card border border-amber-200 bg-amber-50 px-4 py-3">
+                      <p className="text-sm font-semibold text-amber-900">Marked as done — waiting for seeker confirmation.</p>
                     </div>
                   ) : (
                     <>
-                      {markDoneError ? (
-                        <p className="mt-3 text-sm text-red-700">{markDoneError}</p>
-                      ) : null}
+                      {markDoneError ? <p className="text-sm text-red-700">{markDoneError}</p> : null}
                       <button
-                        className="ui-button-primary mt-6 flex w-full"
+                        type="button"
+                        className="ui-button-primary flex w-full"
                         onClick={handleMarkDone}
                         disabled={markingDone}
-                        type="button"
                       >
-                        {markingDone ? (
-                          <><span className="material-icons animate-spin text-base">refresh</span> Marking done...</>
-                        ) : (
-                          <><span className="material-icons text-base">task_alt</span> Mark as Done</>
-                        )}
+                        {markingDone
+                          ? <><span className="material-icons animate-spin text-base">refresh</span> Marking done...</>
+                          : <><span className="material-icons text-base">task_alt</span> Mark as Done</>}
                       </button>
-                      <p className="mt-3 text-sm leading-6 text-ink-muted">
-                        Only mark as done after the seeker has paid you in cash and all work is complete.
+                      <p className="text-sm leading-6 text-ink-muted">
+                        Only click after the seeker has paid you in cash and all work is complete.
                       </p>
                     </>
                   )}
-                </>
+                </div>
               ) : request.status === 'WORKER_COMPLETED' ? (
                 <div className="mt-6 rounded-card border border-amber-200 bg-amber-50 px-4 py-3">
                   <div className="flex items-start gap-2">
@@ -334,7 +337,11 @@ const WorkerRequestDetailsPage = () => {
                     <p className="text-sm font-semibold text-green-900">Job completed successfully.</p>
                   </div>
                 </div>
-              ) : null}
+              ) : (
+                <div className="mt-6 rounded-card border border-line bg-surface-muted px-4 py-3">
+                  <p className="text-sm text-ink-muted">Status: {String(request.status || '').replaceAll('_', ' ')}</p>
+                </div>
+              )}
             </section>
 
             <section className="ui-card p-5">

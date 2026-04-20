@@ -86,7 +86,7 @@ const Navbar = ({ variant = 'landing' }) => {
         )}
       >
         <div className="container flex items-center justify-between py-2">
-          <Link to="/" className="flex items-center gap-3" onClick={closeMobile}>
+          <Link to={user ? dashboardPath : '/'} className="flex items-center gap-3" onClick={closeMobile}>
             <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-brand">
               <img src="/LankaFIX%20Logo.png" alt="LankaFIX logo" className="h-10 w-10 object-contain" />
             </span>
