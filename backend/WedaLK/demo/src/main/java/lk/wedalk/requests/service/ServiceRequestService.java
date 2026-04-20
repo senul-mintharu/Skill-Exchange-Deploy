@@ -12,7 +12,6 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import org.springframework.util.StringUtils;
 import lk.wedalk.common.enums.QuoteStatus;
 import lk.wedalk.common.enums.RequestStatus;
 import lk.wedalk.common.enums.ServiceCategory;
@@ -43,10 +42,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 /**
  * ServiceRequestService.java — Service Request Business Logic
- *
- * <p>
- * Handles creation, retrieval, status transitions, and payment slip management
- * for service requests.
  *
  * <p>Status lifecycle:
  * PENDING_PAYMENT → PAYMENT_UNDER_REVIEW → OPEN → ASSIGNED → WORKER_COMPLETED → COMPLETED
@@ -141,9 +136,7 @@ public class ServiceRequestService {
   public List<RequestResponse> getPendingPaymentSlips() {
     return serviceRequestRepository
         .findByStatusOrderByCreatedAtDesc(RequestStatus.PAYMENT_UNDER_REVIEW)
-        .stream()
-        .map(this::mapToResponse)
-        .collect(Collectors.toList());
+        .stream().map(this::mapToResponse).collect(Collectors.toList());
   }
 
   @Transactional
@@ -205,107 +198,6 @@ public class ServiceRequestService {
   // -------------------------------------------------------------------------
   // Read operations
   // -------------------------------------------------------------------------
-  @Transactional
-  public RequestResponse uploadRequestPaymentSlip(Long requestId, Long seekerId, MultipartFile slip) {
-    ServiceRequest request = serviceRequestRepository.findById(requestId)
-        .orElseThrow(() -> new NotFoundException("Service request not found"));
-
-    if (!request.getSeeker().getId().equals(seekerId)) {
-      throw new UnauthorizedException("You can only upload payment for your own requests");
-    }
-
-    if (request.getStatus() != RequestStatus.PENDING_PAYMENT) {
-      throw new BadRequestException("Payment slip can only be uploaded for requests awaiting payment. Current status: " + request.getStatus());
-    }
-
-    validateSlip(slip);
-
-    String extension = getExtension(slip.getOriginalFilename());
-    String storedName = "request-" + requestId + "-" + UUID.randomUUID() + "." + extension;
-    Path dir = Paths.get(uploadDir, "payment-slips");
-    Path dest = dir.resolve(storedName);
-
-    try {
-      Files.createDirectories(dir);
-      try (InputStream in = slip.getInputStream()) {
-        Files.copy(in, dest, StandardCopyOption.REPLACE_EXISTING);
-      }
-    } catch (IOException ex) {
-      throw new BadRequestException("Failed to store payment slip", ex);
-    }
-
-    request.setPaymentSlipPath(dest.toString());
-    request.setStatus(RequestStatus.PAYMENT_UNDER_REVIEW);
-    ServiceRequest saved = serviceRequestRepository.save(request);
-    return mapToResponse(saved);
-  }
-
-  @Transactional(readOnly = true)
-  public List<RequestResponse> getPendingPaymentSlips() {
-    return serviceRequestRepository
-        .findByStatusOrderByCreatedAtDesc(RequestStatus.PAYMENT_UNDER_REVIEW)
-        .stream()
-        .map(this::mapToResponse)
-        .collect(Collectors.toList());
-  }
-
-  @Transactional
-  public RequestResponse approvePaymentSlip(Long requestId, Long adminId) {
-    ServiceRequest request = serviceRequestRepository.findById(requestId)
-        .orElseThrow(() -> new NotFoundException("Service request not found"));
-
-    if (request.getStatus() != RequestStatus.PAYMENT_UNDER_REVIEW) {
-      throw new BadRequestException("Only requests under payment review can be approved. Current status: " + request.getStatus());
-    }
-
-    request.setStatus(RequestStatus.OPEN);
-    ServiceRequest saved = serviceRequestRepository.save(request);
-    return mapToResponse(saved);
-  }
-
-  @Transactional
-  public RequestResponse rejectPaymentSlip(Long requestId, Long adminId, String reason) {
-    ServiceRequest request = serviceRequestRepository.findById(requestId)
-        .orElseThrow(() -> new NotFoundException("Service request not found"));
-
-    if (request.getStatus() != RequestStatus.PAYMENT_UNDER_REVIEW) {
-      throw new BadRequestException("Only requests under payment review can be rejected. Current status: " + request.getStatus());
-    }
-
-    request.setStatus(RequestStatus.PENDING_PAYMENT);
-    request.setPaymentSlipPath(null);
-    request.setPaymentRejectionNote(StringUtils.hasText(reason) ? reason.trim() : null);
-    ServiceRequest saved = serviceRequestRepository.save(request);
-    return mapToResponse(saved);
-  }
-
-  @Transactional(readOnly = true)
-  public StoredSlipFile getRequestPaymentSlipFile(Long requestId) {
-    ServiceRequest request = serviceRequestRepository.findById(requestId)
-        .orElseThrow(() -> new NotFoundException("Service request not found"));
-
-    String slipPath = request.getPaymentSlipPath();
-    if (!StringUtils.hasText(slipPath)) {
-      throw new NotFoundException("No payment slip has been uploaded for this request");
-    }
-
-    Path path = Paths.get(slipPath);
-    if (!Files.exists(path) || !Files.isRegularFile(path) || !Files.isReadable(path)) {
-      throw new NotFoundException("Payment slip file could not be retrieved");
-    }
-
-    String fileName = path.getFileName().toString();
-    String ext = getExtension(fileName).toLowerCase(Locale.ROOT);
-    String contentType = switch (ext) {
-      case "pdf" -> "application/pdf";
-      case "png" -> "image/png";
-      default -> "image/jpeg";
-    };
-
-    return new StoredSlipFile(path, fileName, contentType);
-  }
-
-  public record StoredSlipFile(Path path, String fileName, String contentType) {}
 
   @Transactional(readOnly = true)
   public List<RequestResponse> getMyRequests(Long seekerId) {
@@ -320,13 +212,13 @@ public class ServiceRequestService {
 
     Sort sort = switch (sortBy) {
       case "budget-high" -> Sort.by(Sort.Direction.DESC, "budget");
-      case "budget-low" -> Sort.by(Sort.Direction.ASC, "budget");
-      case "urgency" -> Sort.by(Sort.Direction.DESC, "urgency");
-      default -> Sort.by(Sort.Direction.DESC, "createdAt");
+      case "budget-low"  -> Sort.by(Sort.Direction.ASC, "budget");
+      case "urgency"     -> Sort.by(Sort.Direction.DESC, "urgency");
+      default            -> Sort.by(Sort.Direction.DESC, "createdAt");
     };
 
     Pageable pageable = PageRequest.of(page, size, sort);
-    String kw = (keyword != null && !keyword.isBlank()) ? keyword.trim() : null;
+    String kw  = (keyword      != null && !keyword.isBlank())      ? keyword.trim()      : null;
     String loc = (locationArea != null && !locationArea.isBlank()) ? locationArea.trim() : null;
 
     Page<ServiceRequest> requestPage = serviceRequestRepository.browseOpenRequests(
@@ -348,7 +240,6 @@ public class ServiceRequestService {
   @Transactional(readOnly = true)
   public List<RequestResponse> searchRequests(String locationArea, ServiceCategory category) {
     List<ServiceRequest> requests;
-
     if (locationArea != null && category != null) {
       requests = serviceRequestRepository.findByLocationAreaContainingIgnoreCaseAndCategoryAndStatus(
           locationArea, category, RequestStatus.OPEN);
@@ -360,7 +251,6 @@ public class ServiceRequestService {
     } else {
       requests = serviceRequestRepository.findByStatusOrderByCreatedAtDesc(RequestStatus.OPEN);
     }
-
     return requests.stream().map(this::mapToResponse).collect(Collectors.toList());
   }
 
@@ -383,7 +273,7 @@ public class ServiceRequestService {
   }
 
   // -------------------------------------------------------------------------
-  // SEEKER: edit request (only while OPEN)
+  // SEEKER: edit request
   // -------------------------------------------------------------------------
 
   @Transactional
@@ -419,7 +309,8 @@ public class ServiceRequestService {
     }
 
     if (request.getStatus() != RequestStatus.ASSIGNED) {
-      throw new BadRequestException("You can only mark a job as done when it is in ASSIGNED status. Current status: " + request.getStatus());
+      throw new BadRequestException(
+          "You can only mark a job as done when it is ASSIGNED. Current status: " + request.getStatus());
     }
 
     request.setStatus(RequestStatus.WORKER_COMPLETED);
@@ -428,14 +319,10 @@ public class ServiceRequestService {
 
   // -------------------------------------------------------------------------
   // SEEKER: confirm completion (WORKER_COMPLETED → COMPLETED)
-  // Disputes are handled separately by DisputeService (WORKER_COMPLETED → NOT_COMPLETED)
   // -------------------------------------------------------------------------
 
   @Transactional
-  public RequestResponse updateRequestStatus(
-      Long requestId,
-      Long seekerId,
-      RequestStatusUpdateRequest requestData) {
+  public RequestResponse updateRequestStatus(Long requestId, Long seekerId, RequestStatusUpdateRequest requestData) {
     ServiceRequest request = serviceRequestRepository.findById(requestId)
         .orElseThrow(() -> new NotFoundException("Service request not found"));
 
@@ -448,36 +335,17 @@ public class ServiceRequestService {
           "You can only confirm completion after the worker has marked the job as done. Current status: " + request.getStatus());
     }
 
-    RequestStatus targetStatus = requestData.getStatus();
-    if (targetStatus != RequestStatus.COMPLETED) {
+    if (requestData.getStatus() != RequestStatus.COMPLETED) {
       throw new BadRequestException("Status must be COMPLETED. To report an issue, use Raise Dispute.");
     }
 
-    request.setStatus(targetStatus);
+    request.setStatus(requestData.getStatus());
     return mapToResponse(serviceRequestRepository.save(request));
   }
 
   // -------------------------------------------------------------------------
   // SEEKER: delete request
   // -------------------------------------------------------------------------
-
-  @Transactional
-  public RequestResponse workerMarkJobDone(Long requestId, Long workerId) {
-    ServiceRequest request = serviceRequestRepository.findById(requestId)
-        .orElseThrow(() -> new NotFoundException("Service request not found"));
-
-    if (request.getAssignedWorker() == null || !request.getAssignedWorker().getId().equals(workerId)) {
-      throw new UnauthorizedException("You are not the assigned worker for this request");
-    }
-
-    if (request.getStatus() != RequestStatus.ASSIGNED) {
-      throw new BadRequestException(
-          "You can only mark a job as done when it is ASSIGNED. Current status: " + request.getStatus());
-    }
-
-    request.setStatus(RequestStatus.WORKER_COMPLETED);
-    return mapToResponse(serviceRequestRepository.save(request));
-  }
 
   @Transactional
   public void deleteRequest(Long requestId, Long seekerId) {
@@ -497,9 +365,11 @@ public class ServiceRequestService {
 
   private RequestResponse mapToResponse(ServiceRequest request) {
     Long assignedWorkerId = request.getAssignedWorker() != null ? request.getAssignedWorker().getId() : null;
-    Long assignedWorkerProfileId = assignedWorkerId == null
-        ? null
-        : workerProfileRepository.findByUserId(assignedWorkerId).map(p -> p.getId()).orElse(null);
+    Long assignedWorkerProfileId = null;
+    if (assignedWorkerId != null) {
+      assignedWorkerProfileId = workerProfileRepository.findByUserId(assignedWorkerId)
+          .map(p -> p.getId()).orElse(null);
+    }
 
     return RequestResponse.builder()
         .id(request.getId())
@@ -536,7 +406,7 @@ public class ServiceRequestService {
   }
 
   // -------------------------------------------------------------------------
-  // Payment slip helpers
+  // Payment slip file helpers
   // -------------------------------------------------------------------------
 
   private void validateSlip(MultipartFile slip) {
