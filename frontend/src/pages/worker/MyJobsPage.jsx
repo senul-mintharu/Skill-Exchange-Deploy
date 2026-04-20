@@ -1,27 +1,36 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertPanel, EmptyState, LoadingPanel, PageIntro, StatusPill } from '../../components/ui/PortalPrimitives';
-import { getMyAssignedJobs } from '../../services/requestService';
+import { getMyAssignedJobs, workerMarkJobDone } from '../../services/requestService';
 
 const statusMeta = (status) => {
   const normalized = String(status || '').toUpperCase();
-
   switch (normalized) {
     case 'ASSIGNED':
-      return { label: 'Assigned', tone: 'info' };
-    case 'IN_PROGRESS':
-      return { label: 'In Progress', tone: 'warning' };
+      return { label: 'Active — Awaiting Completion', tone: 'info' };
+    case 'WORKER_COMPLETED':
+      return { label: 'Awaiting Seeker Confirmation', tone: 'warning' };
     case 'COMPLETED':
       return { label: 'Completed', tone: 'success' };
+    case 'NOT_COMPLETED':
+      return { label: 'Disputed', tone: 'danger' };
     default:
-      return { label: normalized || 'Unknown', tone: 'neutral' };
+      return { label: String(status || '').replaceAll('_', ' '), tone: 'neutral' };
   }
+};
+
+const formatBudget = (value) => {
+  if (value === null || value === undefined) return 'Negotiable';
+  return `Rs. ${Number(value).toLocaleString()}`;
 };
 
 const MyJobsPage = () => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [markingDone, setMarkingDone] = useState(null);
+  const [actionError, setActionError] = useState('');
+  const [actionSuccess, setActionSuccess] = useState('');
 
   const load = async () => {
     setLoading(true);
@@ -41,6 +50,24 @@ const MyJobsPage = () => {
     load();
   }, []);
 
+  const handleMarkDone = async (job) => {
+    if (!window.confirm(`Mark "${job.requestTitle || `Job #${job.requestId}`}" as completed? Only do this after the seeker has paid you in cash and the work is fully done.`)) {
+      return;
+    }
+    setMarkingDone(job.requestId);
+    setActionError('');
+    setActionSuccess('');
+    try {
+      await workerMarkJobDone(job.requestId);
+      setActionSuccess(`"${job.requestTitle || `Job #${job.requestId}`}" marked as done. Waiting for seeker to confirm.`);
+      await load();
+    } catch (err) {
+      setActionError(err.response?.data?.message || 'Failed to mark job as done. Please try again.');
+    } finally {
+      setMarkingDone(null);
+    }
+  };
+
   return (
     <div className="page-wrapper">
       <main className="ui-shell space-y-5">
@@ -48,7 +75,7 @@ const MyJobsPage = () => {
           <PageIntro
             eyebrow="Worker Jobs"
             title="My Jobs"
-            subtitle="Track assigned work, keep the seeker context visible, and open the job that needs your attention next."
+            subtitle="Track assigned work and mark jobs complete once the seeker has paid you in cash."
             actions={(
               <Link to="/browse-requests" className="ui-button-primary w-full sm:w-auto">
                 <span className="material-icons text-base">travel_explore</span>
@@ -59,18 +86,26 @@ const MyJobsPage = () => {
           />
         </section>
 
+        {actionSuccess ? (
+          <AlertPanel tone="success" icon="check_circle" title="Job updated">
+            <p>{actionSuccess}</p>
+          </AlertPanel>
+        ) : null}
+
+        {actionError ? (
+          <AlertPanel tone="danger" icon="error_outline" title="Action failed">
+            <p>{actionError}</p>
+          </AlertPanel>
+        ) : null}
+
         {loading ? <LoadingPanel message="Loading assigned jobs..." /> : null}
 
         {!loading && error ? (
           <AlertPanel
             tone="danger"
             icon="error_outline"
-            title="Couldn’t load jobs"
-            action={(
-              <button className="ui-button-primary" type="button" onClick={load}>
-                Try Again
-              </button>
-            )}
+            title="Couldn't load jobs"
+            action={<button className="ui-button-primary" type="button" onClick={load}>Try Again</button>}
           >
             <p>{error}</p>
           </AlertPanel>
@@ -89,12 +124,11 @@ const MyJobsPage = () => {
           <div className="grid gap-4 md:grid-cols-2">
             {jobs.map((job) => {
               const meta = statusMeta(job.status);
+              const canMarkDone = String(job.status || '').toUpperCase() === 'ASSIGNED';
+              const isBusy = markingDone === job.requestId;
+
               return (
-                <Link
-                  key={job.requestId}
-                  to={`/requests/${job.requestId}`}
-                  className="ui-card-interactive flex flex-col gap-4 p-5"
-                >
+                <div key={job.requestId} className="ui-card flex flex-col gap-4 p-5">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
@@ -107,6 +141,7 @@ const MyJobsPage = () => {
                       <p className="inline-flex items-center gap-2 text-sm text-ink-muted">
                         <span className="material-icons text-base text-brand-700">person</span>
                         Seeker: {job.seekerName || 'Unknown'}
+                        {job.seekerPhone ? ` · ${job.seekerPhone}` : ''}
                       </p>
                     </div>
                   </div>
@@ -118,14 +153,51 @@ const MyJobsPage = () => {
                     </div>
                     <div className="rounded-card border border-line bg-surface-muted px-4 py-3">
                       <p className="ui-stat-label">Budget</p>
-                      <p className="mt-2 text-sm font-semibold text-ink">
-                        {job.budget !== null && job.budget !== undefined ? `Rs. ${Number(job.budget).toLocaleString()}` : 'Negotiable'}
-                      </p>
+                      <p className="mt-2 text-sm font-semibold text-ink">{formatBudget(job.budget)}</p>
                     </div>
                   </div>
 
-                  <p className="text-sm font-semibold text-brand-800">View job details</p>
-                </Link>
+                  {String(job.status || '').toUpperCase() === 'WORKER_COMPLETED' ? (
+                    <div className="rounded-card border border-amber-200 bg-amber-50 px-4 py-3">
+                      <div className="flex items-start gap-2">
+                        <span className="material-icons text-base text-amber-700">hourglass_top</span>
+                        <p className="text-sm text-amber-800">
+                          You have marked this job as done. Waiting for the seeker to confirm completion.
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div className="flex flex-col gap-2 border-t border-line pt-3 sm:flex-row">
+                    <Link
+                      to={`/requests/${job.requestId}`}
+                      className="ui-button-ghost w-full justify-center sm:w-auto"
+                    >
+                      <span className="material-icons text-base">visibility</span>
+                      View Details
+                    </Link>
+                    {canMarkDone ? (
+                      <button
+                        type="button"
+                        className="ui-button-primary w-full justify-center sm:w-auto"
+                        onClick={() => handleMarkDone(job)}
+                        disabled={isBusy}
+                      >
+                        {isBusy ? (
+                          <>
+                            <span className="material-icons animate-spin text-base">refresh</span>
+                            Marking done...
+                          </>
+                        ) : (
+                          <>
+                            <span className="material-icons text-base">task_alt</span>
+                            Mark as Done
+                          </>
+                        )}
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
               );
             })}
           </div>
