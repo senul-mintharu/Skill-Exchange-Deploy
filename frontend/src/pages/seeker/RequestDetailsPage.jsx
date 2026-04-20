@@ -308,8 +308,7 @@ const RequestDetailsPage = () => {
   };
 
   const handleUpdateJobOutcome = async (status) => {
-    const statusLabel = status === 'COMPLETED' ? 'Completed' : 'Not Completed';
-    const confirmed = window.confirm(`Are you sure you want to mark this job as ${statusLabel}?`);
+    const confirmed = window.confirm('Confirm that the job was completed to your satisfaction?');
     if (!confirmed) return;
 
     setIsUpdatingStatus(true);

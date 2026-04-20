@@ -27,6 +27,24 @@ const disputeTone = (status) => {
   return 'neutral';
 };
 
+const getStatusLabel = (status) => {
+  const normalized = String(status || '').toUpperCase();
+  if (normalized === 'ASSIGNED') return 'Active Job';
+  if (normalized === 'WORKER_COMPLETED') return 'Awaiting Seeker Confirmation';
+  if (normalized === 'COMPLETED') return 'Completed';
+  if (normalized === 'NOT_COMPLETED') return 'Disputed';
+  return String(status || '').replaceAll('_', ' ');
+};
+
+const getStatusTone = (status) => {
+  const normalized = String(status || '').toUpperCase();
+  if (normalized === 'ASSIGNED') return 'info';
+  if (normalized === 'WORKER_COMPLETED') return 'warning';
+  if (normalized === 'COMPLETED') return 'success';
+  if (normalized === 'NOT_COMPLETED') return 'danger';
+  return 'neutral';
+};
+
 const WorkerRequestDetailsPage = () => {
   const { requestId } = useParams();
   const navigate = useNavigate();
@@ -176,7 +194,7 @@ const WorkerRequestDetailsPage = () => {
                   {getCategoryIcon(request.category)} {formatCategoryLabel(request.category)}
                 </span>
                 <StatusPill tone={urgencyTone(request.urgency)}>{request.urgency || 'MEDIUM'}</StatusPill>
-                <StatusPill tone="neutral">{request.status}</StatusPill>
+                <StatusPill tone={getStatusTone(request.status)}>{getStatusLabel(request.status)}</StatusPill>
                 <span className="text-sm font-medium text-white/80 xl:ml-auto">{request.timeAgo}</span>
               </div>
 
@@ -258,6 +276,7 @@ const WorkerRequestDetailsPage = () => {
             <section className="ui-panel p-6">
               <p className="ui-stat-label">Estimated Budget</p>
               <p className="mt-2 text-3xl font-extrabold text-brand-800">{formatBudget(request.budget)}</p>
+
               {request.status === 'OPEN' ? (
                 <>
                   <button className="ui-button-primary mt-6 flex w-full" onClick={() => navigate(`/requests/${request.id}/quote`)} type="button">

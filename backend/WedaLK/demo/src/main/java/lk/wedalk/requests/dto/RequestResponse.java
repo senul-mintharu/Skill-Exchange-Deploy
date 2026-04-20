@@ -37,12 +37,12 @@ public class RequestResponse {
   private String seekerName;
   private String seekerPhone;
 
-  // Assigned worker information (SCRUM-68)
+  // Assigned worker information
   private Long assignedWorkerId;
   private String assignedWorkerName;
   private Long assignedWorkerProfileId;
 
-  // Payment info (SCRUM-106/107)
+  // Payment slip info (SCRUM-106/107)
   private boolean paymentSlipUploaded;
   private String paymentRejectionNote;
 }

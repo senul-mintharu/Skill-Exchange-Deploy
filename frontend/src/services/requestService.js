@@ -102,7 +102,7 @@ export const updateRequest = async (id, updateData) => {
  * Update request job outcome status (ASSIGNED -> COMPLETED / NOT_COMPLETED)
  * Identity is resolved server-side from the JWT — no seekerId param needed.
  * @param {number} id - Request ID
- * @param {string} status - COMPLETED or NOT_COMPLETED
+ * @param {string} status - Must be COMPLETED
  * @returns {Promise<Object>} Updated request
  */
 export const updateRequestStatus = async (id, status) => {

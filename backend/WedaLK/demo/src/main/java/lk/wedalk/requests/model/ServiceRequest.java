@@ -16,8 +16,7 @@ import lombok.NoArgsConstructor;
  *
  * <p>
  * Represents a service request posted by a seeker. Workers can browse open
- * requests and submit
- * quotations.
+ * requests and submit quotations.
  */
 @Entity
 @Table(name = "service_requests")
@@ -52,7 +51,7 @@ public class ServiceRequest {
   private Double budget;
 
   @Enumerated(EnumType.STRING)
-  @Column(nullable = false, length = 20)
+  @Column(nullable = false, length = 25)
   private RequestStatus status;
 
   @Column(length = 500)

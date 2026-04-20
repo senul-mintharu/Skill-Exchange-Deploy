@@ -109,27 +109,16 @@ const requestMetaBadge = (request) => {
   const quoteCount = getQuoteCount(request);
 
   if (normalized === 'PENDING_PAYMENT') {
-    return {
-      icon: 'payment',
-      text: 'Payment Pending',
-      className: 'text-amber-700',
-    };
+    return { icon: 'payment', text: 'Payment Pending', className: 'text-amber-700' };
   }
-
   if (normalized === 'PAYMENT_UNDER_REVIEW') {
-    return {
-      icon: 'hourglass_top',
-      text: 'Under Review',
-      className: 'text-amber-600',
-    };
+    return { icon: 'hourglass_top', text: 'Under Review', className: 'text-amber-600' };
   }
-
+  if (normalized === 'WORKER_COMPLETED') {
+    return { icon: 'task_alt', text: 'Worker Marked Done', className: 'text-amber-700' };
+  }
   if (normalized === 'COMPLETED') {
-    return {
-      icon: 'check_circle',
-      text: 'Done',
-      className: 'text-green-700',
-    };
+    return { icon: 'check_circle', text: 'Done', className: 'text-green-700' };
   }
 
   if (normalized === 'ASSIGNED') {

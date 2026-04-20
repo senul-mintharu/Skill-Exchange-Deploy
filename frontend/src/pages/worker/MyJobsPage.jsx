@@ -14,6 +14,11 @@ const statusMeta = (status) => {
   }
 };
 
+const formatBudget = (value) => {
+  if (value === null || value === undefined) return 'Negotiable';
+  return `Rs. ${Number(value).toLocaleString()}`;
+};
+
 const MyJobsPage = () => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
