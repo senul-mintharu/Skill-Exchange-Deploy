@@ -17,6 +17,7 @@ import { formatBudget, formatCategoryLabel } from '../../utils/constants';
 import { resolveHttpError } from '../../utils/httpErrors';
 
 const getJobStatusLabel = (status) => {
+  if (status === 'PENDING_PAYMENT') return 'Awaiting Payment';
   if (status === 'ASSIGNED') return 'Assigned';
   if (status === 'IN_PROGRESS') return 'In Progress';
   if (status === 'COMPLETED') return 'Completed';
@@ -26,6 +27,7 @@ const getJobStatusLabel = (status) => {
 
 const statusTone = (status) => {
   const normalized = String(status || '').toUpperCase();
+  if (normalized === 'PENDING_PAYMENT') return 'warning';
   if (normalized === 'OPEN') return 'info';
   if (normalized === 'ASSIGNED' || normalized === 'IN_PROGRESS') return 'warning';
   if (normalized === 'COMPLETED') return 'success';

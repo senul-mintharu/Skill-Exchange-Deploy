@@ -50,6 +50,9 @@ public class WorkerProfile {
 
     private String availability;
 
+    @Column(length = 500)
+    private String paymentSlipPath;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 

@@ -126,3 +126,19 @@ export const deleteRequest = async (id) => {
     await apiClient.delete(`/requests/${id}`);
     return true;
 };
+
+/**
+ * Upload a bank transfer payment slip for a service request.
+ * Transitions the request from PENDING_PAYMENT → OPEN.
+ * @param {number} requestId - Request ID
+ * @param {File} slipFile - The payment slip image or PDF
+ * @returns {Promise<Object>} Updated request
+ */
+export const uploadRequestPaymentSlip = async (requestId, slipFile) => {
+    const formData = new FormData();
+    formData.append('slip', slipFile);
+    const response = await apiClient.post(`/requests/${requestId}/payment-slip`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data.data;
+};
