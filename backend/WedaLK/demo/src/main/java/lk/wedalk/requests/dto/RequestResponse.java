@@ -42,6 +42,7 @@ public class RequestResponse {
   private String assignedWorkerName;
   private Long assignedWorkerProfileId;
 
-  // Payment info (SCRUM-106)
+  // Payment info (SCRUM-106/107)
   private boolean paymentSlipUploaded;
+  private String paymentRejectionNote;
 }

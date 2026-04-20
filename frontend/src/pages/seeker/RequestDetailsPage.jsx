@@ -383,6 +383,25 @@ const RequestDetailsPage = () => {
           {isWorker ? 'Back to Browse Requests' : 'Back to My Requests'}
         </Link>
 
+        {request.status === 'PENDING_PAYMENT' && request.paymentRejectionNote ? (
+          <div className="rounded-card border border-red-200 bg-red-50 px-5 py-4">
+            <div className="flex items-start gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100">
+                <span className="material-icons text-xl text-red-700">cancel</span>
+              </span>
+              <div>
+                <p className="font-bold text-red-900">Payment Slip Rejected</p>
+                <p className="mt-1 text-sm leading-6 text-red-800">
+                  <span className="font-semibold">Admin note:</span> {request.paymentRejectionNote}
+                </p>
+                <p className="mt-2 text-sm text-red-700">
+                  Please upload a new payment slip that addresses the issue above.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_320px]">
           <section className="space-y-5">
             <section className="ui-panel overflow-hidden p-0">

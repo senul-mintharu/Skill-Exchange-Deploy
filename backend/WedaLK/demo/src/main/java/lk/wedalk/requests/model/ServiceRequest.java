@@ -58,6 +58,9 @@ public class ServiceRequest {
   @Column(length = 500)
   private String paymentSlipPath;
 
+  @Column(length = 1000)
+  private String paymentRejectionNote;
+
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "seeker_id", nullable = false)
   private User seeker;

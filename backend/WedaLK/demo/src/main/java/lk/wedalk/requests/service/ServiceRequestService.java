@@ -12,6 +12,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.util.StringUtils;
 import lk.wedalk.common.enums.QuoteStatus;
 import lk.wedalk.common.enums.RequestStatus;
 import lk.wedalk.common.enums.ServiceCategory;
@@ -144,7 +145,7 @@ public class ServiceRequestService {
   }
 
   @Transactional
-  public RequestResponse rejectPaymentSlip(Long requestId, Long adminId) {
+  public RequestResponse rejectPaymentSlip(Long requestId, Long adminId, String reason) {
     ServiceRequest request = serviceRequestRepository.findById(requestId)
         .orElseThrow(() -> new NotFoundException("Service request not found"));
 
@@ -154,9 +155,38 @@ public class ServiceRequestService {
 
     request.setStatus(RequestStatus.PENDING_PAYMENT);
     request.setPaymentSlipPath(null);
+    request.setPaymentRejectionNote(StringUtils.hasText(reason) ? reason.trim() : null);
     ServiceRequest saved = serviceRequestRepository.save(request);
     return mapToResponse(saved);
   }
+
+  @Transactional(readOnly = true)
+  public StoredSlipFile getRequestPaymentSlipFile(Long requestId) {
+    ServiceRequest request = serviceRequestRepository.findById(requestId)
+        .orElseThrow(() -> new NotFoundException("Service request not found"));
+
+    String slipPath = request.getPaymentSlipPath();
+    if (!StringUtils.hasText(slipPath)) {
+      throw new NotFoundException("No payment slip has been uploaded for this request");
+    }
+
+    Path path = Paths.get(slipPath);
+    if (!Files.exists(path) || !Files.isRegularFile(path) || !Files.isReadable(path)) {
+      throw new NotFoundException("Payment slip file could not be retrieved");
+    }
+
+    String fileName = path.getFileName().toString();
+    String ext = getExtension(fileName).toLowerCase(Locale.ROOT);
+    String contentType = switch (ext) {
+      case "pdf" -> "application/pdf";
+      case "png" -> "image/png";
+      default -> "image/jpeg";
+    };
+
+    return new StoredSlipFile(path, fileName, contentType);
+  }
+
+  public record StoredSlipFile(Path path, String fileName, String contentType) {}
 
   @Transactional(readOnly = true)
   public List<RequestResponse> getMyRequests(Long seekerId) {
@@ -323,6 +353,7 @@ public class ServiceRequestService {
         .assignedWorkerName(request.getAssignedWorker() != null ? request.getAssignedWorker().getFullName() : null)
         .assignedWorkerProfileId(assignedWorkerProfileId)
         .paymentSlipUploaded(request.getPaymentSlipPath() != null && !request.getPaymentSlipPath().isBlank())
+        .paymentRejectionNote(request.getPaymentRejectionNote())
         .build();
   }
 

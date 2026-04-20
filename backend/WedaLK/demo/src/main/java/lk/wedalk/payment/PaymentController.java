@@ -8,6 +8,10 @@ import lk.wedalk.requests.dto.RequestResponse;
 import lk.wedalk.requests.service.ServiceRequestService;
 import lk.wedalk.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -71,8 +75,28 @@ public class PaymentController {
     public ResponseEntity<ApiResponse<RequestResponse>> rejectPaymentSlip(
             @PathVariable Long requestId,
             @RequestBody(required = false) Map<String, String> body) {
-        RequestResponse response = serviceRequestService.rejectPaymentSlip(requestId, requireCurrentUserId());
+        String reason = (body != null) ? body.get("reason") : null;
+        RequestResponse response = serviceRequestService.rejectPaymentSlip(requestId, requireCurrentUserId(), reason);
         return ResponseEntity.ok(ApiResponse.success(response, "Payment rejected. Seeker must re-upload a valid slip."));
+    }
+
+    @GetMapping("/{requestId}/payment-slip/view")
+    public ResponseEntity<Resource> viewRequestPaymentSlip(@PathVariable Long requestId) {
+        ServiceRequestService.StoredSlipFile slip = serviceRequestService.getRequestPaymentSlipFile(requestId);
+        Resource resource = new FileSystemResource(slip.path());
+
+        MediaType mediaType;
+        try {
+            mediaType = MediaType.parseMediaType(slip.contentType());
+        } catch (IllegalArgumentException ignored) {
+            mediaType = MediaType.APPLICATION_OCTET_STREAM;
+        }
+
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.inline().filename(slip.fileName()).build().toString())
+                .body(resource);
     }
 
     private Long requireCurrentUserId() {
