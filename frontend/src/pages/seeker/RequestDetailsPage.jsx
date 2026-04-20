@@ -17,6 +17,8 @@ import { formatBudget, formatCategoryLabel } from '../../utils/constants';
 import { resolveHttpError } from '../../utils/httpErrors';
 
 const getJobStatusLabel = (status) => {
+  if (status === 'PENDING_PAYMENT') return 'Awaiting Payment';
+  if (status === 'PAYMENT_UNDER_REVIEW') return 'Under Review';
   if (status === 'ASSIGNED') return 'Assigned';
   if (status === 'IN_PROGRESS') return 'In Progress';
   if (status === 'COMPLETED') return 'Completed';
@@ -26,6 +28,8 @@ const getJobStatusLabel = (status) => {
 
 const statusTone = (status) => {
   const normalized = String(status || '').toUpperCase();
+  if (normalized === 'PENDING_PAYMENT') return 'warning';
+  if (normalized === 'PAYMENT_UNDER_REVIEW') return 'warning';
   if (normalized === 'OPEN') return 'info';
   if (normalized === 'ASSIGNED' || normalized === 'IN_PROGRESS') return 'warning';
   if (normalized === 'COMPLETED') return 'success';
@@ -378,6 +382,25 @@ const RequestDetailsPage = () => {
           <span className="material-icons text-base">arrow_back</span>
           {isWorker ? 'Back to Browse Requests' : 'Back to My Requests'}
         </Link>
+
+        {request.status === 'PENDING_PAYMENT' && request.paymentRejectionNote ? (
+          <div className="rounded-card border border-red-200 bg-red-50 px-5 py-4">
+            <div className="flex items-start gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100">
+                <span className="material-icons text-xl text-red-700">cancel</span>
+              </span>
+              <div>
+                <p className="font-bold text-red-900">Payment Slip Rejected</p>
+                <p className="mt-1 text-sm leading-6 text-red-800">
+                  <span className="font-semibold">Admin note:</span> {request.paymentRejectionNote}
+                </p>
+                <p className="mt-2 text-sm text-red-700">
+                  Please upload a new payment slip that addresses the issue above.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_320px]">
           <section className="space-y-5">
