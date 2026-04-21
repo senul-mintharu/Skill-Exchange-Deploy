@@ -97,6 +97,7 @@ public class AiDescriptionService {
         Do not include a title, greeting, markdown, bullets, quotation marks, or price estimate.
         Write in first person as the seeker.
         Mention the issue, useful details workers need before quoting, access or timing notes, and expected outcome.
+        If existing notes are provided, rewrite and improve them as a fresh complete description instead of appending to them.
         Keep the draft concise and comfortably below 2000 characters.
         """;
   }

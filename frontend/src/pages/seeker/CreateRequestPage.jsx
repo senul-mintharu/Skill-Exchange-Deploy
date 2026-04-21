@@ -52,6 +52,7 @@ const CreateRequestPage = () => {
   const [loading, setLoading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiBanner, setAiBanner] = useState({ message: '', type: 'error' });
+  const [hasAiDraft, setHasAiDraft] = useState(false);
   const [descriptionLimitWarning, setDescriptionLimitWarning] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -149,6 +150,7 @@ const CreateRequestPage = () => {
     }
 
     setAiBanner({ message: '', type: 'error' });
+    setDescriptionLimitWarning('');
     setAiLoading(true);
 
     try {
@@ -160,6 +162,7 @@ const CreateRequestPage = () => {
         existingDescription: formData.description.trim(),
       });
       handleChange('description', (response?.draft || '').slice(0, DESCRIPTION_LIMIT));
+      setHasAiDraft(true);
       setDescriptionLimitWarning('');
     } catch (err) {
       setAiBanner({ message: AI_FAILURE_MESSAGE, type: 'error' });
@@ -419,7 +422,7 @@ const CreateRequestPage = () => {
                         <span className={`material-icons text-base ${aiLoading ? 'animate-spin' : ''}`}>
                           {aiLoading ? 'progress_activity' : 'auto_awesome'}
                         </span>
-                        {aiLoading ? 'Drafting...' : 'AI Assist'}
+                        {aiLoading ? 'Drafting...' : hasAiDraft ? 'Regenerate Draft' : 'AI Assist'}
                       </button>
                     </div>
                   </div>
