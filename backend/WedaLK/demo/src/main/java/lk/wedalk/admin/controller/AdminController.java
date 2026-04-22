@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,5 +30,23 @@ public class AdminController {
       @RequestParam(required = false) String status) {
     List<UserDto> users = adminService.getAllUsers(search, role, status);
     return ResponseEntity.ok(ApiResponse.success(users, "Users retrieved successfully"));
+  }
+
+  /**
+   * Toggles the suspended status of a user account.
+   *
+   * <p>Deactivates an active account or reactivates a suspended one.
+   * Protected by the existing {@code /api/admin/**} ADMIN-only security rule.
+   *
+   * @param id the ID of the user to toggle
+   * @return the updated {@link UserDto} wrapped in {@link ApiResponse}
+   */
+  @PatchMapping("/users/{id}/status")
+  public ResponseEntity<ApiResponse<UserDto>> toggleUserStatus(@PathVariable Long id) {
+    UserDto updated = adminService.toggleUserStatus(id);
+    String message = Boolean.TRUE.equals(updated.getIsSuspended())
+        ? "User account deactivated successfully."
+        : "User account reactivated successfully.";
+    return ResponseEntity.ok(ApiResponse.success(updated, message));
   }
 }

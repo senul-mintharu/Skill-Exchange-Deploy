@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ErrorBanner from '../../components/common/ErrorBanner';
 import {
   EmptyState,
@@ -7,7 +7,8 @@ import {
   SectionCard,
   StatusPill,
 } from '../../components/ui/PortalPrimitives';
-import { getAllUsers } from '../../services/adminService';
+import { getAllUsers, toggleUserStatus } from '../../services/adminService';
+import { getUser } from '../../utils/storage';
 
 const roleOptions = [
   { value: '', label: 'All roles' },
@@ -52,6 +53,12 @@ const UserManagementPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Track which user IDs are currently having their status toggled
+  const [actionLoading, setActionLoading] = useState(new Set());
+
+  // Current admin's own ID, so we can prevent self-suspension in the UI
+  const currentAdminId = useRef(getUser()?.id ?? null);
+
   const filters = useMemo(
     () => ({
       search: search.trim(),
@@ -79,6 +86,30 @@ const UserManagementPage = () => {
   useEffect(() => {
     loadUsers();
   }, [loadUsers]);
+
+  const handleToggle = useCallback(async (user) => {
+    const { id } = user;
+    setActionLoading((prev) => new Set(prev).add(id));
+    setError('');
+
+    try {
+      const updated = await toggleUserStatus(id);
+      // Update the row in-place — no full reload needed
+      setUsers((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, isSuspended: updated.isSuspended } : u)),
+      );
+    } catch (err) {
+      setError(
+        err?.response?.data?.message || 'Failed to update account status. Please try again.',
+      );
+    } finally {
+      setActionLoading((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }, []);
 
   const totals = useMemo(() => {
     const active = users.filter((user) => !user.isSuspended).length;
@@ -178,28 +209,85 @@ const UserManagementPage = () => {
                       <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.12em] text-ink-subtle">District</th>
                       <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.12em] text-ink-subtle">Status</th>
                       <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.12em] text-ink-subtle">Joined</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.12em] text-ink-subtle">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {users.map((user) => (
-                      <tr key={user.id} className="border-t border-line transition hover:bg-brand-50/50">
-                        <td className="px-4 py-3">
-                          <p className="text-sm font-bold text-ink">{user.fullName || 'Unnamed user'}</p>
-                          <p className="mt-1 text-sm text-ink-muted">{user.email || 'No email available'}</p>
-                          {user.phoneNumber ? <p className="mt-1 text-xs text-ink-subtle">{user.phoneNumber}</p> : null}
-                        </td>
-                        <td className="px-4 py-3">
-                          <StatusPill tone={getRoleTone(user.role)}>{getDisplayRole(user.role)}</StatusPill>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-ink-muted">{user.district || 'Not provided'}</td>
-                        <td className="px-4 py-3">
-                          <StatusPill tone={user.isSuspended ? 'warning' : 'success'} icon={user.isSuspended ? 'block' : 'check_circle'}>
-                            {user.isSuspended ? 'Suspended' : 'Active'}
-                          </StatusPill>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-ink-muted">{formatDate(user.createdAt)}</td>
-                      </tr>
-                    ))}
+                    {users.map((user) => {
+                      const isToggling = actionLoading.has(user.id);
+                      // Prevent an admin from toggling their own account or other admin accounts
+                      const isDisabled =
+                        isToggling ||
+                        user.role === 'ADMIN' ||
+                        user.id === currentAdminId.current;
+
+                      return (
+                        <tr key={user.id} className="border-t border-line transition hover:bg-brand-50/50">
+                          <td className="px-4 py-3">
+                            <p className="text-sm font-bold text-ink">{user.fullName || 'Unnamed user'}</p>
+                            <p className="mt-1 text-sm text-ink-muted">{user.email || 'No email available'}</p>
+                            {user.phoneNumber ? (
+                              <p className="mt-1 text-xs text-ink-subtle">{user.phoneNumber}</p>
+                            ) : null}
+                          </td>
+                          <td className="px-4 py-3">
+                            <StatusPill tone={getRoleTone(user.role)}>
+                              {getDisplayRole(user.role)}
+                            </StatusPill>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-ink-muted">
+                            {user.district || 'Not provided'}
+                          </td>
+                          <td className="px-4 py-3">
+                            <StatusPill
+                              tone={user.isSuspended ? 'warning' : 'success'}
+                              icon={user.isSuspended ? 'block' : 'check_circle'}
+                            >
+                              {user.isSuspended ? 'Suspended' : 'Active'}
+                            </StatusPill>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-ink-muted">
+                            {formatDate(user.createdAt)}
+                          </td>
+                          <td className="px-4 py-3">
+                            {user.role === 'ADMIN' ? (
+                              <span className="text-xs italic text-ink-subtle">Protected</span>
+                            ) : (
+                              <button
+                                id={`toggle-status-${user.id}`}
+                                type="button"
+                                disabled={isDisabled}
+                                onClick={() => handleToggle(user)}
+                                className={[
+                                  'inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition',
+                                  'disabled:cursor-not-allowed disabled:opacity-50',
+                                  user.isSuspended
+                                    ? 'border-green-200 bg-green-50 text-green-700 hover:bg-green-100'
+                                    : 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100',
+                                ].join(' ')}
+                              >
+                                {isToggling ? (
+                                  <>
+                                    <span
+                                      className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"
+                                      aria-hidden="true"
+                                    />
+                                    {user.isSuspended ? 'Reactivating…' : 'Deactivating…'}
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="material-icons text-sm leading-none">
+                                      {user.isSuspended ? 'check_circle' : 'block'}
+                                    </span>
+                                    {user.isSuspended ? 'Reactivate' : 'Deactivate'}
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
