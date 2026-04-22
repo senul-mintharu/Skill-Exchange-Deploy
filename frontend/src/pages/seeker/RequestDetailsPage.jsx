@@ -316,7 +316,7 @@ const RequestDetailsPage = () => {
 
     try {
       await updateRequestStatus(request.id, status);
-      setStatusUpdateMessage(`Job marked as ${statusLabel} successfully.`);
+      setStatusUpdateMessage(`Job marked as ${getJobStatusLabel(status)} successfully.`);
       await fetchRequestDetails(false);
     } catch (err) {
       setStatusUpdateMessage(err.response?.data?.message || 'Failed to update job status. Please try again.');

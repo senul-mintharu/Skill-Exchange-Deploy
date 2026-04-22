@@ -1,6 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { createRequest, generateRequestDescription, updateRequest } from '../../services/requestService';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import {
+  createRequest,
+  generateRequestDescription,
+  updateRequest,
+  uploadRequestPaymentSlip,
+} from '../../services/requestService';
 import { CATEGORIES, formatBudget } from '../../utils/constants';
 import { AlertPanel, PageIntro, SectionCard, StatusPill } from '../../components/ui/PortalPrimitives';
 import ErrorBanner from '../../components/common/ErrorBanner';
@@ -153,6 +158,40 @@ const CreateRequestPage = () => {
       handleChange('description', nextDescription.slice(0, DESCRIPTION_LIMIT));
       setDescriptionLimitWarning(DESCRIPTION_LIMIT_MESSAGE);
     }
+  };
+
+  const handleSlipChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+    const maxSizeBytes = 5 * 1024 * 1024;
+
+    if (!allowedTypes.includes(file.type)) {
+      setPaymentSlip(null);
+      setPaymentSlipPreview('');
+      setErrors((prev) => ({ ...prev, paymentSlip: 'Please upload a JPG, PNG, or PDF file.' }));
+      return;
+    }
+
+    if (file.size > maxSizeBytes) {
+      setPaymentSlip(null);
+      setPaymentSlipPreview('');
+      setErrors((prev) => ({ ...prev, paymentSlip: 'Payment slip must be 5 MB or smaller.' }));
+      return;
+    }
+
+    setPaymentSlip(file);
+    setErrors((prev) => ({ ...prev, paymentSlip: '' }));
+
+    if (file.type === 'application/pdf') {
+      setPaymentSlipPreview('pdf');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => setPaymentSlipPreview(String(reader.result || ''));
+    reader.readAsDataURL(file);
   };
 
   const handleAiAssist = async () => {

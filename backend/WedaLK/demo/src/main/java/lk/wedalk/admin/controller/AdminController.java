@@ -1,14 +1,32 @@
 package lk.wedalk.admin.controller;
 
-/**
- * AdminController.java — Admin REST Controller
- *
- * <p>This file should contain: - @RestController, @RequestMapping("/api/admin") annotations -
- * Inject AdminService, UserService - Endpoints: - GET /api/admin/users — List all users (with
- * filters) - GET /api/admin/users/{id} — Get user details - POST /api/admin/users/{id}/suspend —
- * Suspend a user - POST /api/admin/users/{id}/unsuspend — Unsuspend a user - GET /api/admin/stats —
- * Platform statistics (total users, requests, etc.) - All endpoints require ADMIN role - All
- * endpoints return ApiResponse
- *
- * <p>Purpose: Admin-only endpoints for user management and platform oversight.
- */
+import java.util.List;
+import lk.wedalk.admin.service.AdminService;
+import lk.wedalk.common.ApiResponse;
+import lk.wedalk.users.dto.UserDto;
+import lk.wedalk.users.model.Role;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/admin")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:3000")
+public class AdminController {
+
+  private final AdminService adminService;
+
+  @GetMapping("/users")
+  public ResponseEntity<ApiResponse<List<UserDto>>> getAllUsers(
+      @RequestParam(required = false) String search,
+      @RequestParam(required = false) Role role,
+      @RequestParam(required = false) String status) {
+    List<UserDto> users = adminService.getAllUsers(search, role, status);
+    return ResponseEntity.ok(ApiResponse.success(users, "Users retrieved successfully"));
+  }
+}

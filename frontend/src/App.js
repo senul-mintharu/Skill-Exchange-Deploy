@@ -35,6 +35,7 @@ import VerificationReviewPage from './pages/admin/VerificationReviewPage';
 import DisputeReviewPage from './pages/admin/DisputeReviewPage';
 import AdminJobDetailsPage from './pages/admin/AdminJobDetailsPage';
 import AdminPaymentSlipsPage from './pages/admin/AdminPaymentSlipsPage';
+import UserManagementPage from './pages/admin/UserManagementPage';
 import AccountProfilePage from './pages/account/AccountProfilePage';
 import RequireWorkerProfile from './components/common/RequireWorkerProfile';
 
@@ -88,6 +89,7 @@ function App() {
            
             <Route path="/admin/jobs/:requestId" element={<AdminJobDetailsPage />} />
             <Route path="/admin/payment-slips" element={<AdminPaymentSlipsPage />} />
+            <Route path="/admin/users" element={<UserManagementPage />} />
           </Route>
 
           {/* Any authenticated user */}
