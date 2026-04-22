@@ -11,3 +11,15 @@ export const getAllUsers = async (filters = {}) => {
   const response = await apiClient.get(`/admin/users${query ? `?${query}` : ''}`);
   return response.data.data;
 };
+
+/**
+ * Toggles the active/suspended status of a user account.
+ * Backend flips isSuspended and returns the updated UserDto.
+ *
+ * @param {number} userId - The ID of the user to toggle.
+ * @returns {Promise<Object>} The updated user DTO.
+ */
+export const toggleUserStatus = async (userId) => {
+  const response = await apiClient.patch(`/admin/users/${userId}/status`);
+  return response.data.data;
+};
