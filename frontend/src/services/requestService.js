@@ -18,6 +18,16 @@ export const createRequest = async (requestData) => {
 };
 
 /**
+ * Generate an AI-assisted draft description for a new service request.
+ * @param {Object} context - { title, category, locationArea, urgency, existingDescription }
+ * @returns {Promise<Object>} AI draft response { draft }
+ */
+export const generateRequestDescription = async (context) => {
+    const response = await apiClient.post('/requests/ai-description', context);
+    return response.data.data;
+};
+
+/**
  * Get all requests created by the current seeker
  * @returns {Promise<Array>} List of requests
  */

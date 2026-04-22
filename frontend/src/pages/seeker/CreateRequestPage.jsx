@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { createRequest, updateRequest, uploadRequestPaymentSlip } from '../../services/requestService';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { createRequest, generateRequestDescription, updateRequest } from '../../services/requestService';
 import { CATEGORIES, formatBudget } from '../../utils/constants';
 import { AlertPanel, PageIntro, SectionCard, StatusPill } from '../../components/ui/PortalPrimitives';
+import ErrorBanner from '../../components/common/ErrorBanner';
 
 const urgencyOptions = [
   { value: 'LOW', label: 'Low', subtitle: 'Within a week', icon: '📅', tone: 'info', hint: 'Flexible timing' },
@@ -41,6 +42,11 @@ const stepDetails = [
   { step: 4, title: 'Payment', description: 'Upload your bank transfer slip to publish.' },
 ];
 
+const DESCRIPTION_LIMIT = 2000;
+const AI_CONTEXT_MESSAGE = 'Please enter a Job Title and Category first so the AI understands your needs.';
+const AI_FAILURE_MESSAGE = 'AI generation is currently unavailable. Please write your description manually or try again later.';
+const DESCRIPTION_LIMIT_MESSAGE = 'Description cannot exceed 2000 characters.';
+
 const previewText = (text) => {
   if (!text) return 'A clear description helps workers understand the issue and quote accurately.';
   return text;
@@ -53,6 +59,10 @@ const CreateRequestPage = () => {
   const requestToEdit = isEditMode ? location.state.requestToEdit : null;
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiBanner, setAiBanner] = useState({ message: '', type: 'error' });
+  const [hasAiDraft, setHasAiDraft] = useState(false);
+  const [descriptionLimitWarning, setDescriptionLimitWarning] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [errors, setErrors] = useState({});
@@ -92,25 +102,85 @@ const CreateRequestPage = () => {
     if (step === 2) {
       if (!formData.description.trim()) nextErrors.description = 'Description is required';
       else if (formData.description.trim().length < 20) nextErrors.description = 'Description must be at least 20 characters';
-      else if (formData.description.length > 2000) nextErrors.description = 'Description must not exceed 2000 characters';
+      else if (formData.description.length > DESCRIPTION_LIMIT) nextErrors.description = 'Description must not exceed 2000 characters';
     }
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSlipChange = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setPaymentSlip(file);
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = () => setPaymentSlipPreview(reader.result);
-      reader.readAsDataURL(file);
-    } else {
-      setPaymentSlipPreview('pdf');
+  const handleDescriptionChange = (value) => {
+    if (value.length > DESCRIPTION_LIMIT) {
+      handleChange('description', value.slice(0, DESCRIPTION_LIMIT));
+      setDescriptionLimitWarning(DESCRIPTION_LIMIT_MESSAGE);
+      return;
     }
-    if (errors.paymentSlip) setErrors((prev) => ({ ...prev, paymentSlip: '' }));
+
+    handleChange('description', value);
+    setDescriptionLimitWarning('');
+  };
+
+  const handleDescriptionBeforeInput = (event) => {
+    const incomingText = event.nativeEvent?.data || '';
+    if (!incomingText) return;
+
+    const textarea = event.currentTarget;
+    const selectedLength = textarea.selectionEnd - textarea.selectionStart;
+    const nextLength = formData.description.length - selectedLength + incomingText.length;
+
+    if (nextLength > DESCRIPTION_LIMIT) {
+      event.preventDefault();
+      setDescriptionLimitWarning(DESCRIPTION_LIMIT_MESSAGE);
+    }
+  };
+
+  const handleDescriptionPaste = (event) => {
+    const pastedText = event.clipboardData.getData('text');
+    if (!pastedText) return;
+
+    const textarea = event.currentTarget;
+    const selectedLength = textarea.selectionEnd - textarea.selectionStart;
+    const availableCharacters = DESCRIPTION_LIMIT - (formData.description.length - selectedLength);
+
+    if (pastedText.length > availableCharacters) {
+      event.preventDefault();
+      const allowedPaste = pastedText.slice(0, Math.max(availableCharacters, 0));
+      const nextDescription =
+        formData.description.slice(0, textarea.selectionStart) +
+        allowedPaste +
+        formData.description.slice(textarea.selectionEnd);
+
+      handleChange('description', nextDescription.slice(0, DESCRIPTION_LIMIT));
+      setDescriptionLimitWarning(DESCRIPTION_LIMIT_MESSAGE);
+    }
+  };
+
+  const handleAiAssist = async () => {
+    if (!formData.title.trim() || !formData.category) {
+      setAiBanner({ message: AI_CONTEXT_MESSAGE, type: 'warning' });
+      return;
+    }
+
+    setAiBanner({ message: '', type: 'error' });
+    setDescriptionLimitWarning('');
+    setAiLoading(true);
+
+    try {
+      const response = await generateRequestDescription({
+        title: formData.title.trim(),
+        category: formData.category,
+        locationArea: formData.locationArea.trim(),
+        urgency: formData.urgency,
+        existingDescription: formData.description.trim(),
+      });
+      handleChange('description', (response?.draft || '').slice(0, DESCRIPTION_LIMIT));
+      setHasAiDraft(true);
+      setDescriptionLimitWarning('');
+    } catch (err) {
+      setAiBanner({ message: AI_FAILURE_MESSAGE, type: 'error' });
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -424,15 +494,42 @@ const CreateRequestPage = () => {
                 <div className="ui-field">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <label className="ui-label" htmlFor="description">Task Description</label>
-                    <span className="text-xs font-semibold text-ink-subtle">{formData.description.length} / 2000</span>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="text-xs font-semibold text-ink-subtle">{formData.description.length} / {DESCRIPTION_LIMIT}</span>
+                      <button
+                        type="button"
+                        onClick={handleAiAssist}
+                        disabled={aiLoading}
+                        className="inline-flex min-h-[36px] items-center gap-2 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-brand-900 transition hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-70"
+                      >
+                        <span className={`material-icons text-base ${aiLoading ? 'animate-spin' : ''}`}>
+                          {aiLoading ? 'progress_activity' : 'auto_awesome'}
+                        </span>
+                        {aiLoading ? 'Drafting...' : hasAiDraft ? 'Regenerate Draft' : 'AI Assist'}
+                      </button>
+                    </div>
                   </div>
+                  <ErrorBanner
+                    message={aiBanner.message}
+                    type={aiBanner.type}
+                    onClose={() => setAiBanner({ message: '', type: 'error' })}
+                  />
                   <textarea
                     id="description"
                     value={formData.description}
-                    onChange={(event) => handleChange('description', event.target.value)}
+                    onBeforeInput={handleDescriptionBeforeInput}
+                    onChange={(event) => handleDescriptionChange(event.target.value)}
+                    onPaste={handleDescriptionPaste}
                     placeholder="Example: I need a leaking tap fixed in the kitchen. It seems to be dripping from the handle..."
                     rows="6"
                     className="ui-textarea"
+                    maxLength={DESCRIPTION_LIMIT}
+                    disabled={aiLoading}
+                  />
+                  <ErrorBanner
+                    message={descriptionLimitWarning}
+                    type="warning"
+                    onClose={() => setDescriptionLimitWarning('')}
                   />
                   {errors.description ? <p className="ui-error-text">{errors.description}</p> : null}
                   <div className="grid gap-3 sm:grid-cols-3">

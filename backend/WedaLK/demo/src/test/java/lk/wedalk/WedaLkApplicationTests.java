@@ -8,6 +8,14 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles("test")
 class WedaLkApplicationTests {
 
+  @MockBean private UserRepository userRepository;
+  @MockBean private ServiceRequestRepository serviceRequestRepository;
+  @MockBean private QuotationRepository quotationRepository;
+  @MockBean private ReviewRepository reviewRepository;
+  @MockBean private DisputeRepository disputeRepository;
+  @MockBean private WorkerProfileRepository workerProfileRepository;
+  @MockBean private VerificationRepository verificationRepository;
+
   @Test
   void contextLoads() {}
 }
