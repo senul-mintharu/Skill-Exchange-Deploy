@@ -408,6 +408,95 @@
     }
   }
 
+  /* ── SystemError component ────────────────────────────────────────────── */
+  .system-error-root {
+    @apply flex items-start gap-4;
+    animation: systemErrorSlideIn 0.35s ease-out both;
+  }
+
+  .system-error-card {
+    @apply rounded-card border px-5 py-5 shadow-soft;
+  }
+
+  .system-error-compact {
+    @apply rounded-xl border px-4 py-4;
+  }
+
+  .system-error-tone-error {
+    border-color: rgba(239, 68, 68, 0.18);
+    background: linear-gradient(
+      135deg,
+      rgba(254, 242, 242, 0.85) 0%,
+      rgba(255, 255, 255, 0.95) 100%
+    );
+  }
+
+  .system-error-tone-warning {
+    border-color: rgba(245, 158, 11, 0.18);
+    background: linear-gradient(
+      135deg,
+      rgba(255, 251, 235, 0.85) 0%,
+      rgba(255, 255, 255, 0.95) 100%
+    );
+  }
+
+  .system-error-tone-info {
+    border-color: rgba(59, 130, 246, 0.18);
+    background: linear-gradient(
+      135deg,
+      rgba(239, 246, 255, 0.85) 0%,
+      rgba(255, 255, 255, 0.95) 100%
+    );
+  }
+
+  .system-error-icon-wrap {
+    @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl;
+    transition: transform 0.25s ease;
+  }
+
+  .system-error-root:hover .system-error-icon-wrap {
+    transform: scale(1.06);
+  }
+
+  .system-error-body {
+    @apply min-w-0 flex-1;
+  }
+
+  .system-error-title {
+    @apply font-display text-base font-bold text-ink;
+  }
+
+  .system-error-message {
+    @apply mt-1 text-sm leading-6 text-ink-muted;
+  }
+
+  .system-error-extra {
+    @apply mt-3 text-sm text-ink-muted;
+  }
+
+  .system-error-actions {
+    @apply mt-4 flex flex-wrap items-center gap-3;
+  }
+
+  .system-error-dismiss {
+    @apply shrink-0 rounded-xl p-1.5 text-ink-subtle transition;
+  }
+
+  .system-error-dismiss:hover {
+    @apply bg-black/5 text-ink;
+  }
+
+  @keyframes systemErrorSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   .ui-spinner {
     @apply h-5 w-5 animate-spin rounded-full border-2 border-brand-200 border-t-brand-700;
   }
