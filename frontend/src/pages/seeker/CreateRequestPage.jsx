@@ -282,31 +282,6 @@ const CreateRequestPage = () => {
         urgency: formData.urgency,
         budget: formData.budget,
       };
-      // #region agent log
-      try {
-        const tokenNow = localStorage.getItem('token');
-        const userNow = localStorage.getItem('user');
-        fetch('http://127.0.0.1:7485/ingest/9a59d784-0ca8-4645-87dc-cb3f3ea01e9c', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'ba51df' },
-          body: JSON.stringify({
-            sessionId: 'ba51df',
-            runId: 'run1',
-            hypothesisId: 'H1,H5',
-            location: 'CreateRequestPage.jsx:handleSubmit-before-createRequest',
-            message: 'about to POST /requests',
-            data: {
-              hasTokenInStorage: !!tokenNow,
-              tokenLen: tokenNow ? tokenNow.length : 0,
-              userStored: userNow ? JSON.parse(userNow) : null,
-              payloadBudgetType: typeof payload.budget,
-              payloadBudgetValue: payload.budget,
-            },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {});
-      } catch (e) {}
-      // #endregion
       const created = await createRequest(payload);
       await uploadRequestPaymentSlip(created.id, paymentSlip);
       setSuccess(true);

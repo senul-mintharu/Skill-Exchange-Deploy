@@ -107,45 +107,14 @@ public class SecurityConfig {
 
   @Bean
   public AuthenticationEntryPoint authenticationEntryPoint() {
-    return (request, response, authException) -> {
-      // #region agent log
-      try {
-        String line = "{\"sessionId\":\"ba51df\",\"runId\":\"run1\",\"hypothesisId\":\"H1,H2,H3,H4\",\"location\":\"SecurityConfig.java:authenticationEntryPoint\",\"message\":\"401 emitted\",\"data\":{\"path\":\""
-            + request.getMethod() + " " + request.getRequestURI() + "\",\"ex\":\""
-            + (authException.getClass().getSimpleName()) + "\",\"msg\":\""
-            + (authException.getMessage() == null ? "" : authException.getMessage().replace("\"", "\\\""))
-            + "\",\"hasAuthHeader\":" + (request.getHeader("Authorization") != null)
-            + "},\"timestamp\":" + System.currentTimeMillis() + "}\n";
-        java.nio.file.Files.write(
-            java.nio.file.Paths.get("D:/skill-exchange/debug-ba51df.log"),
-            line.getBytes(java.nio.charset.StandardCharsets.UTF_8),
-            java.nio.file.StandardOpenOption.CREATE,
-            java.nio.file.StandardOpenOption.APPEND);
-      } catch (Exception ignored) {}
-      // #endregion
-      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
-    };
+    return (request, response, authException) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
+        "Unauthorized");
   }
 
   @Bean
   public AccessDeniedHandler accessDeniedHandler() {
-    return (request, response, accessDeniedException) -> {
-      // #region agent log
-      try {
-        String line = "{\"sessionId\":\"ba51df\",\"runId\":\"run1\",\"hypothesisId\":\"H2,H3\",\"location\":\"SecurityConfig.java:accessDeniedHandler\",\"message\":\"403 emitted\",\"data\":{\"path\":\""
-            + request.getMethod() + " " + request.getRequestURI()
-            + "\",\"msg\":\""
-            + (accessDeniedException.getMessage() == null ? "" : accessDeniedException.getMessage().replace("\"", "\\\""))
-            + "\"},\"timestamp\":" + System.currentTimeMillis() + "}\n";
-        java.nio.file.Files.write(
-            java.nio.file.Paths.get("D:/skill-exchange/debug-ba51df.log"),
-            line.getBytes(java.nio.charset.StandardCharsets.UTF_8),
-            java.nio.file.StandardOpenOption.CREATE,
-            java.nio.file.StandardOpenOption.APPEND);
-      } catch (Exception ignored) {}
-      // #endregion
-      response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden");
-    };
+    return (request, response, accessDeniedException) -> response.sendError(HttpServletResponse.SC_FORBIDDEN,
+        "Forbidden");
   }
 
   @Bean
