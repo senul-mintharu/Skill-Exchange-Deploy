@@ -15,6 +15,7 @@ import {
   StatCard,
   StatusPill,
 } from '../../components/ui/PortalPrimitives';
+import EmptyStateCard from '../../components/common/EmptyState';
 import { formatCategoryLabel } from '../../utils/constants';
 
 const jobStatusTone = (status) => {
@@ -402,12 +403,17 @@ const WorkerDashboard = () => {
 
                 {activeJobs.length === 0 ? (
                   <div className="px-6 py-8">
-                    <EmptyState
+                    <EmptyStateCard
                       icon="work_off"
                       title="No active jobs right now"
-                      text="Accepted jobs will show up here once a seeker assigns work to you."
-                      className="max-w-full border-none bg-transparent px-0 py-0 shadow-none"
-                      action={<Link to="/browse-requests" className="ui-button-primary">Find Work</Link>}
+                      description="Accepted jobs will show up here once a seeker assigns work to you. Browse open requests nearby and submit your first quote to get started."
+                      compact
+                      action={
+                        <Link to="/browse-requests" className="ui-button-primary">
+                          <span className="material-icons text-base">travel_explore</span>
+                          Find Jobs
+                        </Link>
+                      }
                     />
                   </div>
                 ) : (
