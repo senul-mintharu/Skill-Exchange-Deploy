@@ -2,10 +2,12 @@ import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useReducer,
 } from 'react';
 import { cn } from '../../utils/cn';
+import { setToastRef } from '../../utils/toastBridge';
 
 /**
  * ──────────────────────────────────────────────────────────────────────────────
@@ -153,6 +155,13 @@ export function ToastProvider({ children }) {
     }),
     [addToast, dismiss],
   );
+
+  // Register the toast API in the singleton bridge so non-React code
+  // (e.g. the Axios interceptor in apiClient.js) can fire toasts.
+  useEffect(() => {
+    setToastRef(api);
+    return () => setToastRef(null);
+  }, [api]);
 
   return (
     <ToastContext.Provider value={api}>
