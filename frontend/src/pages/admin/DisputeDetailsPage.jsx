@@ -6,6 +6,12 @@ import { getDisputeById, resolveDispute } from '../../services/disputeService';
 
 const isResolved = (status) => String(status || '').toUpperCase() === 'RESOLVED';
 
+const formatStatusLabel = (value) =>
+  String(value || '')
+    .replaceAll('_', ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
 const formatDateTime = (value) => {
   if (!value) return 'N/A';
   const date = new Date(value);
@@ -54,12 +60,11 @@ const DisputeDetailsPage = () => {
     };
   }, [disputeId]);
 
-  const handleResolve = async (event) => {
-    event.preventDefault();
+  const handleResolve = async (outcome) => {
     const trimmed = resolutionText.trim();
 
     if (!trimmed) {
-      setError('Please provide resolution notes before resolving this dispute.');
+      setError('Please add resolution notes so both parties can see why this was closed.');
       return;
     }
 
@@ -67,15 +72,26 @@ const DisputeDetailsPage = () => {
       return;
     }
 
+    if (outcome === 'SUSPEND_WORKER') {
+      const ok = window.confirm(
+        'Suspend this worker and close the dispute? They will not be able to sign in until an admin reactivates their account. The job will stay in the not-completed state.'
+      );
+      if (!ok) return;
+    }
+
     setSubmitting(true);
     setError('');
     setSuccessMessage('');
 
     try {
-      const updated = await resolveDispute(dispute.id, trimmed);
+      const updated = await resolveDispute(dispute.id, trimmed, outcome);
       setDispute(updated);
       setResolutionText(updated?.resolution || trimmed);
-      setSuccessMessage('Dispute resolved successfully.');
+      if (outcome === 'SUSPEND_WORKER') {
+        setSuccessMessage('Dispute closed and the worker account has been suspended.');
+      } else {
+        setSuccessMessage('Dispute closed and the job has been marked completed again.');
+      }
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to resolve dispute.');
     } finally {
@@ -122,18 +138,48 @@ const DisputeDetailsPage = () => {
                 <div className="rounded-card border border-line bg-surface-muted p-4">
                   <p className="ui-stat-label">Job ID</p>
                   <p className="mt-1 text-base font-semibold text-ink">#{dispute.requestId}</p>
+                  <Link
+                    to={`/admin/jobs/${dispute.requestId}`}
+                    className="mt-2 inline-block text-sm font-semibold text-brand-600 hover:underline"
+                  >
+                    Open job in admin
+                  </Link>
+                </div>
+                <div className="rounded-card border border-line bg-surface-muted p-4">
+                  <p className="ui-stat-label">Job status</p>
+                  <p className="mt-1 text-base font-semibold text-ink">
+                    {formatStatusLabel(dispute.requestStatus) || '—'}
+                  </p>
                 </div>
                 <div className="rounded-card border border-line bg-surface-muted p-4">
                   <p className="ui-stat-label">Date Raised</p>
                   <p className="mt-1 text-base font-semibold text-ink">{formatDateTime(dispute.createdAt)}</p>
                 </div>
                 <div className="rounded-card border border-line bg-surface-muted p-4">
-                  <p className="ui-stat-label">Seeker</p>
-                  <p className="mt-1 text-base font-semibold text-ink">{dispute.seekerName || 'Unknown seeker'}</p>
-                </div>
-                <div className="rounded-card border border-line bg-surface-muted p-4">
                   <p className="ui-stat-label">Worker</p>
                   <p className="mt-1 text-base font-semibold text-ink">{dispute.workerName || 'Unknown worker'}</p>
+                </div>
+              </div>
+
+              <div className="rounded-card border border-line bg-white p-4">
+                <p className="ui-stat-label">Contact the raiser (seeker)</p>
+                <p className="mt-1 text-base font-semibold text-ink">{dispute.seekerName || 'Unknown seeker'}</p>
+                <div className="mt-3 flex flex-wrap gap-3 text-sm">
+                  {dispute.seekerPhone ? (
+                    <a
+                      href={`tel:${String(dispute.seekerPhone).replace(/\s+/g, '')}`}
+                      className="ui-button-secondary inline-flex items-center gap-1"
+                    >
+                      Call {dispute.seekerPhone}
+                    </a>
+                  ) : (
+                    <span className="text-ink-muted">No phone on file</span>
+                  )}
+                  {dispute.seekerEmail ? (
+                    <a href={`mailto:${dispute.seekerEmail}`} className="ui-button-ghost">
+                      Email seeker
+                    </a>
+                  ) : null}
                 </div>
               </div>
 
@@ -159,7 +205,7 @@ const DisputeDetailsPage = () => {
                   </p>
                 </div>
               ) : (
-                <form className="space-y-4" onSubmit={handleResolve}>
+                <div className="space-y-4">
                   <div className="ui-field">
                     <label htmlFor="resolution-note" className="ui-label">Final ruling note</label>
                     <textarea
@@ -173,10 +219,29 @@ const DisputeDetailsPage = () => {
                     <p className="ui-helper">This note will be visible to both parties.</p>
                   </div>
 
-                  <button type="submit" className="ui-button-primary" disabled={submitting}>
-                    {submitting ? 'Resolving...' : 'Resolve Dispute'}
-                  </button>
-                </form>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                    <button
+                      type="button"
+                      className="ui-button-primary"
+                      disabled={submitting}
+                      onClick={() => handleResolve('COMPLETE_JOB')}
+                    >
+                      {submitting ? 'Working...' : 'Resolve — mark job completed'}
+                    </button>
+                    <button
+                      type="button"
+                      className="ui-button-secondary border-red-200 text-red-800 hover:bg-red-50"
+                      disabled={submitting}
+                      onClick={() => handleResolve('SUSPEND_WORKER')}
+                    >
+                      {submitting ? 'Working...' : 'Serious — suspend worker & close'}
+                    </button>
+                  </div>
+                  <p className="text-xs text-ink-muted">
+                    Use “mark job completed” when the issue is minor or the job should count as done. Use suspend only
+                    for serious misconduct; the job stays not completed until handled separately.
+                  </p>
+                </div>
               )}
             </SectionCard>
           </>

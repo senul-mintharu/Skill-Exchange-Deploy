@@ -62,9 +62,9 @@ const DisputeReviewPage = () => {
 		[disputes]
 	);
 
-	const handleOpenDetails = (requestId) => {
-		if (!requestId) return;
-		navigate(`/admin/jobs/${requestId}`);
+	const handleOpenDetails = (disputeId) => {
+		if (!disputeId) return;
+		navigate(`/admin/disputes/${disputeId}`);
 	};
 
 	return (
@@ -81,8 +81,7 @@ const DisputeReviewPage = () => {
 					<div className="flex flex-wrap items-center justify-between gap-3">
 						<h2 className="text-xl font-bold text-ink">Open Disputes</h2>
 						<StatusPill tone="danger" icon="report_problem">
-							{sortedDisputes.length} Open
-							{totalElements} Active
+							{sortedDisputes.length} on this page · {totalElements} total open
 						</StatusPill>
 					</div>
 
@@ -118,7 +117,7 @@ const DisputeReviewPage = () => {
 											<tr
 												key={dispute.id}
 												className="cursor-pointer border-t border-line transition hover:bg-brand-50/50"
-												onClick={() => handleOpenDetails(dispute.requestId)}
+												onClick={() => handleOpenDetails(dispute.id)}
 											>
 												<td className="px-4 py-3 text-sm font-semibold text-ink">#{dispute.requestId}</td>
 												<td className="px-4 py-3 text-sm text-ink-muted">{dispute.seekerName || 'Unknown seeker'}</td>
@@ -133,7 +132,7 @@ const DisputeReviewPage = () => {
 														className="ui-button-secondary"
 														onClick={(event) => {
 															event.stopPropagation();
-															handleOpenDetails(dispute.requestId);
+															handleOpenDetails(dispute.id);
 														}}
 													>
 														View Details

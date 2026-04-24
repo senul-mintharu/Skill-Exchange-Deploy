@@ -65,7 +65,7 @@ export const getOpenDisputes = async () => {
   const response = await apiClient.get('/disputes/open');
   const data = response.data.data;
   if (Array.isArray(data)) return data;
-  if (data && Array.isArray(data.content)) return data.content;
+  if (Array.isArray(data?.content)) return data.content;
   return [];
 };
 
@@ -87,9 +87,10 @@ export const getOpenDisputesPaged = async (params = {}) => {
  * Resolve a dispute (admin only).
  * @param {number} id - Dispute ID
  * @param {string} resolution - Final ruling note
+ * @param {'COMPLETE_JOB'|'SUSPEND_WORKER'} [outcome='COMPLETE_JOB'] - COMPLETE_JOB marks the job completed; SUSPEND_WORKER suspends the worker
  * @returns {Promise<Object>} Resolved dispute details
  */
-export const resolveDispute = async (id, resolution) => {
-  const response = await apiClient.put(`/disputes/${id}/resolve`, { resolution });
+export const resolveDispute = async (id, resolution, outcome = 'COMPLETE_JOB') => {
+  const response = await apiClient.put(`/disputes/${id}/resolve`, { resolution, outcome });
   return response.data.data;
 };

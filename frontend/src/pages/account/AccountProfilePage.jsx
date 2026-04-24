@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getCurrentUser, logout, updateCurrentUser } from '../../services/authService';
+import { clearAuth } from '../../utils/storage';
 import { deleteMyAccount, getMyAccount, updateMyAccount } from '../../services/userService';
 import AuthShell from '../../components/ui/AuthShell';
 import ErrorBanner from '../../components/common/ErrorBanner';
@@ -84,7 +85,6 @@ const AccountProfilePage = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login', { replace: true });
   };
 
   const handleDeleteAccount = async () => {
@@ -94,7 +94,7 @@ const AccountProfilePage = () => {
     setDeleting(true);
     try {
       await deleteMyAccount();
-      logout();
+      clearAuth();
       navigate('/register', { replace: true });
     } catch (err) {
       setMessage(err?.response?.data?.message || 'Failed to delete account');
