@@ -176,6 +176,12 @@ const WorkerDashboard = () => {
 
   const averageRating = Number(profile?.averageRating || 0);
   const skills = Array.isArray(profile?.skills) ? profile.skills.slice(0, 4) : [];
+  const registrationPaymentApproved =
+    !!profile
+    && String(profile.registrationPaymentStatus || 'APPROVED').toUpperCase() === 'APPROVED';
+  const registrationPaymentStatus = profile
+    ? String(profile.registrationPaymentStatus || '').toUpperCase()
+    : '';
   const overviewTiles = [
     {
       label: 'Pending Quotes',
@@ -265,26 +271,54 @@ const WorkerDashboard = () => {
               <h3 className="mt-3 text-xl font-bold text-ink">
                 {needsProfile
                   ? 'Complete your worker profile'
-                  : stats.pendingQuotes > 0
-                    ? 'Track pending quotations'
-                    : 'Find your next request'}
+                  : !registrationPaymentApproved
+                    ? registrationPaymentStatus === 'PAYMENT_UNDER_REVIEW'
+                      ? 'Registration payment under review'
+                      : 'Finish your registration payment'
+                    : stats.pendingQuotes > 0
+                      ? 'Track pending quotations'
+                      : 'Find your next request'}
               </h3>
               <p className="mt-3 text-sm leading-7 text-ink-muted">
                 {needsProfile
                   ? 'A complete profile unlocks quoting and gives seekers confidence in your skills, rate, and service area.'
-                  : stats.pendingQuotes > 0
-                    ? 'Your pending quotations are still waiting on seeker decisions, so stay ready to respond quickly.'
-                    : 'Your profile is in place. Browse new requests and keep your pipeline active.'}
+                  : !registrationPaymentApproved
+                    ? registrationPaymentStatus === 'PAYMENT_UNDER_REVIEW'
+                      ? 'An administrator is reviewing your bank slip. Quoting unlocks automatically after approval.'
+                      : 'Upload a valid bank transfer slip so an admin can approve your registration. Until then, quoting stays locked.'
+                    : stats.pendingQuotes > 0
+                      ? 'Your pending quotations are still waiting on seeker decisions, so stay ready to respond quickly.'
+                      : 'Your profile is in place. Browse new requests and keep your pipeline active.'}
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link
-                  to={needsProfile ? '/create-profile' : stats.pendingQuotes > 0 ? '/my-quotations' : '/browse-requests'}
+                  to={
+                    needsProfile
+                      ? '/create-profile'
+                      : !registrationPaymentApproved && profile?.id
+                        ? `/profile/${profile.id}`
+                        : stats.pendingQuotes > 0
+                          ? '/my-quotations'
+                          : '/browse-requests'
+                  }
                   className="ui-button-primary"
                 >
                   <span className="material-icons text-base">
-                    {needsProfile ? 'person_add' : stats.pendingQuotes > 0 ? 'request_quote' : 'travel_explore'}
+                    {needsProfile
+                      ? 'person_add'
+                      : !registrationPaymentApproved
+                        ? 'hourglass_top'
+                        : stats.pendingQuotes > 0
+                          ? 'request_quote'
+                          : 'travel_explore'}
                   </span>
-                  {needsProfile ? 'Create Profile' : stats.pendingQuotes > 0 ? 'Review Quotations' : 'Browse Work'}
+                  {needsProfile
+                    ? 'Create Profile'
+                    : !registrationPaymentApproved
+                      ? 'View status'
+                      : stats.pendingQuotes > 0
+                        ? 'Review Quotations'
+                        : 'Browse Work'}
                 </Link>
                 {profile?.id ? (
                   <Link to={`/profile/${profile.id}`} className="ui-button-secondary">
@@ -308,7 +342,30 @@ const WorkerDashboard = () => {
           </AlertPanel>
         ) : null}
 
-        {!needsProfile && verificationStatus !== 'APPROVED' ? (
+        {!needsProfile && !registrationPaymentApproved ? (
+          <AlertPanel
+            tone={registrationPaymentStatus === 'PAYMENT_UNDER_REVIEW' ? 'warning' : 'info'}
+            icon={registrationPaymentStatus === 'PAYMENT_UNDER_REVIEW' ? 'hourglass_top' : 'account_balance'}
+            title={
+              registrationPaymentStatus === 'PAYMENT_UNDER_REVIEW'
+                ? 'Registration payment is being reviewed'
+                : 'Registration payment required'
+            }
+            action={
+              profile?.id ? (
+                <Link to={`/profile/${profile.id}`} className="ui-button-primary">View details</Link>
+              ) : null
+            }
+          >
+            <p>
+              {registrationPaymentStatus === 'PAYMENT_UNDER_REVIEW'
+                ? 'You can browse open jobs, but submitting quotes stays disabled until an admin approves your fee.'
+                : 'Upload your bank slip from your profile page so an admin can activate full worker access.'}
+            </p>
+          </AlertPanel>
+        ) : null}
+
+        {!needsProfile && registrationPaymentApproved && verificationStatus !== 'APPROVED' ? (
           <AlertPanel
             tone={verificationStatus === 'PENDING' ? 'warning' : verificationStatus === 'REJECTED' ? 'danger' : 'info'}
             icon={verificationStatus === 'PENDING' ? 'hourglass_top' : verificationStatus === 'REJECTED' ? 'report_problem' : 'verified_user'}

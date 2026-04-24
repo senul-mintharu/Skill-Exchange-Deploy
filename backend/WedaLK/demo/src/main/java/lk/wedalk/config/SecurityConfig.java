@@ -85,6 +85,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/api/admin/requests/*/payment-approve").hasRole("ADMIN")
             .requestMatchers(HttpMethod.POST, "/api/admin/requests/*/payment-reject").hasRole("ADMIN")
             .requestMatchers(HttpMethod.GET, "/api/requests/*/payment-slip/view").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.GET, "/api/profiles/*/payment-slip/view").hasRole("ADMIN")
             .requestMatchers("/api/admin/**").hasRole("ADMIN")
             .anyRequest().authenticated());
 

@@ -81,3 +81,31 @@ export const uploadProfilePaymentSlip = async (profileId, slipFile) => {
     });
     return response.data.data;
 };
+
+// ---- Admin: worker profile registration payment (same review flow as seeker requests) ----
+
+export const getAdminPendingProfilePaymentSlips = async () => {
+    const response = await apiClient.get('/admin/profile-payment-slips/pending');
+    return response.data.data;
+};
+
+export const adminApproveProfilePaymentSlip = async (profileId) => {
+    const response = await apiClient.post(`/admin/profiles/${profileId}/payment-approve`);
+    return response.data.data;
+};
+
+export const adminRejectProfilePaymentSlip = async (profileId, reason = '') => {
+    const response = await apiClient.post(`/admin/profiles/${profileId}/payment-reject`, { reason });
+    return response.data.data;
+};
+
+/**
+ * @param {number} profileId
+ * @returns {Promise<Blob>}
+ */
+export const getAdminProfilePaymentSlipBlob = async (profileId) => {
+    const response = await apiClient.get(`/profiles/${profileId}/payment-slip/view`, {
+        responseType: 'blob',
+    });
+    return response.data;
+};

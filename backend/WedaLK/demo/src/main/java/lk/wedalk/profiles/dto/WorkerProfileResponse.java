@@ -1,11 +1,11 @@
 package lk.wedalk.profiles.dto;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -26,4 +26,8 @@ public class WorkerProfileResponse {
     private String verificationStatus;
     private Double averageRating;
     private int totalJobsCompleted;
+    /** PENDING_PAYMENT | PAYMENT_UNDER_REVIEW | APPROVED */
+    private String registrationPaymentStatus;
+    private String paymentRejectionNote;
+    private LocalDateTime updatedAt;
 }

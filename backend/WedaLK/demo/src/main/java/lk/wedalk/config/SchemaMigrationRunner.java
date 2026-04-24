@@ -54,4 +54,32 @@ public class SchemaMigrationRunner {
             System.out.println("[SchemaMigration] Stale CHECK constraints dropped (if any).");
         };
     }
+
+    /**
+     * Backfill worker profile registration payment columns (SCRUM: worker fee review).
+     * Existing rows are treated as already approved so current workers stay listed.
+     */
+    @Bean
+    @Order(1)
+    CommandLineRunner ensureWorkerProfilePaymentColumns(DataSource dataSource) {
+        return args -> {
+            JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+            try {
+                jdbc.execute(
+                        "ALTER TABLE worker_profiles ADD COLUMN IF NOT EXISTS registration_payment_status VARCHAR(30)");
+                jdbc.execute(
+                        "UPDATE worker_profiles SET registration_payment_status = 'APPROVED' "
+                                + "WHERE registration_payment_status IS NULL");
+                jdbc.execute("ALTER TABLE worker_profiles ALTER COLUMN registration_payment_status "
+                        + "SET DEFAULT 'APPROVED'");
+                jdbc.execute("ALTER TABLE worker_profiles ALTER COLUMN registration_payment_status "
+                        + "SET NOT NULL");
+                jdbc.execute(
+                        "ALTER TABLE worker_profiles ADD COLUMN IF NOT EXISTS payment_rejection_note TEXT");
+            } catch (Exception ex) {
+                System.err.println("[SchemaMigration] worker_profiles payment columns: " + ex.getMessage());
+            }
+            System.out.println("[SchemaMigration] Worker profile payment columns ensured.");
+        };
+    }
 }

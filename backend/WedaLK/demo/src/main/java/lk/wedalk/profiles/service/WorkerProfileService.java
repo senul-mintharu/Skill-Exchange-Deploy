@@ -1,5 +1,6 @@
 package lk.wedalk.profiles.service;
 
+import lk.wedalk.common.enums.WorkerRegistrationPaymentStatus;
 import lk.wedalk.profiles.dto.WorkerProfileCreateRequest;
 import lk.wedalk.profiles.dto.WorkerProfileResponse;
 import lk.wedalk.profiles.dto.WorkerProfileUpdateRequest;
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -77,6 +79,7 @@ public class WorkerProfileService {
                 .serviceAreas(request.getServiceAreas())
                 .hourlyRate(request.getHourlyRate())
                 .availability(request.getAvailability())
+                .registrationPaymentStatus(WorkerRegistrationPaymentStatus.PENDING_PAYMENT)
                 .build();
 
         WorkerProfile savedProfile = workerProfileRepository.save(profile);
@@ -86,20 +89,32 @@ public class WorkerProfileService {
     public List<WorkerProfileResponse> getAllProfiles() {
         return workerProfileRepository.findAll()
                 .stream()
+                .filter(p -> p.getRegistrationPaymentStatus() == WorkerRegistrationPaymentStatus.APPROVED)
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
-    public WorkerProfileResponse getProfile(Long id) {
-        WorkerProfile profile = workerProfileRepository.findById(id)
+    /**
+     * Public or authenticated viewer: only {@link WorkerRegistrationPaymentStatus#APPROVED} profiles
+     * are visible to others; owners always see their own row.
+     */
+    public WorkerProfileResponse getProfileForViewer(Long profileId, Long viewerUserId) {
+        WorkerProfile profile = workerProfileRepository.findById(profileId)
                 .orElseThrow(() -> new NotFoundException("Profile not found"));
-        return mapToResponse(profile);
+
+        if (profile.getRegistrationPaymentStatus() == WorkerRegistrationPaymentStatus.APPROVED) {
+            return mapToResponse(profile);
+        }
+        if (viewerUserId != null && viewerUserId.equals(profile.getUser().getId())) {
+            return mapToResponse(profile);
+        }
+        throw new NotFoundException("Profile not found");
     }
 
-    public WorkerProfileResponse getProfileByUserId(Long userId) {
+    public WorkerProfileResponse getProfileByUserIdForViewer(Long userId, Long viewerUserId) {
         WorkerProfile profile = workerProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new NotFoundException("Profile not found for user"));
-        return mapToResponse(profile);
+        return getProfileForViewer(profile.getId(), viewerUserId);
     }
 
     @Transactional
@@ -143,6 +158,12 @@ public class WorkerProfileService {
             throw new UnauthorizedException("You can only upload payment for your own profile");
         }
 
+        if (profile.getRegistrationPaymentStatus() != WorkerRegistrationPaymentStatus.PENDING_PAYMENT) {
+            throw new BadRequestException(
+                    "Payment slip can only be uploaded while registration payment is pending. Current status: "
+                            + profile.getRegistrationPaymentStatus());
+        }
+
         validateSlip(slip);
 
         String extension = getExtension(slip.getOriginalFilename());
@@ -160,9 +181,82 @@ public class WorkerProfileService {
         }
 
         profile.setPaymentSlipPath(dest.toString());
+        profile.setRegistrationPaymentStatus(WorkerRegistrationPaymentStatus.PAYMENT_UNDER_REVIEW);
+        profile.setPaymentRejectionNote(null);
         WorkerProfile saved = workerProfileRepository.save(profile);
         return mapToResponse(saved);
     }
+
+    @Transactional(readOnly = true)
+    public List<WorkerProfileResponse> getPendingProfilePaymentSlips() {
+        return workerProfileRepository
+                .findByRegistrationPaymentStatusOrderByUpdatedAtAsc(
+                        WorkerRegistrationPaymentStatus.PAYMENT_UNDER_REVIEW)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public WorkerProfileResponse approveProfileRegistrationPayment(Long profileId, Long adminId) {
+        WorkerProfile profile = workerProfileRepository.findById(profileId)
+                .orElseThrow(() -> new NotFoundException("Worker profile not found"));
+
+        if (profile.getRegistrationPaymentStatus() != WorkerRegistrationPaymentStatus.PAYMENT_UNDER_REVIEW) {
+            throw new BadRequestException(
+                    "Only profiles under payment review can be approved. Current status: "
+                            + profile.getRegistrationPaymentStatus());
+        }
+
+        profile.setRegistrationPaymentStatus(WorkerRegistrationPaymentStatus.APPROVED);
+        profile.setPaymentRejectionNote(null);
+        return mapToResponse(workerProfileRepository.save(profile));
+    }
+
+    @Transactional
+    public WorkerProfileResponse rejectProfileRegistrationPayment(Long profileId, Long adminId, String reason) {
+        WorkerProfile profile = workerProfileRepository.findById(profileId)
+                .orElseThrow(() -> new NotFoundException("Worker profile not found"));
+
+        if (profile.getRegistrationPaymentStatus() != WorkerRegistrationPaymentStatus.PAYMENT_UNDER_REVIEW) {
+            throw new BadRequestException(
+                    "Only profiles under payment review can be rejected. Current status: "
+                            + profile.getRegistrationPaymentStatus());
+        }
+
+        profile.setRegistrationPaymentStatus(WorkerRegistrationPaymentStatus.PENDING_PAYMENT);
+        profile.setPaymentSlipPath(null);
+        profile.setPaymentRejectionNote(StringUtils.hasText(reason) ? reason.trim() : null);
+        return mapToResponse(workerProfileRepository.save(profile));
+    }
+
+    @Transactional(readOnly = true)
+    public StoredSlipFile getProfilePaymentSlipFile(Long profileId) {
+        WorkerProfile profile = workerProfileRepository.findById(profileId)
+                .orElseThrow(() -> new NotFoundException("Worker profile not found"));
+
+        String slipPath = profile.getPaymentSlipPath();
+        if (!StringUtils.hasText(slipPath)) {
+            throw new NotFoundException("No payment slip has been uploaded for this profile");
+        }
+
+        Path path = Paths.get(slipPath);
+        if (!Files.exists(path) || !Files.isRegularFile(path) || !Files.isReadable(path)) {
+            throw new NotFoundException("Payment slip file could not be retrieved");
+        }
+
+        String fileName = path.getFileName().toString();
+        String ext = getExtension(fileName).toLowerCase(Locale.ROOT);
+        String contentType = switch (ext) {
+            case "pdf" -> "application/pdf";
+            case "png" -> "image/png";
+            default -> "image/jpeg";
+        };
+
+        return new StoredSlipFile(path, fileName, contentType);
+    }
+
+    public record StoredSlipFile(Path path, String fileName, String contentType) {}
 
     @Transactional
     public void deleteProfile(Long id, Long currentUserId) {
@@ -184,6 +278,10 @@ public class WorkerProfileService {
         Double averageRating = reviewRepository.findAverageRatingByWorkerId(userId);
         int totalJobsCompleted = reviewRepository.findByWorkerId(userId).size();
 
+        WorkerRegistrationPaymentStatus regStatus = profile.getRegistrationPaymentStatus() != null
+                ? profile.getRegistrationPaymentStatus()
+                : WorkerRegistrationPaymentStatus.APPROVED;
+
         return new WorkerProfileResponse(
                 profile.getId(),
                 userId,
@@ -198,7 +296,10 @@ public class WorkerProfileService {
                 profile.getAvailability(),
                 verificationStatus,
                 averageRating,
-                totalJobsCompleted);
+                totalJobsCompleted,
+                regStatus.name(),
+                profile.getPaymentRejectionNote(),
+                profile.getUpdatedAt());
     }
 
     private void validateSlip(MultipartFile slip) {

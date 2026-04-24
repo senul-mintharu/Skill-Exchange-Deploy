@@ -84,6 +84,8 @@ const BrowseRequestsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [needsProfile, setNeedsProfile] = useState(false);
+  const [registrationPaymentApproved, setRegistrationPaymentApproved] = useState(true);
+  const [workerProfileId, setWorkerProfileId] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
@@ -158,11 +160,17 @@ const BrowseRequestsPage = () => {
       if (!currentUser?.id || currentUser?.role !== 'WORKER') return;
 
       try {
-        await getProfileByUserId(currentUser.id);
+        const wp = await getProfileByUserId(currentUser.id);
         setNeedsProfile(false);
+        setWorkerProfileId(wp?.id ?? null);
+        setRegistrationPaymentApproved(
+          String(wp?.registrationPaymentStatus || 'APPROVED').toUpperCase() === 'APPROVED',
+        );
       } catch (err) {
         if (err?.response?.status === 404) {
           setNeedsProfile(true);
+          setRegistrationPaymentApproved(false);
+          setWorkerProfileId(null);
         }
       }
     };
@@ -240,6 +248,21 @@ const BrowseRequestsPage = () => {
             action={<Link to="/create-profile" className="ui-button-primary">Create Worker Profile</Link>}
           >
             <p>You can browse jobs now. To submit quotes or manage jobs, please create your worker profile first.</p>
+          </AlertPanel>
+        ) : null}
+
+        {!needsProfile && !registrationPaymentApproved ? (
+          <AlertPanel
+            tone="warning"
+            icon="lock"
+            title="Quoting is paused until registration payment is approved"
+            action={
+              workerProfileId ? (
+                <Link to={`/profile/${workerProfileId}`} className="ui-button-primary">View profile status</Link>
+              ) : null
+            }
+          >
+            <p>You can keep browsing open requests. Submitting quotes unlocks after an administrator approves your worker fee.</p>
           </AlertPanel>
         ) : null}
 
