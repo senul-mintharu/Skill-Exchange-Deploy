@@ -2,7 +2,16 @@ package lk.wedalk;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
+
+import lk.wedalk.disputes.repository.DisputeRepository;
+import lk.wedalk.profiles.repository.WorkerProfileRepository;
+import lk.wedalk.quotes.repository.QuotationRepository;
+import lk.wedalk.requests.repository.ServiceRequestRepository;
+import lk.wedalk.reviews.repository.ReviewRepository;
+import lk.wedalk.users.repository.UserRepository;
+import lk.wedalk.verification.repository.VerificationRepository;
 
 @SpringBootTest
 @ActiveProfiles("test")

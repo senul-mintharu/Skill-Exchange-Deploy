@@ -12,10 +12,12 @@ const AdminDashboard = () => (
         light
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Trust workflow" value="Verifications + disputes" icon="verified_user" tone="warning" />
+        <StatCard label="Users" value="Monitor" icon="groups" tone="info" />
         <StatCard label="Verification Queue" value="Review Now" icon="fact_check" tone="warning" />
         <StatCard label="Disputes" value="Active Cases" icon="gavel" tone="danger" />
-        <StatCard label="Payment Slips" value="Review Now" icon="receipt_long" tone="warning" />
+        <StatCard label="Payment Slips" value="Review Now" icon="receipt_long" tone="warning" className="md:col-span-2 lg:col-span-4" />
       </div>
 
       <SectionCard className="space-y-4">
@@ -24,6 +26,14 @@ const AdminDashboard = () => (
           Access active moderation workflows directly from the dashboard.
         </p>
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          <Link to="/admin/trust-workflow" className="ui-button-primary w-full justify-center ring-2 ring-brand-200">
+            <span className="material-icons text-base">verified_user</span>
+            Trust workflow (unified)
+          </Link>
+          <Link to="/admin/users" className="ui-button-secondary w-full justify-center">
+            <span className="material-icons text-base">groups</span>
+            User Management
+          </Link>
           <Link to="/admin/verification" className="ui-button-primary w-full justify-center">
             <span className="material-icons text-base">fact_check</span>
             Verification Review
