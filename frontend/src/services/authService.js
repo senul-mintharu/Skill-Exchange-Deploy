@@ -30,8 +30,14 @@ export const register = async (registerData) => {
   return normalizeAuthPayload(payload);
 };
 
+/**
+ * Clears auth and sends the user to the public landing page (not the login screen).
+ */
 export const logout = () => {
   clearAuth();
+  if (typeof window !== 'undefined') {
+    window.location.replace('/');
+  }
 };
 
 export const getCurrentUser = () => getUser();

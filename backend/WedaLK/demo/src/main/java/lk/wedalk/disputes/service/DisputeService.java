@@ -3,6 +3,7 @@ package lk.wedalk.disputes.service;
 import java.util.List;
 import java.util.stream.Collectors;
 import lk.wedalk.common.PagedResponse;
+import lk.wedalk.common.enums.DisputeResolveOutcome;
 import lk.wedalk.common.enums.DisputeStatus;
 import lk.wedalk.common.enums.RequestStatus;
 import lk.wedalk.common.exceptions.BadRequestException;
@@ -206,7 +207,8 @@ public class DisputeService {
     }
 
     @Transactional
-    public DisputeResponse resolveDispute(Long disputeId, Long adminId, String resolution) {
+    public DisputeResponse resolveDispute(
+            Long disputeId, Long adminId, String resolution, DisputeResolveOutcome outcome) {
         User admin = userRepository.findById(adminId)
                 .orElseThrow(() -> new NotFoundException("Authenticated user not found"));
 
@@ -221,25 +223,53 @@ public class DisputeService {
             throw new BadRequestException("Dispute is already resolved");
         }
 
-        // Status is always assigned server-side for admin resolution.
+        DisputeResolveOutcome effectiveOutcome =
+                outcome == null ? DisputeResolveOutcome.COMPLETE_JOB : outcome;
+
         dispute.setStatus(DisputeStatus.RESOLVED);
         dispute.setResolution(resolution);
         dispute.setResolvedBy(admin);
         dispute.setResolvedAt(LocalDateTime.now());
 
         Dispute saved = disputeRepository.save(dispute);
+
+        ServiceRequest serviceRequest = saved.getRequest();
+        if (effectiveOutcome == DisputeResolveOutcome.COMPLETE_JOB) {
+            serviceRequest.setStatus(RequestStatus.COMPLETED);
+            serviceRequestRepository.save(serviceRequest);
+        } else if (effectiveOutcome == DisputeResolveOutcome.SUSPEND_WORKER) {
+            User worker = saved.getWorker();
+            if (worker == null) {
+                throw new BadRequestException("No worker associated with this dispute");
+            }
+            if (worker.getRole() == Role.ADMIN) {
+                throw new BadRequestException("Admin accounts cannot be suspended.");
+            }
+            worker.setIsSuspended(true);
+            userRepository.save(worker);
+        }
+
         return mapToResponse(saved);
     }
 
     private DisputeResponse mapToResponse(Dispute dispute) {
+        User seeker = dispute.getSeeker();
+        User worker = dispute.getWorker();
+        ServiceRequest request = dispute.getRequest();
+
         return DisputeResponse.builder()
                 .id(dispute.getId())
-                .requestId(dispute.getRequest().getId())
-                .requestTitle(dispute.getRequest().getTitle())
-                .seekerId(dispute.getSeeker().getId())
-                .seekerName(dispute.getSeeker().getFullName())
-                .workerId(dispute.getWorker().getId())
-                .workerName(dispute.getWorker().getFullName())
+                .requestId(request.getId())
+                .requestTitle(request.getTitle())
+                .requestStatus(request.getStatus())
+                .seekerId(seeker != null ? seeker.getId() : null)
+                .seekerName(seeker != null ? seeker.getFullName() : null)
+                .seekerEmail(seeker != null ? seeker.getEmail() : null)
+                .seekerPhone(seeker != null ? seeker.getPhoneNumber() : null)
+                .workerId(worker != null ? worker.getId() : null)
+                .workerName(worker != null ? worker.getFullName() : null)
+                .workerEmail(worker != null ? worker.getEmail() : null)
+                .workerPhone(worker != null ? worker.getPhoneNumber() : null)
                 .seekerReason(dispute.getSeekerReason())
                 .workerResponse(dispute.getWorkerResponse())
                 .status(dispute.getStatus())
