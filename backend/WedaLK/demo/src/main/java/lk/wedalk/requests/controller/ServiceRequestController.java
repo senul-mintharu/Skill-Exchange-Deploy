@@ -51,60 +51,9 @@ public class ServiceRequestController {
 
   @PostMapping
   public ResponseEntity<ApiResponse<RequestResponse>> createRequest(@Valid @RequestBody RequestCreateRequest request) {
-    // #region agent log
-    try {
-      String line = "{\"sessionId\":\"ba51df\",\"runId\":\"run1\",\"hypothesisId\":\"H6,H7\",\"location\":\"ServiceRequestController.java:createRequest-entry\",\"message\":\"controller reached\",\"data\":{\"title\":\""
-          + (request.getTitle() == null ? "" : request.getTitle().replace("\"", "\\\""))
-          + "\",\"category\":\"" + request.getCategory()
-          + "\",\"urgency\":\"" + request.getUrgency()
-          + "\",\"budget\":" + request.getBudget()
-          + "},\"timestamp\":" + System.currentTimeMillis() + "}\n";
-      java.nio.file.Files.write(
-          java.nio.file.Paths.get("D:/skill-exchange/debug-ba51df.log"),
-          line.getBytes(java.nio.charset.StandardCharsets.UTF_8),
-          java.nio.file.StandardOpenOption.CREATE,
-          java.nio.file.StandardOpenOption.APPEND);
-    } catch (Exception ignored) {}
-    // #endregion
-    try {
-      RequestResponse response = serviceRequestService.createRequest(requireCurrentUserId(), request);
-      // #region agent log
-      try {
-        String line = "{\"sessionId\":\"ba51df\",\"runId\":\"run1\",\"hypothesisId\":\"H6,H7\",\"location\":\"ServiceRequestController.java:createRequest-success\",\"message\":\"controller success\",\"data\":{\"newId\":"
-            + response.getId() + "},\"timestamp\":" + System.currentTimeMillis() + "}\n";
-        java.nio.file.Files.write(
-            java.nio.file.Paths.get("D:/skill-exchange/debug-ba51df.log"),
-            line.getBytes(java.nio.charset.StandardCharsets.UTF_8),
-            java.nio.file.StandardOpenOption.CREATE,
-            java.nio.file.StandardOpenOption.APPEND);
-      } catch (Exception ignored) {}
-      // #endregion
-      return ResponseEntity.status(HttpStatus.CREATED)
-          .body(ApiResponse.success(response, "Service request created successfully"));
-    } catch (Throwable t) {
-      // #region agent log
-      try {
-        StringBuilder chain = new StringBuilder();
-        Throwable cur = t;
-        int depth = 0;
-        while (cur != null && depth < 5) {
-          chain.append(cur.getClass().getName()).append(": ")
-              .append(cur.getMessage() == null ? "" : cur.getMessage().replace("\"", "\\\"").replace("\n", " "))
-              .append(" | ");
-          cur = cur.getCause();
-          depth++;
-        }
-        String line = "{\"sessionId\":\"ba51df\",\"runId\":\"run1\",\"hypothesisId\":\"H6,H7\",\"location\":\"ServiceRequestController.java:createRequest-exception\",\"message\":\"controller threw\",\"data\":{\"chain\":\""
-            + chain.toString().replace("\"", "\\\"") + "\"},\"timestamp\":" + System.currentTimeMillis() + "}\n";
-        java.nio.file.Files.write(
-            java.nio.file.Paths.get("D:/skill-exchange/debug-ba51df.log"),
-            line.getBytes(java.nio.charset.StandardCharsets.UTF_8),
-            java.nio.file.StandardOpenOption.CREATE,
-            java.nio.file.StandardOpenOption.APPEND);
-      } catch (Exception ignored) {}
-      // #endregion
-      throw t;
-    }
+    RequestResponse response = serviceRequestService.createRequest(requireCurrentUserId(), request);
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(ApiResponse.success(response, "Service request created successfully"));
   }
 
   @PostMapping("/ai-description")

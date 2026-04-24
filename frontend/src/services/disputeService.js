@@ -58,13 +58,14 @@ export const getDisputeByRequest = async (requestId) => {
 
 /**
  * Get all open disputes (admin only).
+ * Backend returns a paged envelope; this unwraps to a plain array (first page only).
  * @returns {Promise<Array>} List of open disputes
  */
 export const getOpenDisputes = async () => {
   const response = await apiClient.get('/disputes/open');
   const data = response.data.data;
   if (Array.isArray(data)) return data;
-  if (data?.content && Array.isArray(data.content)) return data.content;
+  if (Array.isArray(data?.content)) return data.content;
   return [];
 };
 

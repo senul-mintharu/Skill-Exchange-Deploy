@@ -36,6 +36,7 @@ import DisputeReviewPage from './pages/admin/DisputeReviewPage';
 import AdminJobDetailsPage from './pages/admin/AdminJobDetailsPage';
 import AdminPaymentSlipsPage from './pages/admin/AdminPaymentSlipsPage';
 import UserManagementPage from './pages/admin/UserManagementPage';
+import TrustWorkflowPage from './pages/admin/TrustWorkflowPage';
 import AccountProfilePage from './pages/account/AccountProfilePage';
 import RequireWorkerProfile from './components/common/RequireWorkerProfile';
 
@@ -83,6 +84,7 @@ function App() {
 
           <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/trust-workflow" element={<TrustWorkflowPage />} />
             <Route path="/admin/disputes" element={<DisputeReviewPage />} />
             <Route path="/admin/disputes/:disputeId" element={<DisputeDetailsPage />} />
             <Route path="/admin/verification" element={<VerificationReviewPage />} />
