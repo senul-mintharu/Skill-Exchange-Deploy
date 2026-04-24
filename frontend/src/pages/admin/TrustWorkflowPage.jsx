@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ErrorBanner from '../../components/common/ErrorBanner';
 import {
@@ -8,8 +8,21 @@ import {
   SectionCard,
   StatusPill,
 } from '../../components/ui/PortalPrimitives';
-import { getOpenDisputes } from '../../services/disputeService';
-import { getPendingSubmissions } from '../../services/verificationService';
+import { getOpenDisputesPaged } from '../../services/disputeService';
+import {
+  adminApprovePaymentSlip,
+  adminRejectPaymentSlip,
+  getAdminPaymentSlipBlob,
+  getAdminPendingPaymentSlips,
+} from '../../services/requestService';
+import {
+  getPendingSubmissions,
+  getSubmissionDocumentBlob,
+  reviewSubmission,
+} from '../../services/verificationService';
+import { formatBudget, formatCategoryLabel } from '../../utils/constants';
+
+const DISPUTE_PAGE_SIZE = 200;
 
 const formatDateTime = (value) => {
   if (!value) return '—';
@@ -24,25 +37,50 @@ const reasonSnippet = (reason) => {
   return `${reason.slice(0, 72)}…`;
 };
 
+const extractErrorMessage = (err, fallback) => {
+  if (err?.response?.data instanceof Blob) return fallback;
+  return err?.response?.data?.message || err?.message || fallback;
+};
+
+const prettyDisputeStatus = (status) => {
+  if (!status) return 'Open';
+  return String(status).replaceAll('_', ' ');
+};
+
 /**
- * SCRUM-110 — Admin trust workflow: pending verifications + open disputes on one page,
- * sorted oldest-first so the longest-waiting cases appear at the top.
+ * SCRUM-110 + SCRUM-111 — Unified trust workflow: verifications, disputes, and payment proofs.
+ * Admins can update verification and payment outcomes inline; disputes link to resolution detail.
+ * Queue sorted oldest-first. Status column reflects current workflow state (AC4).
  */
 const TrustWorkflowPage = () => {
   const [verifications, setVerifications] = useState([]);
   const [disputes, setDisputes] = useState([]);
+  const [paymentSlips, setPaymentSlips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorVerification, setErrorVerification] = useState('');
   const [errorDispute, setErrorDispute] = useState('');
+  const [errorPayment, setErrorPayment] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const [verifyProcessingId, setVerifyProcessingId] = useState(null);
+  const [verifyRejectingId, setVerifyRejectingId] = useState(null);
+  const [verifyRejectReason, setVerifyRejectReason] = useState('');
+
+  const [slipProcessingId, setSlipProcessingId] = useState(null);
+  const [slipRejectingId, setSlipRejectingId] = useState(null);
+  const [slipRejectReason, setSlipRejectReason] = useState('');
 
   const loadAll = useCallback(async () => {
     setLoading(true);
     setErrorVerification('');
     setErrorDispute('');
+    setErrorPayment('');
+    setSuccessMessage('');
 
     const results = await Promise.allSettled([
       getPendingSubmissions(),
-      getOpenDisputes(),
+      getOpenDisputesPaged({ page: 0, size: DISPUTE_PAGE_SIZE }),
+      getAdminPendingPaymentSlips(),
     ]);
 
     if (results[0].status === 'fulfilled') {
@@ -51,22 +89,25 @@ const TrustWorkflowPage = () => {
     } else {
       setVerifications([]);
       setErrorVerification(
-        results[0].reason?.response?.data?.message
-          || results[0].reason?.message
-          || 'Failed to load pending verifications.',
+        extractErrorMessage(results[0].reason, 'Failed to load pending verifications.'),
       );
     }
 
     if (results[1].status === 'fulfilled') {
       const data = results[1].value;
-      setDisputes(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data?.content) ? data.content : [];
+      setDisputes(list);
     } else {
       setDisputes([]);
-      setErrorDispute(
-        results[1].reason?.response?.data?.message
-          || results[1].reason?.message
-          || 'Failed to load open disputes.',
-      );
+      setErrorDispute(extractErrorMessage(results[1].reason, 'Failed to load open disputes.'));
+    }
+
+    if (results[2].status === 'fulfilled') {
+      const data = results[2].value;
+      setPaymentSlips(Array.isArray(data) ? data : []);
+    } else {
+      setPaymentSlips([]);
+      setErrorPayment(extractErrorMessage(results[2].reason, 'Failed to load pending payment slips.'));
     }
 
     setLoading(false);
@@ -99,18 +140,128 @@ const TrustWorkflowPage = () => {
       });
     });
 
+    paymentSlips.forEach((r) => {
+      const t = r.updatedAt ? new Date(r.updatedAt).getTime() : 0;
+      rows.push({
+        key: `p-${r.id}`,
+        kind: 'payment',
+        sortTime: t,
+        request: r,
+      });
+    });
+
     rows.sort((a, b) => {
       if (a.sortTime !== b.sortTime) return a.sortTime - b.sortTime;
       return a.key.localeCompare(b.key);
     });
 
     return rows;
-  }, [verifications, disputes]);
+  }, [verifications, disputes, paymentSlips]);
 
   const pendingCount = queueRows.length;
-  const globalError = errorVerification && errorDispute
-    ? 'Could not load trust queue. Check your connection and try again.'
-    : '';
+  const allFailed = Boolean(errorVerification && errorDispute && errorPayment);
+
+  const handleVerifyApprove = async (submissionId, workerName) => {
+    setErrorVerification('');
+    setSuccessMessage('');
+    setVerifyProcessingId(submissionId);
+    try {
+      await reviewSubmission(submissionId, true, null);
+      setVerifications((prev) => prev.filter((item) => item.submissionId !== submissionId));
+      setSuccessMessage(`${workerName || 'Worker'} verification approved.`);
+    } catch (err) {
+      setErrorVerification(extractErrorMessage(err, 'Failed to approve verification.'));
+    } finally {
+      setVerifyProcessingId(null);
+    }
+  };
+
+  const handleVerifyRejectConfirm = async (submissionId, workerName) => {
+    const reason = verifyRejectReason.trim();
+    if (!reason) {
+      setErrorVerification('Please provide a brief reason before rejecting.');
+      return;
+    }
+    setErrorVerification('');
+    setSuccessMessage('');
+    setVerifyProcessingId(submissionId);
+    try {
+      await reviewSubmission(submissionId, false, reason);
+      setVerifications((prev) => prev.filter((item) => item.submissionId !== submissionId));
+      setSuccessMessage(`${workerName || 'Worker'} verification rejected.`);
+      setVerifyRejectingId(null);
+      setVerifyRejectReason('');
+    } catch (err) {
+      setErrorVerification(extractErrorMessage(err, 'Failed to reject verification.'));
+    } finally {
+      setVerifyProcessingId(null);
+    }
+  };
+
+  const handleViewVerifyDoc = async (submissionId) => {
+    setErrorVerification('');
+    try {
+      const blob = await getSubmissionDocumentBlob(submissionId);
+      const objectUrl = URL.createObjectURL(blob);
+      window.open(objectUrl, '_blank', 'noopener,noreferrer');
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 30000);
+    } catch (err) {
+      setErrorVerification(
+        extractErrorMessage(err, 'Could not open verification document.'),
+      );
+    }
+  };
+
+  const handleSlipApprove = async (requestId, title) => {
+    setErrorPayment('');
+    setSuccessMessage('');
+    setSlipProcessingId(requestId);
+    try {
+      await adminApprovePaymentSlip(requestId);
+      setPaymentSlips((prev) => prev.filter((r) => r.id !== requestId));
+      setSuccessMessage(`Payment for "${title || 'request'}" approved. Request is now live.`);
+    } catch (err) {
+      setErrorPayment(extractErrorMessage(err, 'Failed to approve payment slip.'));
+    } finally {
+      setSlipProcessingId(null);
+    }
+  };
+
+  const handleSlipRejectConfirm = async (requestId, title) => {
+    const reason = slipRejectReason.trim();
+    if (!reason) {
+      setErrorPayment('Please provide a reason before rejecting this payment slip.');
+      return;
+    }
+    setErrorPayment('');
+    setSuccessMessage('');
+    setSlipProcessingId(requestId);
+    try {
+      await adminRejectPaymentSlip(requestId, reason);
+      setPaymentSlips((prev) => prev.filter((r) => r.id !== requestId));
+      setSuccessMessage(`Payment for "${title || 'request'}" rejected. Seeker may re-upload.`);
+      setSlipRejectingId(null);
+      setSlipRejectReason('');
+    } catch (err) {
+      setErrorPayment(extractErrorMessage(err, 'Failed to reject payment slip.'));
+    } finally {
+      setSlipProcessingId(null);
+    }
+  };
+
+  const handleViewSlip = async (requestId) => {
+    setErrorPayment('');
+    try {
+      const blob = await getAdminPaymentSlipBlob(requestId);
+      const objectUrl = URL.createObjectURL(blob);
+      window.open(objectUrl, '_blank', 'noopener,noreferrer');
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 30000);
+    } catch (err) {
+      setErrorPayment(extractErrorMessage(err, 'Could not open payment slip.'));
+    }
+  };
+
+  const colSpan = 5;
 
   return (
     <div className="page-wrapper">
@@ -118,41 +269,56 @@ const TrustWorkflowPage = () => {
         <PageIntro
           eyebrow="Admin"
           title="Trust workflow"
-          subtitle="Pending worker verifications and open disputes in one place. Oldest cases are listed first."
+          subtitle="Verifications, disputes, and payment proofs in one queue. Update statuses here or open full pages. Oldest cases first; the table reflects the latest saved state after each action."
           light
         />
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <SectionCard className="border-brand-100 bg-brand-50/60">
             <p className="ui-stat-label">Pending verifications</p>
             <p className="mt-2 text-3xl font-bold text-ink">{verifications.length}</p>
             <Link to="/admin/verification" className="mt-3 inline-block text-sm font-semibold text-brand-800 hover:text-brand-900">
-              Open full verification queue →
+              Full verification queue →
             </Link>
           </SectionCard>
           <SectionCard className="border-amber-100 bg-amber-50/70">
             <p className="ui-stat-label">Open disputes</p>
             <p className="mt-2 text-3xl font-bold text-ink">{disputes.length}</p>
             <Link to="/admin/disputes" className="mt-3 inline-block text-sm font-semibold text-amber-900 hover:text-amber-950">
-              Open disputes management →
+              Disputes management →
+            </Link>
+          </SectionCard>
+          <SectionCard className="border-cyan-100 bg-cyan-50/70 sm:col-span-2 lg:col-span-1">
+            <p className="ui-stat-label">Payment slips under review</p>
+            <p className="mt-2 text-3xl font-bold text-ink">{paymentSlips.length}</p>
+            <Link to="/admin/payment-slips" className="mt-3 inline-block text-sm font-semibold text-cyan-900 hover:text-cyan-950">
+              Full payment queue →
             </Link>
           </SectionCard>
         </div>
 
         <SectionCard className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-xl font-bold text-ink">Unified pending queue</h2>
+            <h2 className="text-xl font-bold text-ink">Unified moderation queue</h2>
             <StatusPill tone="warning" icon="priority_high">
               {pendingCount} pending
             </StatusPill>
           </div>
 
-          {globalError ? <ErrorBanner message={globalError} /> : null}
-          {!globalError && errorVerification ? (
+          {allFailed ? (
+            <ErrorBanner message="Could not load the trust queue. Check your connection and try Refresh." />
+          ) : null}
+          {!allFailed && errorVerification ? (
             <ErrorBanner message={`Verifications: ${errorVerification}`} />
           ) : null}
-          {!globalError && errorDispute ? (
+          {!allFailed && errorDispute ? (
             <ErrorBanner message={`Disputes: ${errorDispute}`} />
+          ) : null}
+          {!allFailed && errorPayment ? (
+            <ErrorBanner message={`Payment slips: ${errorPayment}`} />
+          ) : null}
+          {successMessage ? (
+            <ErrorBanner message={successMessage} type="success" onClose={() => setSuccessMessage('')} />
           ) : null}
 
           <div className="flex flex-wrap gap-2">
@@ -163,19 +329,19 @@ const TrustWorkflowPage = () => {
 
           {loading ? <LoadingPanel message="Loading trust queue…" /> : null}
 
-          {!loading && pendingCount === 0 && !errorVerification && !errorDispute ? (
+          {!loading && pendingCount === 0 && !errorVerification && !errorDispute && !errorPayment ? (
             <EmptyState
               icon="fact_check"
               title="No pending trust cases"
-              text="There are no pending verifications or open disputes right now."
+              text="There are no pending verifications, open disputes, or payment slips awaiting review."
             />
           ) : null}
 
-          {!loading && pendingCount === 0 && (errorVerification || errorDispute) ? (
+          {!loading && pendingCount === 0 && (errorVerification || errorDispute || errorPayment) && !allFailed ? (
             <EmptyState
               icon="cloud_off"
-              title="Queue unavailable"
-              text="Fix the errors above and refresh, or use the dedicated verification and dispute pages."
+              title="Partial queue"
+              text="Some sections failed to load. Fix errors above and refresh, or use the dedicated admin pages."
             />
           ) : null}
 
@@ -186,37 +352,194 @@ const TrustWorkflowPage = () => {
                   <thead className="bg-surface-muted">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.12em] text-ink-subtle">Type</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.12em] text-ink-subtle">Status</th>
                       <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.12em] text-ink-subtle">Summary</th>
                       <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.12em] text-ink-subtle">Waiting since</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.12em] text-ink-subtle">Action</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.12em] text-ink-subtle">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {queueRows.map((row) => {
                       if (row.kind === 'verification') {
                         const v = row.verification;
+                        const busy = verifyProcessingId === v.submissionId;
+                        const rejecting = verifyRejectingId === v.submissionId;
                         return (
-                          <tr key={row.key} className="border-t border-line transition hover:bg-brand-50/40">
-                            <td className="px-4 py-3">
-                              <StatusPill tone="info" icon="fact_check">Verification</StatusPill>
-                            </td>
-                            <td className="px-4 py-3 text-sm text-ink">
-                              <span className="font-semibold">{v.workerName || 'Worker'}</span>
-                              <span className="text-ink-muted"> · {v.workerEmail || '—'}</span>
-                              {v.documentName ? (
-                                <span className="mt-1 block text-xs text-ink-muted">{v.documentName}</span>
-                              ) : null}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-ink-muted">{formatDateTime(v.submittedAt)}</td>
-                            <td className="px-4 py-3">
-                              <Link
-                                to="/admin/verification"
-                                className="ui-button-secondary inline-flex items-center justify-center"
-                              >
-                                Review
-                              </Link>
-                            </td>
-                          </tr>
+                          <Fragment key={row.key}>
+                            <tr className="border-t border-line transition hover:bg-brand-50/40">
+                              <td className="px-4 py-3">
+                                <StatusPill tone="info" icon="fact_check">Verification</StatusPill>
+                              </td>
+                              <td className="px-4 py-3">
+                                <StatusPill tone="warning" icon="hourglass_top">Pending review</StatusPill>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-ink">
+                                <span className="font-semibold">{v.workerName || 'Worker'}</span>
+                                <span className="text-ink-muted"> · {v.workerEmail || '—'}</span>
+                                {v.documentName ? (
+                                  <span className="mt-1 block text-xs text-ink-muted">{v.documentName}</span>
+                                ) : null}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-ink-muted">{formatDateTime(v.submittedAt)}</td>
+                              <td className="px-4 py-3">
+                                <div className="flex flex-wrap gap-2">
+                                  <button
+                                    type="button"
+                                    className="ui-button-ghost text-xs"
+                                    onClick={() => handleViewVerifyDoc(v.submissionId)}
+                                    disabled={busy}
+                                  >
+                                    View doc
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="ui-button-primary text-xs"
+                                    onClick={() => handleVerifyApprove(v.submissionId, v.workerName)}
+                                    disabled={busy}
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="ui-button-danger text-xs"
+                                    onClick={() => {
+                                      setVerifyRejectingId(v.submissionId);
+                                      setVerifyRejectReason('');
+                                      setErrorVerification('');
+                                    }}
+                                    disabled={busy}
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                            {rejecting ? (
+                              <tr className="border-t border-line bg-amber-50/80">
+                                <td colSpan={colSpan} className="px-4 py-4">
+                                  <p className="ui-label">Rejection reason</p>
+                                  <textarea
+                                    className="ui-textarea mt-2"
+                                    rows={2}
+                                    value={verifyRejectReason}
+                                    onChange={(e) => setVerifyRejectReason(e.target.value)}
+                                    placeholder="Reason shown to the worker…"
+                                  />
+                                  <div className="mt-2 flex flex-wrap gap-2">
+                                    <button
+                                      type="button"
+                                      className="ui-button-danger text-sm"
+                                      disabled={busy}
+                                      onClick={() => handleVerifyRejectConfirm(v.submissionId, v.workerName)}
+                                    >
+                                      Confirm reject
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="ui-button-ghost text-sm"
+                                      onClick={() => {
+                                        setVerifyRejectingId(null);
+                                        setVerifyRejectReason('');
+                                      }}
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ) : null}
+                          </Fragment>
+                        );
+                      }
+
+                      if (row.kind === 'payment') {
+                        const r = row.request;
+                        const busy = slipProcessingId === r.id;
+                        const rejecting = slipRejectingId === r.id;
+                        return (
+                          <Fragment key={row.key}>
+                            <tr className="border-t border-line transition hover:bg-cyan-50/40">
+                              <td className="px-4 py-3">
+                                <StatusPill tone="info" icon="receipt_long">Payment</StatusPill>
+                              </td>
+                              <td className="px-4 py-3">
+                                <StatusPill tone="warning">Payment under review</StatusPill>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-ink">
+                                <span className="font-semibold">{r.title || formatCategoryLabel(r.category)}</span>
+                                <span className="mt-1 block text-xs text-ink-muted">
+                                  {formatCategoryLabel(r.category)} · Seeker: {r.seekerName || '—'} · {formatBudget(r.budget)}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-ink-muted">{formatDateTime(r.updatedAt)}</td>
+                              <td className="px-4 py-3">
+                                <div className="flex flex-wrap gap-2">
+                                  <button
+                                    type="button"
+                                    className="ui-button-ghost text-xs"
+                                    onClick={() => handleViewSlip(r.id)}
+                                    disabled={busy || !r.paymentSlipUploaded}
+                                  >
+                                    View slip
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="ui-button-primary text-xs"
+                                    onClick={() => handleSlipApprove(r.id, r.title)}
+                                    disabled={busy}
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="ui-button-danger text-xs"
+                                    onClick={() => {
+                                      setSlipRejectingId(r.id);
+                                      setSlipRejectReason('');
+                                      setErrorPayment('');
+                                    }}
+                                    disabled={busy}
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                            {rejecting ? (
+                              <tr className="border-t border-line bg-red-50/60">
+                                <td colSpan={colSpan} className="px-4 py-4">
+                                  <p className="ui-label text-red-900">Rejection reason (shown to seeker)</p>
+                                  <textarea
+                                    className="ui-textarea mt-2"
+                                    rows={2}
+                                    value={slipRejectReason}
+                                    onChange={(e) => setSlipRejectReason(e.target.value)}
+                                    placeholder="What should the seeker fix before re-uploading?"
+                                  />
+                                  <div className="mt-2 flex flex-wrap gap-2">
+                                    <button
+                                      type="button"
+                                      className="ui-button-danger text-sm"
+                                      disabled={busy}
+                                      onClick={() => handleSlipRejectConfirm(r.id, r.title)}
+                                    >
+                                      Confirm reject
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="ui-button-ghost text-sm"
+                                      onClick={() => {
+                                        setSlipRejectingId(null);
+                                        setSlipRejectReason('');
+                                      }}
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ) : null}
+                          </Fragment>
                         );
                       }
 
@@ -225,6 +548,9 @@ const TrustWorkflowPage = () => {
                         <tr key={row.key} className="border-t border-line transition hover:bg-amber-50/40">
                           <td className="px-4 py-3">
                             <StatusPill tone="danger" icon="gavel">Dispute</StatusPill>
+                          </td>
+                          <td className="px-4 py-3">
+                            <StatusPill tone="warning">{prettyDisputeStatus(d.status)}</StatusPill>
                           </td>
                           <td className="px-4 py-3 text-sm text-ink">
                             <span className="font-semibold">Job #{d.requestId}</span>
@@ -236,9 +562,9 @@ const TrustWorkflowPage = () => {
                           <td className="px-4 py-3">
                             <Link
                               to={`/admin/disputes/${d.id}`}
-                              className="ui-button-secondary inline-flex items-center justify-center"
+                              className="ui-button-secondary inline-flex items-center justify-center text-xs"
                             >
-                              Open details
+                              Resolve / update status
                             </Link>
                           </td>
                         </tr>

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ErrorBanner from '../../components/common/ErrorBanner';
 import { EmptyState, LoadingPanel, PageIntro, SectionCard, StatusPill } from '../../components/ui/PortalPrimitives';
-import { getOpenDisputes, getOpenDisputesPaged } from '../../services/disputeService';
+import { getOpenDisputesPaged } from '../../services/disputeService';
 
 const PAGE_SIZE = 10;
 
@@ -25,36 +25,6 @@ const DisputeReviewPage = () => {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState('');
 
-	useEffect(() => {
-		let ignore = false;
-
-		const fetchOpenDisputes = async () => {
-			setLoading(true);
-			setError('');
-
-			try {
-				const data = await getOpenDisputes();
-				if (!ignore) {
-					setDisputes(Array.isArray(data) ? data : []);
-				}
-			} catch (err) {
-				if (!ignore) {
-					setError(err?.response?.data?.message || 'Failed to load open disputes.');
-					setDisputes([]);
-				}
-			} finally {
-				if (!ignore) {
-					setLoading(false);
-				}
-			}
-		};
-
-		fetchOpenDisputes();
-
-		return () => {
-			ignore = true;
-		};
-	}, []);
 	const [currentPage, setCurrentPage] = useState(0);
 	const [totalPages, setTotalPages] = useState(0);
 	const [totalElements, setTotalElements] = useState(0);
