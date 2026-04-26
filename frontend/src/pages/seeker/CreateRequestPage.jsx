@@ -7,6 +7,7 @@ import {
   uploadRequestPaymentSlip,
 } from '../../services/requestService';
 import { CATEGORIES, formatBudget } from '../../utils/constants';
+import { getApiErrorMessage } from '../../utils/formValidationMessages';
 import { AlertPanel, PageIntro, SectionCard, StatusPill } from '../../components/ui/PortalPrimitives';
 import ErrorBanner from '../../components/common/ErrorBanner';
 
@@ -243,7 +244,7 @@ const CreateRequestPage = () => {
         setSuccess(true);
         setTimeout(() => navigate(`/my-requests/${requestToEdit.id}`), 1800);
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to update request. Please try again.');
+        setError(getApiErrorMessage(err, 'Could not save your changes. Check the form and try again.'));
       } finally {
         setLoading(false);
       }
@@ -290,7 +291,12 @@ const CreateRequestPage = () => {
       if (err.response?.status === 401) {
         setError('__SESSION_EXPIRED__');
       } else {
-        setError(err.response?.data?.message || 'Failed to submit request. Please try again.');
+        setError(
+          getApiErrorMessage(
+            err,
+            'We could not submit your request. Check your details and payment slip, then try again.',
+          )
+        );
       }
     } finally {
       setLoading(false);

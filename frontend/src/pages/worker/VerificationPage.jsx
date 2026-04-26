@@ -3,6 +3,7 @@ import ErrorBanner from '../../components/common/ErrorBanner';
 import { PageIntro, SectionCard, StatusPill } from '../../components/ui/PortalPrimitives';
 import { getCurrentUser } from '../../services/authService';
 import { getMyVerification, submitVerification } from '../../services/verificationService';
+import { getApiErrorMessage } from '../../utils/formValidationMessages';
 import { resolveHttpError } from '../../utils/httpErrors';
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
@@ -107,7 +108,7 @@ const VerificationPage = () => {
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
       clearFileSelection(event.target);
-      setError('File exceeds the 5MB maximum limit.');
+      setError('This file is over 5 MB. Please choose a smaller JPG, PNG, or PDF (max 5 MB).');
       return;
     }
 
@@ -119,7 +120,7 @@ const VerificationPage = () => {
 
     if (!ALLOWED_EXTENSIONS.has(extension) || !ALLOWED_MIME_TYPES.has(mimeType)) {
       clearFileSelection(event.target);
-      setError('Only JPG, PNG, and PDF formats are supported.');
+      setError('Only JPG, PNG, or PDF files are allowed. Check the file type and try again.');
       return;
     }
 
@@ -145,7 +146,7 @@ const VerificationPage = () => {
     }
 
     if (!selectedFile) {
-      setError('Please choose a document file to upload.');
+      setError('Select a document (JPG, PNG, or PDF) using the file picker before submitting.');
       return;
     }
 
@@ -164,7 +165,9 @@ const VerificationPage = () => {
       localStorage.setItem(getStoredFileKey(currentUser?.id), documentName);
       showTemporarySuccess('Verification submitted successfully.');
     } catch (err) {
-      setError(resolveHttpError(err, 'Failed to submit verification. Please try again.'));
+      setError(
+        getApiErrorMessage(err, resolveHttpError(err, 'Could not upload your document. Please try again.'))
+      );
     } finally {
       setSubmitting(false);
     }
