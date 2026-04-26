@@ -2,9 +2,11 @@ package lk.wedalk.quotes.service;
 
 import lk.wedalk.common.enums.QuoteStatus;
 import lk.wedalk.common.enums.RequestStatus;
+import lk.wedalk.common.enums.WorkerRegistrationPaymentStatus;
 import lk.wedalk.common.exceptions.BadRequestException;
 import lk.wedalk.common.exceptions.NotFoundException;
 import lk.wedalk.common.exceptions.UnauthorizedException;
+import lk.wedalk.profiles.model.WorkerProfile;
 import lk.wedalk.profiles.repository.WorkerProfileRepository;
 import lk.wedalk.quotes.dto.QuoteCreateRequest;
 import lk.wedalk.quotes.dto.QuoteResponse;
@@ -82,6 +84,17 @@ public class QuotationService {
             throw new BadRequestException(
                     "You have already submitted a quotation for this request. "
                             + "You can only submit one quote per request.");
+        }
+
+        WorkerProfile workerProfile = workerProfileRepository
+                .findByUserId(workerId)
+                .orElseThrow(() -> new BadRequestException("Create a worker profile before submitting quotations."));
+        WorkerRegistrationPaymentStatus reg = workerProfile.getRegistrationPaymentStatus() != null
+                ? workerProfile.getRegistrationPaymentStatus()
+                : WorkerRegistrationPaymentStatus.APPROVED;
+        if (reg != WorkerRegistrationPaymentStatus.APPROVED) {
+            throw new BadRequestException(
+                    "Your worker registration payment must be approved before you can submit quotations.");
         }
 
         // 5. Build and persist the quotation

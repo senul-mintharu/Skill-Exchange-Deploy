@@ -1,12 +1,17 @@
 package lk.wedalk.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
+import lk.wedalk.common.ApiResponse;
 import lk.wedalk.security.CustomUserDetailsService;
 import lk.wedalk.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -32,6 +37,11 @@ public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
   private final CustomUserDetailsService userDetailsService;
+
+  /** Shared mapper for writing JSON error responses in the security handlers. */
+  private static final ObjectMapper MAPPER = new ObjectMapper()
+      .registerModule(new JavaTimeModule())
+      .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
   public SecurityConfig(
       JwtAuthenticationFilter jwtAuthenticationFilter,
@@ -85,6 +95,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/api/admin/requests/*/payment-approve").hasRole("ADMIN")
             .requestMatchers(HttpMethod.POST, "/api/admin/requests/*/payment-reject").hasRole("ADMIN")
             .requestMatchers(HttpMethod.GET, "/api/requests/*/payment-slip/view").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.GET, "/api/profiles/*/payment-slip/view").hasRole("ADMIN")
             .requestMatchers("/api/admin/**").hasRole("ADMIN")
             .anyRequest().authenticated());
 
@@ -105,16 +116,34 @@ public class SecurityConfig {
     return config.getAuthenticationManager();
   }
 
+  /**
+   * Returns a JSON {@link ApiResponse.ErrorResponse} with 401 status when the
+   * request is unauthenticated (missing or invalid JWT).
+   */
   @Bean
   public AuthenticationEntryPoint authenticationEntryPoint() {
-    return (request, response, authException) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
-        "Unauthorized");
+    return (request, response, authException) -> {
+      response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+      response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+      MAPPER.writeValue(response.getOutputStream(),
+          ApiResponse.ErrorResponse.of(401, "Unauthorized",
+              "Authentication is required. Please log in to continue."));
+    };
   }
 
+  /**
+   * Returns a JSON {@link ApiResponse.ErrorResponse} with 403 status when the
+   * authenticated user lacks the required role/authority.
+   */
   @Bean
   public AccessDeniedHandler accessDeniedHandler() {
-    return (request, response, accessDeniedException) -> response.sendError(HttpServletResponse.SC_FORBIDDEN,
-        "Forbidden");
+    return (request, response, accessDeniedException) -> {
+      response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+      response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+      MAPPER.writeValue(response.getOutputStream(),
+          ApiResponse.ErrorResponse.of(403, "Forbidden",
+              "You do not have the required permissions to perform this action."));
+    };
   }
 
   @Bean

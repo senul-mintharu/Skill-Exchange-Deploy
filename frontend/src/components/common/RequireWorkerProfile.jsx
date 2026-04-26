@@ -8,6 +8,7 @@ const RequireWorkerProfile = () => {
   const user = getCurrentUser();
   const [loading, setLoading] = useState(true);
   const [hasProfile, setHasProfile] = useState(false);
+  const [pendingPaymentProfileId, setPendingPaymentProfileId] = useState(null);
   const [checkError, setCheckError] = useState('');
 
   useEffect(() => {
@@ -18,9 +19,16 @@ const RequireWorkerProfile = () => {
       }
 
       try {
-        await getProfileByUserId(user.id);
+        const profile = await getProfileByUserId(user.id);
+        if (profile?.registrationPaymentStatus && profile.registrationPaymentStatus !== 'APPROVED') {
+          setPendingPaymentProfileId(profile.id);
+          setHasProfile(false);
+          return;
+        }
+        setPendingPaymentProfileId(null);
         setHasProfile(true);
       } catch (err) {
+        setPendingPaymentProfileId(null);
         if (err?.response?.status === 404) {
           setHasProfile(false);
         } else {
@@ -40,6 +48,16 @@ const RequireWorkerProfile = () => {
 
   if (checkError) {
     return <div style={{ padding: '2rem', textAlign: 'center' }}>{checkError}</div>;
+  }
+
+  if (pendingPaymentProfileId) {
+    return (
+      <Navigate
+        to={`/profile/${pendingPaymentProfileId}`}
+        replace
+        state={{ from: location.pathname, registrationPaymentPending: true }}
+      />
+    );
   }
 
   if (!hasProfile) {

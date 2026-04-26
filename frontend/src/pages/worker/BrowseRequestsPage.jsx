@@ -4,7 +4,9 @@ import { browseRequests } from '../../services/requestService';
 import { getProfileByUserId } from '../../services/profileService';
 import { getCurrentUser } from '../../services/authService';
 import { CATEGORIES, formatBudget, formatCategoryLabel } from '../../utils/constants';
-import { AlertPanel, EmptyState, PageIntro, StatusPill } from '../../components/ui/PortalPrimitives';
+import { AlertPanel, PageIntro, StatusPill } from '../../components/ui/PortalPrimitives';
+import EmptyState from '../../components/common/EmptyState';
+import SystemError from '../../components/common/SystemError';
 
 const PAGE_SIZE = 9;
 const selectClass = 'ui-select min-w-[180px]';
@@ -84,6 +86,8 @@ const BrowseRequestsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [needsProfile, setNeedsProfile] = useState(false);
+  const [registrationPaymentApproved, setRegistrationPaymentApproved] = useState(true);
+  const [workerProfileId, setWorkerProfileId] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
@@ -158,11 +162,17 @@ const BrowseRequestsPage = () => {
       if (!currentUser?.id || currentUser?.role !== 'WORKER') return;
 
       try {
-        await getProfileByUserId(currentUser.id);
+        const wp = await getProfileByUserId(currentUser.id);
         setNeedsProfile(false);
+        setWorkerProfileId(wp?.id ?? null);
+        setRegistrationPaymentApproved(
+          String(wp?.registrationPaymentStatus || 'APPROVED').toUpperCase() === 'APPROVED',
+        );
       } catch (err) {
         if (err?.response?.status === 404) {
           setNeedsProfile(true);
+          setRegistrationPaymentApproved(false);
+          setWorkerProfileId(null);
         }
       }
     };
@@ -243,6 +253,21 @@ const BrowseRequestsPage = () => {
           </AlertPanel>
         ) : null}
 
+        {!needsProfile && !registrationPaymentApproved ? (
+          <AlertPanel
+            tone="warning"
+            icon="lock"
+            title="Quoting is paused until registration payment is approved"
+            action={
+              workerProfileId ? (
+                <Link to={`/profile/${workerProfileId}`} className="ui-button-primary">View profile status</Link>
+              ) : null
+            }
+          >
+            <p>You can keep browsing open requests. Submitting quotes unlocks after an administrator approves your worker fee.</p>
+          </AlertPanel>
+        ) : null}
+
         <section className="ui-panel p-5">
           <div className="mb-4 flex flex-col gap-1">
             <p className="ui-stat-label">Request Filters</p>
@@ -311,31 +336,37 @@ const BrowseRequestsPage = () => {
             {Array.from({ length: PAGE_SIZE }).map((_, index) => <SkeletonCard key={index} />)}
           </div>
         ) : error ? (
-          <EmptyState
-            icon="error_outline"
-            title="Oops! Something went wrong."
-            text={error}
-            action={<button className="ui-button-primary" onClick={() => fetchRequests(currentPage)} type="button">Try Again</button>}
+          <SystemError
+            title="Couldn't load available jobs"
+            message={error}
+            onRetry={() => fetchRequests(currentPage)}
           />
         ) : requests.length === 0 ? (
           <EmptyState
-            icon="work_off"
-            title="No jobs available right now"
-            text={hasActiveFilters ? 'Try adjusting your filters or clearing them.' : 'Check back later for new opportunities.'}
-            action={hasActiveFilters ? (
-              <button
-                className="ui-button-primary"
-                onClick={() => {
-                  setKeyword('');
-                  setSelectedCategory('');
-                  setLocationSearch('');
-                  setSortBy('newest');
-                }}
-                type="button"
-              >
-                Clear Filters
-              </button>
-            ) : null}
+            icon="location_off"
+            title="No requests in your area right now"
+            description={
+              hasActiveFilters
+                ? 'No jobs match your current filters. Try broadening your search or clearing all filters.'
+                : 'There are no open service requests at the moment. New requests are posted daily — check back soon or adjust your location filter to explore nearby areas.'
+            }
+            action={
+              hasActiveFilters ? (
+                <button
+                  className="ui-button-primary"
+                  onClick={() => {
+                    setKeyword('');
+                    setSelectedCategory('');
+                    setLocationSearch('');
+                    setSortBy('newest');
+                  }}
+                  type="button"
+                >
+                  <span className="material-icons text-base">filter_alt_off</span>
+                  Clear All Filters
+                </button>
+              ) : null
+            }
           />
         ) : (
           <>

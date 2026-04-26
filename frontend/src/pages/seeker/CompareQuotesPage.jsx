@@ -210,6 +210,13 @@ const CompareQuotesPage = () => {
                           {isBusy ? 'Accepting...' : isAccepted ? 'Accepted' : 'Accept'}
                         </button>
                       </div>
+
+                      <div className="col-span-full border-t border-line pt-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-subtle">Full quotation (proposal)</p>
+                        <p className="mt-2 whitespace-pre-line text-sm leading-7 text-ink">
+                          {quote.message?.trim() ? quote.message : 'No written proposal was provided for this quote.'}
+                        </p>
+                      </div>
                     </article>
                   );
                 })}
@@ -226,6 +233,12 @@ const CompareQuotesPage = () => {
                 You are about to accept <strong>{confirmingQuote.workerName || `Worker #${confirmingQuote.workerId}`}</strong>&apos;s
                 quotation for <strong>LKR {Number(confirmingQuote.price).toLocaleString()}</strong>. This will close all other quotations.
               </p>
+              {confirmingQuote.message?.trim() ? (
+                <div className="mt-4 max-h-48 overflow-y-auto rounded-card border border-line bg-surface-muted/80 px-3 py-3 text-left">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-subtle">Their proposal</p>
+                  <p className="mt-2 whitespace-pre-line text-sm leading-6 text-ink">{confirmingQuote.message}</p>
+                </div>
+              ) : null}
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"

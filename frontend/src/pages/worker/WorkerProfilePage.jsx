@@ -56,29 +56,81 @@ const WorkerProfilePage = () => {
 
   if (!profile) return null;
 
+  const reg = String(profile.registrationPaymentStatus || 'APPROVED').toUpperCase();
+  const paymentApproved = reg === 'APPROVED';
+  const paymentUnderReview = reg === 'PAYMENT_UNDER_REVIEW';
+  const paymentPending = reg === 'PENDING_PAYMENT';
+
+  const notice = (
+    <div className="mb-6 space-y-4">
+      {location.state?.profileSubmitted && paymentUnderReview ? (
+        <AlertPanel tone="info" icon="upload_file" title="Payment slip received" className="w-full">
+          <p>
+            Thank you. An administrator will review your registration payment. You&apos;ll be able to submit quotes
+            once it&apos;s approved.
+          </p>
+        </AlertPanel>
+      ) : null}
+      {paymentUnderReview && !location.state?.profileSubmitted ? (
+        <AlertPanel tone="warning" icon="hourglass_top" title="Registration payment under review" className="w-full">
+          <p>Your profile is saved and your slip is with the admin team. We&apos;ll notify you here once it&apos;s approved.</p>
+        </AlertPanel>
+      ) : null}
+      {paymentPending && profile.paymentRejectionNote ? (
+        <AlertPanel tone="danger" icon="cancel" title="Payment slip needs a new upload" className="w-full">
+          <p className="font-medium text-ink">{profile.paymentRejectionNote}</p>
+          <button
+            type="button"
+            className="ui-button-primary mt-3"
+            onClick={() => navigate(`/edit-profile/${profile.id}`)}
+          >
+            Upload a new slip
+          </button>
+        </AlertPanel>
+      ) : null}
+      {paymentPending && !profile.paymentRejectionNote ? (
+        <AlertPanel tone="info" icon="account_balance" title="Finish registration payment" className="w-full">
+          <p>Upload your bank transfer slip to send your profile for admin review.</p>
+          <button
+            type="button"
+            className="ui-button-primary mt-3"
+            onClick={() => navigate(`/edit-profile/${profile.id}`)}
+          >
+            Complete payment
+          </button>
+        </AlertPanel>
+      ) : null}
+    </div>
+  );
+
+  const hasAnyNotice =
+    (location.state?.profileSubmitted && paymentUnderReview)
+    || paymentUnderReview
+    || paymentPending;
+
   return (
     <WorkerProfilePanel
       profile={profile}
       reviews={reviews}
       backLink={<WorkerProfileBackButton to="/worker/dashboard" label="Back to Dashboard" />}
-      notice={location.state?.profileCreated ? (
-        <AlertPanel
-          tone="success"
-          icon="check_circle"
-          title="Your worker profile is ready"
-          action={<WorkerProfileBackButton to="/browse-requests" label="Find Work" />}
-          className="mb-6"
-        >
-          <p>Start exploring jobs and submitting quotes whenever you&apos;re ready.</p>
-        </AlertPanel>
-      ) : null}
+      notice={hasAnyNotice ? notice : null}
       actions={(
         <>
-          <button className="ui-button-primary w-full sm:w-auto" type="button" onClick={() => navigate('/worker/verification')}>
+          <button
+            className="ui-button-primary w-full sm:w-auto"
+            type="button"
+            onClick={() => navigate('/worker/verification')}
+            disabled={!paymentApproved}
+          >
             <span className="material-icons text-base">verified_user</span>
             Verification
           </button>
-          <button className="ui-button-primary w-full sm:w-auto" type="button" onClick={() => navigate('/browse-requests')}>
+          <button
+            className="ui-button-primary w-full sm:w-auto"
+            type="button"
+            onClick={() => navigate('/browse-requests')}
+            disabled={!paymentApproved}
+          >
             <span className="material-icons text-base">travel_explore</span>
             Find Work
           </button>

@@ -23,6 +23,8 @@ const EditWorkerProfilePage = () => {
   const [paymentSlip, setPaymentSlip] = useState(null);
   const [paymentSlipPreview, setPaymentSlipPreview] = useState('');
   const [slipError, setSlipError] = useState('');
+  const [registrationPaymentStatus, setRegistrationPaymentStatus] = useState('APPROVED');
+  const [paymentRejectionNote, setPaymentRejectionNote] = useState('');
   const slipInputRef = useRef(null);
   const [skillInput, setSkillInput] = useState('');
   const [formData, setFormData] = useState({
@@ -55,6 +57,8 @@ const EditWorkerProfilePage = () => {
         availability: data.availability || '',
         profilePictureUrl: data.profilePictureUrl || '',
       });
+      setRegistrationPaymentStatus(String(data.registrationPaymentStatus || 'APPROVED').toUpperCase());
+      setPaymentRejectionNote(data.paymentRejectionNote || '');
     } catch (err) {
       setError('Failed to fetch profile');
     } finally {
@@ -161,7 +165,6 @@ const EditWorkerProfilePage = () => {
       return;
     }
 
-    // Require payment slip for new profile creation
     if (!id && !paymentSlip) {
       setSlipError('Please upload your bank transfer slip to complete profile registration.');
       setLoading(false);
@@ -184,13 +187,16 @@ const EditWorkerProfilePage = () => {
     try {
       if (id) {
         await updateProfile(id, payload);
-        toast.success('Your profile has been updated successfully!', { title: 'Profile Saved' });
-        navigate(`/profile/${id}`);
+        if (registrationPaymentStatus === 'PENDING_PAYMENT' && paymentSlip) {
+          await uploadProfilePaymentSlip(id, paymentSlip);
+          navigate(`/profile/${id}`, { state: { profileSubmitted: true } });
+        } else {
+          navigate(`/profile/${id}`);
+        }
       } else {
         const data = await createProfile(payload);
         await uploadProfilePaymentSlip(data.id, paymentSlip);
-        toast.success('Your worker profile has been created! Welcome aboard.', { title: 'Registration Complete' });
-        navigate(`/profile/${data.id}`, { state: { profileCreated: true } });
+        navigate(`/profile/${data.id}`, { state: { profileSubmitted: true } });
       }
     } catch (err) {
       if (err.response?.data?.details) {
@@ -233,6 +239,18 @@ const EditWorkerProfilePage = () => {
         {error ? (
           <AlertPanel tone="danger" icon="error" title="Please review the form">
             <p>{error}</p>
+          </AlertPanel>
+        ) : null}
+
+        {id && registrationPaymentStatus === 'PAYMENT_UNDER_REVIEW' ? (
+          <AlertPanel tone="warning" icon="hourglass_top" title="Payment under review">
+            <p>You cannot upload another slip until the admin team finishes reviewing your current submission.</p>
+          </AlertPanel>
+        ) : null}
+
+        {id && registrationPaymentStatus === 'PENDING_PAYMENT' && paymentRejectionNote ? (
+          <AlertPanel tone="danger" icon="cancel" title="Previous slip was rejected">
+            <p>{paymentRejectionNote}</p>
           </AlertPanel>
         ) : null}
 
@@ -407,7 +425,7 @@ const EditWorkerProfilePage = () => {
             </div>
           </section>
 
-          {!id ? (
+          {(!id || (id && registrationPaymentStatus === 'PENDING_PAYMENT')) && !(id && registrationPaymentStatus === 'PAYMENT_UNDER_REVIEW') ? (
             <section className="ui-card p-6">
               <div className="flex items-start gap-3">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white">
@@ -416,7 +434,8 @@ const EditWorkerProfilePage = () => {
                 <div>
                   <h2 className="text-2xl font-bold text-ink">Registration Payment</h2>
                   <p className="mt-2 text-sm leading-6 text-ink-muted">
-                    Make a one-time bank transfer of <strong>Rs. {PAYMENT_DETAILS.amount.toLocaleString()}.00</strong> to complete your worker registration. Upload the transfer slip below.
+                    Make a one-time bank transfer of <strong>Rs. {PAYMENT_DETAILS.amount.toLocaleString()}.00</strong> to complete your worker registration.
+                    {id ? ' Upload a new transfer slip below.' : ' Upload the transfer slip below.'}
                   </p>
                 </div>
               </div>
@@ -494,7 +513,7 @@ const EditWorkerProfilePage = () => {
                 <div className="flex items-start gap-3">
                   <span className="material-icons mt-0.5 text-brand-700">info</span>
                   <p className="text-sm leading-6 text-ink-muted">
-                    Your profile will go live immediately after slip upload. Our team may verify the payment if needed.
+                    After you upload, your slip is reviewed by an administrator. Your profile becomes public and you can quote on jobs only after approval.
                   </p>
                 </div>
               </div>

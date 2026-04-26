@@ -6,9 +6,11 @@ import lk.wedalk.common.exceptions.NotFoundException;
 import lk.wedalk.profiles.dto.WorkerProfileCreateRequest;
 import lk.wedalk.profiles.dto.WorkerProfileResponse;
 import lk.wedalk.profiles.service.WorkerProfileService;
+import lk.wedalk.users.model.User;
 import lk.wedalk.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +35,17 @@ public class WorkerProfileController {
                 .getId();
     }
 
+    /** {@code null} when anonymous or not logged in. */
+    private Long tryGetCurrentUserId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null
+                || !auth.isAuthenticated()
+                || auth instanceof AnonymousAuthenticationToken) {
+            return null;
+        }
+        return userRepository.findByEmail(auth.getName()).map(User::getId).orElse(null);
+    }
+
     @GetMapping
     public ResponseEntity<ApiResponse<List<WorkerProfileResponse>>> getAllProfiles() {
         List<WorkerProfileResponse> profiles = workerProfileService.getAllProfiles();
@@ -47,12 +60,12 @@ public class WorkerProfileController {
 
     @GetMapping("/{id}")
     public ResponseEntity<WorkerProfileResponse> getProfile(@PathVariable Long id) {
-        return ResponseEntity.ok(workerProfileService.getProfile(id));
+        return ResponseEntity.ok(workerProfileService.getProfileForViewer(id, tryGetCurrentUserId()));
     }
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<WorkerProfileResponse> getProfileByUserId(@PathVariable Long userId) {
-        return ResponseEntity.ok(workerProfileService.getProfileByUserId(userId));
+        return ResponseEntity.ok(workerProfileService.getProfileByUserIdForViewer(userId, tryGetCurrentUserId()));
     }
 
     @PutMapping("/{id}")

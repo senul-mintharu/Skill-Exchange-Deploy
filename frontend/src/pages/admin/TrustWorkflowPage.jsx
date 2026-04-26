@@ -10,6 +10,12 @@ import {
 } from '../../components/ui/PortalPrimitives';
 import { getOpenDisputesPaged } from '../../services/disputeService';
 import {
+  adminApproveProfilePaymentSlip,
+  adminRejectProfilePaymentSlip,
+  getAdminPendingProfilePaymentSlips,
+  getAdminProfilePaymentSlipBlob,
+} from '../../services/profileService';
+import {
   adminApprovePaymentSlip,
   adminRejectPaymentSlip,
   getAdminPaymentSlipBlob,
@@ -56,18 +62,21 @@ const TrustWorkflowPage = () => {
   const [verifications, setVerifications] = useState([]);
   const [disputes, setDisputes] = useState([]);
   const [paymentSlips, setPaymentSlips] = useState([]);
+  const [workerProfilePayments, setWorkerProfilePayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorVerification, setErrorVerification] = useState('');
   const [errorDispute, setErrorDispute] = useState('');
   const [errorPayment, setErrorPayment] = useState('');
+  const [errorWorkerProfilePayment, setErrorWorkerProfilePayment] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
   const [verifyProcessingId, setVerifyProcessingId] = useState(null);
   const [verifyRejectingId, setVerifyRejectingId] = useState(null);
   const [verifyRejectReason, setVerifyRejectReason] = useState('');
 
-  const [slipProcessingId, setSlipProcessingId] = useState(null);
-  const [slipRejectingId, setSlipRejectingId] = useState(null);
+  /** Seeker request slip: `r:${id}`; worker registration: `w:${profileId}` */
+  const [slipProcessingKey, setSlipProcessingKey] = useState(null);
+  const [slipRejectingKey, setSlipRejectingKey] = useState(null);
   const [slipRejectReason, setSlipRejectReason] = useState('');
 
   const loadAll = useCallback(async () => {
@@ -75,12 +84,14 @@ const TrustWorkflowPage = () => {
     setErrorVerification('');
     setErrorDispute('');
     setErrorPayment('');
+    setErrorWorkerProfilePayment('');
     setSuccessMessage('');
 
     const results = await Promise.allSettled([
       getPendingSubmissions(),
       getOpenDisputesPaged({ page: 0, size: DISPUTE_PAGE_SIZE }),
       getAdminPendingPaymentSlips(),
+      getAdminPendingProfilePaymentSlips(),
     ]);
 
     if (results[0].status === 'fulfilled') {
@@ -108,6 +119,16 @@ const TrustWorkflowPage = () => {
     } else {
       setPaymentSlips([]);
       setErrorPayment(extractErrorMessage(results[2].reason, 'Failed to load pending payment slips.'));
+    }
+
+    if (results[3].status === 'fulfilled') {
+      const data = results[3].value;
+      setWorkerProfilePayments(Array.isArray(data) ? data : []);
+    } else {
+      setWorkerProfilePayments([]);
+      setErrorWorkerProfilePayment(
+        extractErrorMessage(results[3].reason, 'Failed to load worker profile payment slips.'),
+      );
     }
 
     setLoading(false);
@@ -143,10 +164,20 @@ const TrustWorkflowPage = () => {
     paymentSlips.forEach((r) => {
       const t = r.updatedAt ? new Date(r.updatedAt).getTime() : 0;
       rows.push({
-        key: `p-${r.id}`,
+        key: `rq-${r.id}`,
         kind: 'payment',
         sortTime: t,
         request: r,
+      });
+    });
+
+    workerProfilePayments.forEach((p) => {
+      const t = p.updatedAt ? new Date(p.updatedAt).getTime() : 0;
+      rows.push({
+        key: `wp-${p.id}`,
+        kind: 'workerProfilePayment',
+        sortTime: t,
+        profile: p,
       });
     });
 
@@ -156,10 +187,12 @@ const TrustWorkflowPage = () => {
     });
 
     return rows;
-  }, [verifications, disputes, paymentSlips]);
+  }, [verifications, disputes, paymentSlips, workerProfilePayments]);
 
   const pendingCount = queueRows.length;
-  const allFailed = Boolean(errorVerification && errorDispute && errorPayment);
+  const allFailed = Boolean(
+    errorVerification && errorDispute && errorPayment && errorWorkerProfilePayment,
+  );
 
   const handleVerifyApprove = async (submissionId, workerName) => {
     setErrorVerification('');
@@ -215,7 +248,7 @@ const TrustWorkflowPage = () => {
   const handleSlipApprove = async (requestId, title) => {
     setErrorPayment('');
     setSuccessMessage('');
-    setSlipProcessingId(requestId);
+    setSlipProcessingKey(`r:${requestId}`);
     try {
       await adminApprovePaymentSlip(requestId);
       setPaymentSlips((prev) => prev.filter((r) => r.id !== requestId));
@@ -223,7 +256,24 @@ const TrustWorkflowPage = () => {
     } catch (err) {
       setErrorPayment(extractErrorMessage(err, 'Failed to approve payment slip.'));
     } finally {
-      setSlipProcessingId(null);
+      setSlipProcessingKey(null);
+    }
+  };
+
+  const handleWorkerProfileSlipApprove = async (profileId, workerName) => {
+    setErrorWorkerProfilePayment('');
+    setSuccessMessage('');
+    setSlipProcessingKey(`w:${profileId}`);
+    try {
+      await adminApproveProfilePaymentSlip(profileId);
+      setWorkerProfilePayments((prev) => prev.filter((p) => p.id !== profileId));
+      setSuccessMessage(
+        `Registration payment for "${workerName || 'worker'}" approved. Profile is now public.`,
+      );
+    } catch (err) {
+      setErrorWorkerProfilePayment(extractErrorMessage(err, 'Failed to approve worker payment.'));
+    } finally {
+      setSlipProcessingKey(null);
     }
   };
 
@@ -235,17 +285,41 @@ const TrustWorkflowPage = () => {
     }
     setErrorPayment('');
     setSuccessMessage('');
-    setSlipProcessingId(requestId);
+    setSlipProcessingKey(`r:${requestId}`);
     try {
       await adminRejectPaymentSlip(requestId, reason);
       setPaymentSlips((prev) => prev.filter((r) => r.id !== requestId));
       setSuccessMessage(`Payment for "${title || 'request'}" rejected. Seeker may re-upload.`);
-      setSlipRejectingId(null);
+      setSlipRejectingKey(null);
       setSlipRejectReason('');
     } catch (err) {
       setErrorPayment(extractErrorMessage(err, 'Failed to reject payment slip.'));
     } finally {
-      setSlipProcessingId(null);
+      setSlipProcessingKey(null);
+    }
+  };
+
+  const handleWorkerProfileSlipRejectConfirm = async (profileId, workerName) => {
+    const reason = slipRejectReason.trim();
+    if (!reason) {
+      setErrorWorkerProfilePayment('Please provide a reason before rejecting this payment slip.');
+      return;
+    }
+    setErrorWorkerProfilePayment('');
+    setSuccessMessage('');
+    setSlipProcessingKey(`w:${profileId}`);
+    try {
+      await adminRejectProfilePaymentSlip(profileId, reason);
+      setWorkerProfilePayments((prev) => prev.filter((p) => p.id !== profileId));
+      setSuccessMessage(
+        `Registration payment for "${workerName || 'worker'}" rejected. Worker may re-upload.`,
+      );
+      setSlipRejectingKey(null);
+      setSlipRejectReason('');
+    } catch (err) {
+      setErrorWorkerProfilePayment(extractErrorMessage(err, 'Failed to reject worker payment.'));
+    } finally {
+      setSlipProcessingKey(null);
     }
   };
 
@@ -258,6 +332,18 @@ const TrustWorkflowPage = () => {
       setTimeout(() => URL.revokeObjectURL(objectUrl), 30000);
     } catch (err) {
       setErrorPayment(extractErrorMessage(err, 'Could not open payment slip.'));
+    }
+  };
+
+  const handleViewWorkerProfileSlip = async (profileId) => {
+    setErrorWorkerProfilePayment('');
+    try {
+      const blob = await getAdminProfilePaymentSlipBlob(profileId);
+      const objectUrl = URL.createObjectURL(blob);
+      window.open(objectUrl, '_blank', 'noopener,noreferrer');
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 30000);
+    } catch (err) {
+      setErrorWorkerProfilePayment(extractErrorMessage(err, 'Could not open payment slip.'));
     }
   };
 
@@ -290,7 +376,12 @@ const TrustWorkflowPage = () => {
           </SectionCard>
           <SectionCard className="border-cyan-100 bg-cyan-50/70 sm:col-span-2 lg:col-span-1">
             <p className="ui-stat-label">Payment slips under review</p>
-            <p className="mt-2 text-3xl font-bold text-ink">{paymentSlips.length}</p>
+            <p className="mt-2 text-3xl font-bold text-ink">
+              {paymentSlips.length + workerProfilePayments.length}
+            </p>
+            <p className="mt-1 text-xs text-ink-muted">
+              Seeker: {paymentSlips.length} · Worker reg.: {workerProfilePayments.length}
+            </p>
             <Link to="/admin/payment-slips" className="mt-3 inline-block text-sm font-semibold text-cyan-900 hover:text-cyan-950">
               Full payment queue →
             </Link>
@@ -315,7 +406,10 @@ const TrustWorkflowPage = () => {
             <ErrorBanner message={`Disputes: ${errorDispute}`} />
           ) : null}
           {!allFailed && errorPayment ? (
-            <ErrorBanner message={`Payment slips: ${errorPayment}`} />
+            <ErrorBanner message={`Seeker payment slips: ${errorPayment}`} />
+          ) : null}
+          {!allFailed && errorWorkerProfilePayment ? (
+            <ErrorBanner message={`Worker registration payments: ${errorWorkerProfilePayment}`} />
           ) : null}
           {successMessage ? (
             <ErrorBanner message={successMessage} type="success" onClose={() => setSuccessMessage('')} />
@@ -329,7 +423,11 @@ const TrustWorkflowPage = () => {
 
           {loading ? <LoadingPanel message="Loading trust queue…" /> : null}
 
-          {!loading && pendingCount === 0 && !errorVerification && !errorDispute && !errorPayment ? (
+          {!loading && pendingCount === 0
+            && !errorVerification
+            && !errorDispute
+            && !errorPayment
+            && !errorWorkerProfilePayment ? (
             <EmptyState
               icon="fact_check"
               title="No pending trust cases"
@@ -337,7 +435,9 @@ const TrustWorkflowPage = () => {
             />
           ) : null}
 
-          {!loading && pendingCount === 0 && (errorVerification || errorDispute || errorPayment) && !allFailed ? (
+          {!loading && pendingCount === 0
+            && (errorVerification || errorDispute || errorPayment || errorWorkerProfilePayment)
+            && !allFailed ? (
             <EmptyState
               icon="cloud_off"
               title="Partial queue"
@@ -454,8 +554,9 @@ const TrustWorkflowPage = () => {
 
                       if (row.kind === 'payment') {
                         const r = row.request;
-                        const busy = slipProcessingId === r.id;
-                        const rejecting = slipRejectingId === r.id;
+                        const rk = `r:${r.id}`;
+                        const busy = slipProcessingKey === rk;
+                        const rejecting = slipRejectingKey === rk;
                         return (
                           <Fragment key={row.key}>
                             <tr className="border-t border-line transition hover:bg-cyan-50/40">
@@ -494,7 +595,7 @@ const TrustWorkflowPage = () => {
                                     type="button"
                                     className="ui-button-danger text-xs"
                                     onClick={() => {
-                                      setSlipRejectingId(r.id);
+                                      setSlipRejectingKey(rk);
                                       setSlipRejectReason('');
                                       setErrorPayment('');
                                     }}
@@ -529,7 +630,99 @@ const TrustWorkflowPage = () => {
                                       type="button"
                                       className="ui-button-ghost text-sm"
                                       onClick={() => {
-                                        setSlipRejectingId(null);
+                                        setSlipRejectingKey(null);
+                                        setSlipRejectReason('');
+                                      }}
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ) : null}
+                          </Fragment>
+                        );
+                      }
+
+                      if (row.kind === 'workerProfilePayment') {
+                        const p = row.profile;
+                        const wk = `w:${p.id}`;
+                        const busy = slipProcessingKey === wk;
+                        const rejecting = slipRejectingKey === wk;
+                        return (
+                          <Fragment key={row.key}>
+                            <tr className="border-t border-line transition hover:bg-violet-50/40">
+                              <td className="px-4 py-3">
+                                <StatusPill tone="info" icon="engineering">Worker reg.</StatusPill>
+                              </td>
+                              <td className="px-4 py-3">
+                                <StatusPill tone="warning">Payment under review</StatusPill>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-ink">
+                                <span className="font-semibold">{p.fullName || 'Worker'}</span>
+                                <span className="mt-1 block text-xs text-ink-muted">
+                                  Profile #{p.id} · {p.district || '—'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-ink-muted">{formatDateTime(p.updatedAt)}</td>
+                              <td className="px-4 py-3">
+                                <div className="flex flex-wrap gap-2">
+                                  <button
+                                    type="button"
+                                    className="ui-button-ghost text-xs"
+                                    onClick={() => handleViewWorkerProfileSlip(p.id)}
+                                    disabled={busy}
+                                  >
+                                    View slip
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="ui-button-primary text-xs"
+                                    onClick={() => handleWorkerProfileSlipApprove(p.id, p.fullName)}
+                                    disabled={busy}
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="ui-button-danger text-xs"
+                                    onClick={() => {
+                                      setSlipRejectingKey(wk);
+                                      setSlipRejectReason('');
+                                      setErrorWorkerProfilePayment('');
+                                    }}
+                                    disabled={busy}
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                            {rejecting ? (
+                              <tr className="border-t border-line bg-red-50/60">
+                                <td colSpan={colSpan} className="px-4 py-4">
+                                  <p className="ui-label text-red-900">Rejection reason (shown to worker)</p>
+                                  <textarea
+                                    className="ui-textarea mt-2"
+                                    rows={2}
+                                    value={slipRejectReason}
+                                    onChange={(e) => setSlipRejectReason(e.target.value)}
+                                    placeholder="What should the worker fix before re-uploading?"
+                                  />
+                                  <div className="mt-2 flex flex-wrap gap-2">
+                                    <button
+                                      type="button"
+                                      className="ui-button-danger text-sm"
+                                      disabled={busy}
+                                      onClick={() => handleWorkerProfileSlipRejectConfirm(p.id, p.fullName)}
+                                    >
+                                      Confirm reject
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="ui-button-ghost text-sm"
+                                      onClick={() => {
+                                        setSlipRejectingKey(null);
                                         setSlipRejectReason('');
                                       }}
                                     >

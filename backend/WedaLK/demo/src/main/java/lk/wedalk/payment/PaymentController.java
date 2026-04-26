@@ -52,12 +52,60 @@ public class PaymentController {
             @RequestParam("slip") MultipartFile slip) {
         WorkerProfileResponse response = workerProfileService.uploadProfilePaymentSlip(
                 profileId, requireCurrentUserId(), slip);
-        return ResponseEntity.ok(ApiResponse.success(response, "Payment slip uploaded. Your worker profile is now active."));
+        return ResponseEntity.ok(ApiResponse.success(
+                response,
+                "Payment slip received. Your profile will become active after an administrator approves the payment."));
     }
 
     // -------------------------------------------------------------------------
     // Admin — Payment slip review endpoints (SCRUM-106)
     // -------------------------------------------------------------------------
+
+    @GetMapping("/admin/profile-payment-slips/pending")
+    public ResponseEntity<ApiResponse<List<WorkerProfileResponse>>> getPendingProfilePaymentSlips() {
+        List<WorkerProfileResponse> slips = workerProfileService.getPendingProfilePaymentSlips();
+        return ResponseEntity.ok(
+                ApiResponse.success(slips, "Pending worker profile payment slips retrieved successfully"));
+    }
+
+    @PostMapping("/admin/profiles/{profileId}/payment-approve")
+    public ResponseEntity<ApiResponse<WorkerProfileResponse>> approveProfileRegistrationPayment(
+            @PathVariable Long profileId) {
+        WorkerProfileResponse response =
+                workerProfileService.approveProfileRegistrationPayment(profileId, requireCurrentUserId());
+        return ResponseEntity.ok(
+                ApiResponse.success(response, "Payment approved. This worker profile is now active."));
+    }
+
+    @PostMapping("/admin/profiles/{profileId}/payment-reject")
+    public ResponseEntity<ApiResponse<WorkerProfileResponse>> rejectProfileRegistrationPayment(
+            @PathVariable Long profileId,
+            @RequestBody(required = false) Map<String, String> body) {
+        String reason = (body != null) ? body.get("reason") : null;
+        WorkerProfileResponse response = workerProfileService.rejectProfileRegistrationPayment(
+                profileId, requireCurrentUserId(), reason);
+        return ResponseEntity.ok(
+                ApiResponse.success(response, "Payment rejected. The worker must upload a new slip."));
+    }
+
+    @GetMapping("/profiles/{profileId}/payment-slip/view")
+    public ResponseEntity<Resource> viewProfilePaymentSlip(@PathVariable Long profileId) {
+        WorkerProfileService.StoredSlipFile slip = workerProfileService.getProfilePaymentSlipFile(profileId);
+        Resource resource = new FileSystemResource(slip.path());
+
+        MediaType mediaType;
+        try {
+            mediaType = MediaType.parseMediaType(slip.contentType());
+        } catch (IllegalArgumentException ignored) {
+            mediaType = MediaType.APPLICATION_OCTET_STREAM;
+        }
+
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.inline().filename(slip.fileName()).build().toString())
+                .body(resource);
+    }
 
     @GetMapping("/admin/payment-slips/pending")
     public ResponseEntity<ApiResponse<List<RequestResponse>>> getPendingPaymentSlips() {

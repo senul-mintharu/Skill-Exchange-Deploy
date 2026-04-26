@@ -819,6 +819,13 @@ const RequestDetailsPage = () => {
                               </p>
                             </div>
                           </div>
+
+                          <div className="mt-4 rounded-card border border-line bg-white px-4 py-3">
+                            <p className="ui-stat-label">Full quotation (proposal)</p>
+                            <p className="mt-2 whitespace-pre-line text-sm leading-7 text-ink-muted">
+                              {quote.message?.trim() ? quote.message : 'No written proposal was provided for this quote.'}
+                            </p>
+                          </div>
                         </article>
                       ))}
                     </div>
