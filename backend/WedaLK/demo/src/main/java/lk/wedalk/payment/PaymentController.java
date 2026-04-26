@@ -128,7 +128,7 @@ public class PaymentController {
         return ResponseEntity.ok(ApiResponse.success(response, "Payment rejected. Seeker must re-upload a valid slip."));
     }
 
-    @GetMapping({"/requests/{requestId}/payment-slip/view", "/{requestId}/payment-slip/view"})
+    @GetMapping("/requests/{requestId}/payment-slip/view")
     public ResponseEntity<Resource> viewRequestPaymentSlip(@PathVariable Long requestId) {
         ServiceRequestService.StoredSlipFile slip = serviceRequestService.getRequestPaymentSlipFile(requestId);
         Resource resource = new FileSystemResource(slip.path());

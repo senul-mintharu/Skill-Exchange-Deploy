@@ -22,7 +22,7 @@ const formatDateTime = (value) => {
 const getJobStatusLabel = (dispute) => {
   const raw = formatStatusLabel(dispute?.requestStatus);
   if (isResolved(dispute?.status) && String(dispute?.requestStatus || '').toUpperCase() === 'NOT_COMPLETED') {
-    return 'Conflicted job completed';
+    return 'Closed after conflict (not completed)';
   }
   return raw || '—';
 };
@@ -96,7 +96,7 @@ const DisputeDetailsPage = () => {
       setDispute(updated);
       setResolutionText(updated?.resolution || trimmed);
       if (outcome === 'SUSPEND_WORKER') {
-        setSuccessMessage('Dispute closed, user banned (suspended), and job marked as conflicted job completed.');
+        setSuccessMessage('Dispute closed and user banned (suspended). Job remains not completed.');
       } else {
         setSuccessMessage('Dispute closed and the job has been marked completed again.');
       }
@@ -247,7 +247,7 @@ const DisputeDetailsPage = () => {
                   </div>
                   <p className="text-xs text-ink-muted">
                     Use "mark job completed" when parties resolve verbally. Use "ban user" for serious misconduct;
-                    this closes the case as conflicted job completed.
+                    this closes the case and keeps the job in not-completed state.
                   </p>
                 </div>
               )}

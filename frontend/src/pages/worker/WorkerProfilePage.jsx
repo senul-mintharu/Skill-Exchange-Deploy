@@ -49,7 +49,7 @@ const WorkerProfilePage = () => {
     return (
       <WorkerProfileError
         message={error}
-        action={<WorkerProfileBackButton to="/browse-workers" label="Back to Workers" />}
+        action={<WorkerProfileBackButton to="/worker/dashboard" label="Back to Dashboard" />}
       />
     );
   }

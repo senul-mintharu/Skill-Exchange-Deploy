@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
  *
  * Sprint 2, Story 1: submit a quotation (this class).
  * Sprint 2, Story 2: view / withdraw quotes — stubs prepared below.
- * Sprint 2, Story 3: seeker compare/accept/reject — stubs prepared below.
+ * Sprint 2, Story 3: seeker compare/accept/reject.
  */
 @Service
 @RequiredArgsConstructor
@@ -150,12 +150,12 @@ public class QuotationService {
     }
 
     // =========================================================================
-    // Story 3 — Seeker: View & Compare Quotations (stubs — next story)
+    // Story 3 — Seeker: View & Compare Quotations
     // =========================================================================
 
     /**
      * Returns all quotations for a service request, ordered by price ascending.
-     * Used by the seeker's Compare Quotes page.
+     * Used by the seeker request details flow.
      */
     @Transactional(readOnly = true)
     public List<QuoteResponse> getQuotesByRequest(Long requestId, Long seekerId) {
