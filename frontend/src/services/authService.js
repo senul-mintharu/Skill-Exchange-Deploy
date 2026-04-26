@@ -6,6 +6,7 @@ const normalizeAuthPayload = (payload) => ({
   email: payload.email,
   fullName: payload.fullName,
   role: payload.role,
+  phoneNumber: payload.phoneNumber || null,
 });
 
 export const login = async (email, password) => {

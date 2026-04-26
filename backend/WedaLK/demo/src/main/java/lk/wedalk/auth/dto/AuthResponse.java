@@ -24,6 +24,8 @@ public class AuthResponse {
   private String email;
   private String fullName;
   private String role;
+  /** Account phone (e.g. from registration). Helps the app pre-fill worker profile contact. */
+  private String phoneNumber;
 
   public AuthResponse(String token, Long userId, String email, String fullName, String role) {
     this.token = token;
