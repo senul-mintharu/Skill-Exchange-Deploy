@@ -51,8 +51,14 @@ public class AuthService {
     User saved = userRepository.save(user);
     UserDetails details = userDetailsService.loadUserByUsername(saved.getEmail());
     String token = jwtService.generateToken(details, saved.getId(), saved.getRole().name());
-    return new AuthResponse(
-        token, saved.getId(), saved.getEmail(), saved.getFullName(), saved.getRole().name());
+    return AuthResponse.builder()
+        .token(token)
+        .userId(saved.getId())
+        .email(saved.getEmail())
+        .fullName(saved.getFullName())
+        .role(saved.getRole().name())
+        .phoneNumber(saved.getPhoneNumber())
+        .build();
   }
 
   public AuthResponse login(LoginRequest request) {
@@ -70,7 +76,13 @@ public class AuthService {
 
     UserDetails details = userDetailsService.loadUserByUsername(user.getEmail());
     String token = jwtService.generateToken(details, user.getId(), user.getRole().name());
-    return new AuthResponse(
-        token, user.getId(), user.getEmail(), user.getFullName(), user.getRole().name());
+    return AuthResponse.builder()
+        .token(token)
+        .userId(user.getId())
+        .email(user.getEmail())
+        .fullName(user.getFullName())
+        .role(user.getRole().name())
+        .phoneNumber(user.getPhoneNumber())
+        .build();
   }
 }

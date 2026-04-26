@@ -73,7 +73,11 @@ const AccountProfilePage = () => {
         phoneNumber: formData.phoneNumber.trim() || null,
         district: formData.district.trim() || null,
       });
-      updateCurrentUser({ fullName: updated.fullName, email: updated.email });
+      updateCurrentUser({
+        fullName: updated.fullName,
+        email: updated.email,
+        phoneNumber: updated.phoneNumber || null,
+      });
       setEditing(false);
       setMessage('Profile updated successfully');
     } catch (err) {

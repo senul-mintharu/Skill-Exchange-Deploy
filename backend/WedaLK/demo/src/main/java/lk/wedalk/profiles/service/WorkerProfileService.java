@@ -65,8 +65,11 @@ public class WorkerProfileService {
         if (request.getFullName() != null && !request.getFullName().trim().isEmpty()) {
             user.setFullName(request.getFullName().trim());
         }
-        if (request.getContactNumber() != null) {
-            user.setPhoneNumber(request.getContactNumber());
+        String contact = StringUtils.hasText(request.getContactNumber())
+                ? request.getContactNumber().trim()
+                : user.getPhoneNumber();
+        if (StringUtils.hasText(contact)) {
+            user.setPhoneNumber(contact);
         }
         userRepository.save(user);
 

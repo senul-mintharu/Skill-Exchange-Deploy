@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { getCurrentUser } from '../../services/authService';
 import { createProfile, getProfileById, updateProfile, uploadProfilePaymentSlip } from '../../services/profileService';
 import { CATEGORIES, DISTRICTS, SERVING_AREAS } from '../../utils/constants';
 import { AlertPanel, LoadingPanel, PageIntro } from '../../components/ui/PortalPrimitives';
@@ -27,17 +28,20 @@ const EditWorkerProfilePage = () => {
   const [paymentRejectionNote, setPaymentRejectionNote] = useState('');
   const slipInputRef = useRef(null);
   const [skillInput, setSkillInput] = useState('');
-  const [formData, setFormData] = useState({
-    fullName: '',
-    contactNumber: '',
-    bio: '',
-    primaryCategories: [],
-    specificSkills: [],
-    district: '',
-    serviceAreas: [],
-    hourlyRate: '',
-    availability: '',
-    profilePictureUrl: '',
+  const [formData, setFormData] = useState(() => {
+    const u = getCurrentUser();
+    return {
+      fullName: (u && u.fullName) || '',
+      contactNumber: (u && u.phoneNumber) || '',
+      bio: '',
+      primaryCategories: [],
+      specificSkills: [],
+      district: '',
+      serviceAreas: [],
+      hourlyRate: '',
+      availability: '',
+      profilePictureUrl: '',
+    };
   });
 
   const fetchProfile = useCallback(async () => {
@@ -165,6 +169,13 @@ const EditWorkerProfilePage = () => {
       return;
     }
 
+    const resolvedPhone = (formData.contactNumber || '').trim() || (getCurrentUser()?.phoneNumber || '').trim();
+    if (!resolvedPhone) {
+      setError('Please enter a contact number.');
+      setLoading(false);
+      return;
+    }
+
     if (!id && !paymentSlip) {
       setSlipError('Please upload your bank transfer slip to complete profile registration.');
       setLoading(false);
@@ -174,7 +185,7 @@ const EditWorkerProfilePage = () => {
 
     const payload = {
       fullName: formData.fullName,
-      contactNumber: formData.contactNumber,
+      contactNumber: resolvedPhone,
       bio: formData.bio,
       profilePictureUrl: formData.profilePictureUrl || null,
       skills: [...formData.primaryCategories, ...formData.specificSkills],
@@ -288,7 +299,8 @@ const EditWorkerProfilePage = () => {
               </div>
               <div className="ui-field">
                 <label className="ui-label">Contact Number</label>
-                <input type="tel" name="contactNumber" value={formData.contactNumber} onChange={handleChange} className="ui-input" placeholder="+94 77 123 4567" required />
+                <input type="tel" name="contactNumber" value={formData.contactNumber} onChange={handleChange} className="ui-input" placeholder="+94 77 123 4567" autoComplete="tel" />
+                <p className="ui-helper">Pre-filled from your account when you sign up. You can change it here if needed.</p>
               </div>
               <div className="ui-field md:col-span-2">
                 <label className="ui-label">Professional Bio</label>
