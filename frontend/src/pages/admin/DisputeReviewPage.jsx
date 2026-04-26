@@ -73,7 +73,7 @@ const DisputeReviewPage = () => {
 				<PageIntro
 					eyebrow="Admin"
 					title="Disputes Management"
-					subtitle="Review active job conflicts raised after NOT_COMPLETED outcomes."
+					subtitle="Unified trust and dispute workflow: review conflicts, contact both parties, then resolve or ban when required."
 					light
 				/>
 

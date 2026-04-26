@@ -756,12 +756,9 @@ const RequestDetailsPage = () => {
                     <p className="ui-stat-label">Responses</p>
                     <h2 className="mt-2 text-xl font-bold text-ink">Quotes Received</h2>
                     <p className="mt-2 text-sm leading-6 text-ink-muted">
-                      Scan the latest quotations here, then select a worker to continue with completion and review.
+                      Review responses from workers for context while coordinating your direct bookings in the bookings flow.
                     </p>
                   </div>
-                  <Link to={`/my-requests/${requestId}/quotations`} className="ui-button-primary w-full sm:w-auto">
-                    Select Worker
-                  </Link>
                 </div>
 
                 <div className="mt-5">

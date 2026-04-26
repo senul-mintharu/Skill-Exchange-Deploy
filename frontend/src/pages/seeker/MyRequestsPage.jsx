@@ -267,7 +267,7 @@ const MyRequestsPage = () => {
           <EmptyState
             icon="assignment_late"
             title="No requests yet"
-            text="Post your first job to start receiving quotations from workers."
+            text="Post your first job to track job details while booking workers directly by date and time."
             action={(
               <Link to="/create-request" className="ui-button-primary">
                 Create Request

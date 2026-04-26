@@ -138,10 +138,6 @@ const WorkerProfilePage = () => {
             <span className="material-icons text-base">edit</span>
             Edit Profile
           </button>
-          <button className="ui-button-ghost w-full sm:w-auto" type="button">
-            <span className="material-icons text-base">share</span>
-            Share
-          </button>
         </>
       )}
     />

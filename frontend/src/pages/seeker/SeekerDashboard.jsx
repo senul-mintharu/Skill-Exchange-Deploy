@@ -242,7 +242,7 @@ const SeekerDashboard = () => {
           <EmptyState
             icon="assignment_late"
             title="No requests yet"
-            text="Create your first service request to start receiving quotations from workers near you."
+            text="Create your first service request to start coordinating work and booking workers by date and time."
             action={<Link to="/create-request" className="ui-button-primary">Create Request</Link>}
           />
         ) : null}
@@ -319,7 +319,7 @@ const SeekerDashboard = () => {
                   <div className="rounded-card border border-blue-100 bg-blue-50/70 px-4 py-3.5">
                     <p className="text-sm font-semibold text-blue-900">Open Requests</p>
                     <p className="mt-2 text-2xl font-extrabold text-blue-900">{stats.open}</p>
-                    <p className="mt-2 text-sm leading-6 text-blue-900/80">Waiting for worker interest and fresh quotations.</p>
+                    <p className="mt-2 text-sm leading-6 text-blue-900/80">Open requests waiting for your next action and booking decisions.</p>
                   </div>
                   <div className="rounded-card border border-amber-100 bg-amber-50/80 px-4 py-3.5">
                     <p className="text-sm font-semibold text-amber-900">Jobs In Progress</p>

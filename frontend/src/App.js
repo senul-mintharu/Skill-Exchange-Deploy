@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom';
 import { ToastProvider } from './components/common/ToastContext';
 
 import MainLayout from './layouts/MainLayout';
@@ -18,7 +18,6 @@ import RequestDetailsPage from './pages/seeker/RequestDetailsPage';
 import BrowseWorkersPage from './pages/seeker/BrowseWorkersPage';
 import BookWorkerPage from './pages/seeker/BookWorkerPage';
 import MyBookingsPage from './pages/seeker/MyBookingsPage';
-import CompareQuotesPage from './pages/seeker/CompareQuotesPage';
 import MyReviewsPage from './pages/seeker/MyReviewsPage';
 import WorkerDashboard from './pages/worker/WorkerDashboard';
 import BrowseRequestsPage from './pages/worker/BrowseRequestsPage';
@@ -40,7 +39,6 @@ import DisputeReviewPage from './pages/admin/DisputeReviewPage';
 import AdminJobDetailsPage from './pages/admin/AdminJobDetailsPage';
 import AdminPaymentSlipsPage from './pages/admin/AdminPaymentSlipsPage';
 import UserManagementPage from './pages/admin/UserManagementPage';
-import TrustWorkflowPage from './pages/admin/TrustWorkflowPage';
 import AccountProfilePage from './pages/account/AccountProfilePage';
 import RequireWorkerProfile from './components/common/RequireWorkerProfile';
 
@@ -63,10 +61,6 @@ function App() {
             <Route path="/create-request" element={<CreateRequestPage />} />
             <Route path="/my-requests" element={<MyRequestsPage />} />
             <Route path="/my-requests/:requestId" element={<RequestDetailsPage />} />
-            <Route
-              path="/my-requests/:requestId/quotations"
-              element={<CompareQuotesPage />}
-            />
             <Route path="/browse-workers" element={<BrowseWorkersPage />} />
             <Route path="/book-worker/:profileId" element={<BookWorkerPage />} />
             <Route path="/my-bookings" element={<MyBookingsPage />} />
@@ -92,7 +86,7 @@ function App() {
 
           <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/trust-workflow" element={<TrustWorkflowPage />} />
+            <Route path="/admin/trust-workflow" element={<Navigate to="/admin/disputes" replace />} />
             <Route path="/admin/disputes" element={<DisputeReviewPage />} />
             <Route path="/admin/disputes/:disputeId" element={<DisputeDetailsPage />} />
             <Route path="/admin/verification" element={<VerificationReviewPage />} />

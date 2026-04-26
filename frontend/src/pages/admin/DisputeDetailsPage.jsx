@@ -19,6 +19,14 @@ const formatDateTime = (value) => {
   return date.toLocaleString();
 };
 
+const getJobStatusLabel = (dispute) => {
+  const raw = formatStatusLabel(dispute?.requestStatus);
+  if (isResolved(dispute?.status) && String(dispute?.requestStatus || '').toUpperCase() === 'NOT_COMPLETED') {
+    return 'Conflicted job completed';
+  }
+  return raw || '—';
+};
+
 const DisputeDetailsPage = () => {
   const { disputeId } = useParams();
   const [dispute, setDispute] = useState(null);
@@ -88,7 +96,7 @@ const DisputeDetailsPage = () => {
       setDispute(updated);
       setResolutionText(updated?.resolution || trimmed);
       if (outcome === 'SUSPEND_WORKER') {
-        setSuccessMessage('Dispute closed and the worker account has been suspended.');
+        setSuccessMessage('Dispute closed, user banned (suspended), and job marked as conflicted job completed.');
       } else {
         setSuccessMessage('Dispute closed and the job has been marked completed again.');
       }
@@ -148,7 +156,7 @@ const DisputeDetailsPage = () => {
                 <div className="rounded-card border border-line bg-surface-muted p-4">
                   <p className="ui-stat-label">Job status</p>
                   <p className="mt-1 text-base font-semibold text-ink">
-                    {formatStatusLabel(dispute.requestStatus) || '—'}
+                    {getJobStatusLabel(dispute)}
                   </p>
                 </div>
                 <div className="rounded-card border border-line bg-surface-muted p-4">
@@ -234,12 +242,12 @@ const DisputeDetailsPage = () => {
                       disabled={submitting}
                       onClick={() => handleResolve('SUSPEND_WORKER')}
                     >
-                      {submitting ? 'Working...' : 'Serious — suspend worker & close'}
+                      {submitting ? 'Working...' : 'Cannot resolve — ban user & close'}
                     </button>
                   </div>
                   <p className="text-xs text-ink-muted">
-                    Use “mark job completed” when the issue is minor or the job should count as done. Use suspend only
-                    for serious misconduct; the job stays not completed until handled separately.
+                    Use "mark job completed" when parties resolve verbally. Use "ban user" for serious misconduct;
+                    this closes the case as conflicted job completed.
                   </p>
                 </div>
               )}

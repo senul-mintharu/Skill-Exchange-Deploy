@@ -161,12 +161,6 @@ const Navbar = ({ variant = 'landing' }) => {
                 {role === 'WORKER' ? <NavLink to="/worker/bookings" className={navLinkClass}>Bookings</NavLink> : null}
                 {role === 'SEEKER' ? <NavLink to="/my-requests" className={navLinkClass}>My Requests</NavLink> : null}
                 <div className="ml-3 flex items-center gap-3">
-                  <button
-                    type="button"
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/20"
-                  >
-                    <span role="img" aria-label="Notifications">🔔</span>
-                  </button>
                   <Link
                     to="/account/profile"
                     title={displayName}
