@@ -3,10 +3,13 @@ package lk.wedalk.common;
 import jakarta.validation.ConstraintViolationException;
 import lk.wedalk.common.exceptions.AiGenerationException;
 import lk.wedalk.common.exceptions.BadRequestException;
+import lk.wedalk.common.exceptions.ConflictException;
 import lk.wedalk.common.exceptions.NotFoundException;
+import lk.wedalk.common.exceptions.ServiceUnavailableException;
 import lk.wedalk.common.exceptions.UnauthorizedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -56,9 +59,19 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
-    @ExceptionHandler(UnauthorizedException.class)
-    public ResponseEntity<ApiResponse.ErrorResponse> handleUnauthorized(UnauthorizedException ex) {
-        return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage());
+  @ExceptionHandler(UnauthorizedException.class)
+  public ResponseEntity<ApiResponse.ErrorResponse> handleUnauthorized(UnauthorizedException ex) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ApiResponse.ErrorResponse> handleConflict(ConflictException ex) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(ServiceUnavailableException.class)
+    public ResponseEntity<ApiResponse.ErrorResponse> handleServiceUnavailable(ServiceUnavailableException ex) {
+        return buildResponse(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
     }
 
     @ExceptionHandler(AiGenerationException.class)
@@ -156,6 +169,21 @@ public class GlobalExceptionHandler {
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
                 "The uploaded file exceeds the maximum allowed size.");
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse.ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        log.warn("Data integrity violation: {}", ex.getMostSpecificCause() != null
+                ? ex.getMostSpecificCause().getMessage()
+                : ex.getMessage());
+        return buildResponse(
+                HttpStatus.CONFLICT,
+                "The requested change conflicts with existing data. Please review your input and try again.");
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse.ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     /**

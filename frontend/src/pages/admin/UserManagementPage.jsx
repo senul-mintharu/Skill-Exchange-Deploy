@@ -8,6 +8,7 @@ import {
   StatusPill,
 } from '../../components/ui/PortalPrimitives';
 import { getAllUsers, toggleUserStatus } from '../../services/adminService';
+import { getApiErrorMessage } from '../../utils/formValidationMessages';
 import { getUser } from '../../utils/storage';
 
 const roleOptions = [
@@ -84,7 +85,7 @@ const UserManagementPage = () => {
       const data = await getAllUsers(filters);
       setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to load platform users.');
+      setError(getApiErrorMessage(err, 'Failed to load platform users.'));
       setUsers([]);
     } finally {
       setLoading(false);
@@ -108,7 +109,7 @@ const UserManagementPage = () => {
       );
     } catch (err) {
       setError(
-        err?.response?.data?.message || 'Failed to update account status. Please try again.',
+        getApiErrorMessage(err, 'Failed to update account status. Please try again.'),
       );
     } finally {
       setActionLoading((prev) => {
@@ -195,6 +196,13 @@ const UserManagementPage = () => {
           </div>
 
           <ErrorBanner message={error} onClose={() => setError('')} />
+          {!loading && error ? (
+            <div>
+              <button type="button" className="ui-button-secondary" onClick={loadUsers}>
+                Retry loading users
+              </button>
+            </div>
+          ) : null}
 
           {loading ? <LoadingPanel message="Loading registered users..." /> : null}
 

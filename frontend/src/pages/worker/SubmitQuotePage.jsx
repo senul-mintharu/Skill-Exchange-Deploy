@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getRequestById } from '../../services/requestService';
 import { createQuote } from '../../services/quoteService';
@@ -24,26 +24,31 @@ const SubmitQuotePage = () => {
   const [submittedQuote, setSubmittedQuote] = useState(null);
   const messageLimit = 1000;
 
-  useEffect(() => {
-    const fetchRequest = async () => {
-      try {
-        const data = await getRequestById(requestId);
-        setRequest(data);
-      } catch (err) {
-        setRequestError(
-          err.response?.status === 404
-            ? 'This service request no longer exists.'
-            : 'Failed to load request details. Please try again.'
-        );
-      } finally {
-        setLoadingRequest(false);
-      }
-    };
+  const loadRequest = useCallback(async () => {
+    if (!requestId) return;
 
-    if (requestId) {
-      fetchRequest();
+    setLoadingRequest(true);
+    setRequestError('');
+
+    try {
+      const data = await getRequestById(requestId);
+      setRequest(data);
+    } catch (err) {
+      if (err?.response?.status === 404) {
+        setRequestError('This service request no longer exists.');
+      } else {
+        setRequestError(
+          getApiErrorMessage(err, 'Failed to load request details. Please try again.'),
+        );
+      }
+    } finally {
+      setLoadingRequest(false);
     }
   }, [requestId]);
+
+  useEffect(() => {
+    loadRequest();
+  }, [loadRequest]);
 
   const validate = () => {
     const nextErrors = {};
@@ -146,7 +151,14 @@ const SubmitQuotePage = () => {
             icon="error_outline"
             title="Couldn’t Load Request"
             text={requestError}
-            action={<Link to="/browse-requests" className="ui-button-primary">Browse Requests</Link>}
+            action={(
+              <div className="flex flex-wrap gap-3">
+                <button type="button" className="ui-button-secondary" onClick={loadRequest}>
+                  Retry
+                </button>
+                <Link to="/browse-requests" className="ui-button-primary">Browse Requests</Link>
+              </div>
+            )}
           />
         </main>
       </div>

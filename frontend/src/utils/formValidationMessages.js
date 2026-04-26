@@ -19,6 +19,10 @@ const SESSION =
 export function getApiErrorMessage(err, fallback = 'Something went wrong. Please try again.') {
   if (!err) return fallback;
 
+  if (typeof err.userMessage === 'string' && err.userMessage.trim()) {
+    return err.userMessage.trim();
+  }
+
   const code = err.code;
   const message = err.message;
   if (code === 'ERR_NETWORK' || code === 'ECONNABORTED' || message === 'Network Error') {
@@ -38,6 +42,21 @@ export function getApiErrorMessage(err, fallback = 'Something went wrong. Please
 
   if (status === 401) {
     return SESSION;
+  }
+  if (status === 403) {
+    return 'You do not have permission to perform this action.';
+  }
+  if (status === 404) {
+    return 'The requested item was not found. It may have been removed.';
+  }
+  if (status === 409) {
+    return 'This action conflicts with existing data. Refresh and try again.';
+  }
+  if (status === 503) {
+    return 'The service is temporarily unavailable. Please try again shortly.';
+  }
+  if (status >= 500) {
+    return 'A server error occurred. Please try again later.';
   }
 
   return fallback;
