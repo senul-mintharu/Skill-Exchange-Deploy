@@ -288,7 +288,7 @@ const CreateRequestPage = () => {
       setSuccess(true);
       setTimeout(() => navigate('/seeker/dashboard'), 1800);
     } catch (err) {
-      if (err.response?.status === 401) {
+      if (err?.normalized?.status === 401 || err?.response?.status === 401) {
         setError('__SESSION_EXPIRED__');
       } else {
         setError(

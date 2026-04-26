@@ -36,6 +36,10 @@ const OWNERSHIP_KEYWORDS = [
  * @returns {string} The message to display in an ErrorBanner
  */
 export function resolveHttpError(err, fallback) {
+  if (typeof err?.userMessage === 'string' && err.userMessage.trim()) {
+    return err.userMessage.trim();
+  }
+
   const status = err?.response?.status;
 
   if (status === 401) {
