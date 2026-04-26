@@ -5,9 +5,11 @@ import { createQuote } from '../../services/quoteService';
 import { formatBudget, formatCategoryLabel, getCategoryIcon } from '../../utils/constants';
 import { getApiErrorMessage } from '../../utils/formValidationMessages';
 import { AlertPanel, EmptyState, LoadingPanel, PageIntro, StatusPill } from '../../components/ui/PortalPrimitives';
+import { useToast } from '../../components/common/ToastContext';
 
 const SubmitQuotePage = () => {
   const { requestId } = useParams();
+  const toast = useToast();
   const [request, setRequest] = useState(null);
   const [loadingRequest, setLoadingRequest] = useState(true);
   const [requestError, setRequestError] = useState('');
@@ -47,7 +49,9 @@ const SubmitQuotePage = () => {
     const nextErrors = {};
 
     if (!price) nextErrors.price = 'Please enter your quoted price.';
-    else if (Number.isNaN(Number(price)) || Number(price) <= 0) nextErrors.price = 'Price must be a positive number.';
+    else if (Number.isNaN(Number(price))) nextErrors.price = 'Price must be a valid number.';
+    else if (Number(price) < 0) nextErrors.price = 'Price cannot be negative. Please enter a positive amount.';
+    else if (Number(price) === 0) nextErrors.price = 'Price must be greater than zero.';
 
     if (!estimatedDays) nextErrors.estimatedDays = 'Please enter the estimated number of days.';
     else if (!Number.isInteger(Number(estimatedDays)) || Number(estimatedDays) < 1) {
@@ -89,6 +93,19 @@ const SubmitQuotePage = () => {
 
       setSubmittedQuote(quote);
       setSubmitted(true);
+
+      // Reset form fields
+      setPrice('');
+      setEstimatedDays('');
+      setMessage('');
+      setErrors({});
+      setSubmitError('');
+
+      // Fire global success toast
+      toast.success(
+        `Quotation of LKR ${Number(quote.price).toLocaleString()} submitted successfully!`,
+        { title: 'Quote Sent' },
+      );
     } catch (err) {
       const responseMessage = err.response?.data?.message || '';
       const duplicateSubmission = responseMessage.toLowerCase().includes('already submitted') ||
@@ -96,13 +113,15 @@ const SubmitQuotePage = () => {
 
       if (duplicateSubmission) {
         setIsDuplicate(true);
+        toast.warning('You have already submitted a quote for this request.');
       } else {
         setSubmitError(
           getApiErrorMessage(
             err,
             'We could not submit your quotation. Check the numbers and your proposal, then try again.',
-          )
+          ),
         );
+        toast.error('Quotation submission failed. Please try again.');
       }
     } finally {
       setSubmitting(false);
@@ -268,7 +287,7 @@ const SubmitQuotePage = () => {
             <form onSubmit={handleSubmit} className="mt-6 space-y-5" noValidate>
               <div className="ui-field">
                 <label htmlFor="price" className="ui-label">Your Quoted Price (LKR)</label>
-                <div className="ui-input-icon-wrap">
+                <div className={`ui-input-icon-wrap ${errors.price ? 'ring-2 ring-red-400/50 border-red-300' : ''}`}>
                   <span className="text-sm font-semibold text-ink-subtle">LKR</span>
                   <input
                     id="price"
@@ -277,14 +296,32 @@ const SubmitQuotePage = () => {
                     step="50"
                     value={price}
                     onChange={(event) => {
-                      setPrice(event.target.value);
-                      clearFieldError('price');
+                      const val = event.target.value;
+                      setPrice(val);
+
+                      // Inline validation — give instant feedback
+                      if (val === '') {
+                        clearFieldError('price');
+                      } else if (Number.isNaN(Number(val))) {
+                        setErrors((prev) => ({ ...prev, price: 'Price must be a valid number.' }));
+                      } else if (Number(val) < 0) {
+                        setErrors((prev) => ({ ...prev, price: 'Price cannot be negative. Please enter a positive amount.' }));
+                      } else if (Number(val) === 0) {
+                        setErrors((prev) => ({ ...prev, price: 'Price must be greater than zero.' }));
+                      } else {
+                        clearFieldError('price');
+                      }
                     }}
                     placeholder="e.g. 3500"
                   />
                 </div>
                 <p className="ui-helper">{budgetHint}</p>
-                {errors.price ? <p className="ui-error-text">{errors.price}</p> : null}
+                {errors.price ? (
+                  <p className="ui-error-text flex items-center gap-1.5">
+                    <span className="material-icons text-sm">warning_amber</span>
+                    {errors.price}
+                  </p>
+                ) : null}
               </div>
 
               <div className="ui-field">

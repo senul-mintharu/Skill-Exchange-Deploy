@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { ToastProvider } from './components/common/ToastContext';
 
 import MainLayout from './layouts/MainLayout';
 import LandingPage from './pages/public/LandingPage';
@@ -45,6 +46,7 @@ import RequireWorkerProfile from './components/common/RequireWorkerProfile';
  */
 function App() {
   return (
+    <ToastProvider>
     <BrowserRouter>
       <Routes>
         <Route element={<MainLayout />}>
@@ -105,6 +107,7 @@ function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+    </ToastProvider>
   );
 }
 

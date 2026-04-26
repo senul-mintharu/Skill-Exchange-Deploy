@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { createProfile, getProfileById, updateProfile, uploadProfilePaymentSlip } from '../../services/profileService';
 import { CATEGORIES, DISTRICTS, SERVING_AREAS } from '../../utils/constants';
 import { AlertPanel, LoadingPanel, PageIntro } from '../../components/ui/PortalPrimitives';
+import { useToast } from '../../components/common/ToastContext';
 
 const PAYMENT_DETAILS = {
   amount: 500,
@@ -15,6 +16,7 @@ const PAYMENT_DETAILS = {
 const EditWorkerProfilePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [fetchingProfile, setFetchingProfile] = useState(false);
   const [error, setError] = useState('');
@@ -202,6 +204,9 @@ const EditWorkerProfilePage = () => {
       } else {
         setError(err.response?.data?.message || 'Failed to save profile. Please check all fields.');
       }
+      toast.error(
+        err.response?.data?.message || 'Failed to save your profile. Please review the form and try again.',
+      );
     } finally {
       setLoading(false);
     }
