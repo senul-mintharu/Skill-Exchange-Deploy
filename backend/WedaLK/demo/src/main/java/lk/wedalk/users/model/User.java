@@ -12,7 +12,14 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(
+    name = "users",
+    indexes = {
+        @Index(name = "idx_users_role", columnList = "role"),
+        @Index(name = "idx_users_is_suspended", columnList = "is_suspended"),
+        @Index(name = "idx_users_created_at", columnList = "created_at")
+    }
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -45,9 +52,11 @@ public class User {
     private VerificationStatus verificationStatus = VerificationStatus.NONE;
 
     @Builder.Default
+    @Column(name = "is_suspended")
     private Boolean isSuspended = false;
 
     @CreationTimestamp
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @UpdateTimestamp

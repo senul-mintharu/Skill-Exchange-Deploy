@@ -48,6 +48,7 @@ const getDisplayRole = (role) => {
 const UserManagementPage = () => {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [role, setRole] = useState('');
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(true);
@@ -59,13 +60,20 @@ const UserManagementPage = () => {
   // Current admin's own ID, so we can prevent self-suspension in the UI
   const currentAdminId = useRef(getUser()?.id ?? null);
 
+  useEffect(() => {
+    const debounceHandle = window.setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => window.clearTimeout(debounceHandle);
+  }, [search]);
+
   const filters = useMemo(
     () => ({
-      search: search.trim(),
+      search: debouncedSearch.trim(),
       role,
       status,
     }),
-    [search, role, status],
+    [debouncedSearch, role, status],
   );
 
   const loadUsers = useCallback(async () => {

@@ -1,6 +1,5 @@
 package lk.wedalk.admin.service;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import lk.wedalk.common.exceptions.BadRequestException;
@@ -21,14 +20,10 @@ public class AdminService {
 
   @Transactional(readOnly = true)
   public List<UserDto> getAllUsers(String search, Role role, String status) {
-    String normalizedSearch = normalize(search);
-    String normalizedStatus = normalize(status);
+    String normalizedSearch = normalizeToNull(search);
+    String normalizedStatus = normalizeToNull(status);
 
-    return userRepository.findAll().stream()
-        .filter(user -> matchesRole(user, role))
-        .filter(user -> matchesStatus(user, normalizedStatus))
-        .filter(user -> matchesSearch(user, normalizedSearch))
-        .sorted(Comparator.comparing(User::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+    return userRepository.findAdminUsers(normalizedSearch, role, normalizedStatus).stream()
         .map(UserDto::fromEntity)
         .toList();
   }
@@ -58,39 +53,7 @@ public class AdminService {
     return UserDto.fromEntity(saved);
   }
 
-  private boolean matchesRole(User user, Role role) {
-    return role == null || user.getRole() == role;
-  }
-
-  private boolean matchesStatus(User user, String status) {
-    if (status == null || status.isBlank()) {
-      return true;
-    }
-
-    boolean suspended = Boolean.TRUE.equals(user.getIsSuspended());
-    return switch (status) {
-      case "active" -> !suspended;
-      case "suspended" -> suspended;
-      default -> true;
-    };
-  }
-
-  private boolean matchesSearch(User user, String search) {
-    if (search == null || search.isBlank()) {
-      return true;
-    }
-
-    return containsIgnoreCase(user.getFullName(), search)
-        || containsIgnoreCase(user.getEmail(), search)
-        || containsIgnoreCase(user.getDistrict(), search)
-        || containsIgnoreCase(user.getPhoneNumber(), search);
-  }
-
-  private boolean containsIgnoreCase(String value, String search) {
-    return value != null && value.toLowerCase(Locale.ROOT).contains(search);
-  }
-
-  private String normalize(String value) {
-    return value == null || value.isBlank() ? "" : value.trim().toLowerCase(Locale.ROOT);
+  private String normalizeToNull(String value) {
+    return value == null || value.isBlank() ? null : value.trim().toLowerCase(Locale.ROOT);
   }
 }
