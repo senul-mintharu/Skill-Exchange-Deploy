@@ -9,7 +9,7 @@ import EmptyState from '../../components/common/EmptyState';
 import SystemError from '../../components/common/SystemError';
 
 const PAGE_SIZE = 9;
-const selectClass = 'ui-select min-w-[180px]';
+const selectClass = 'ui-select w-full min-w-0 sm:min-w-[160px]';
 
 const categoryMeta = (category) => {
   const normalized = String(category || '').toUpperCase();

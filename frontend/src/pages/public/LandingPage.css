@@ -3,6 +3,7 @@
    ======================================== */
 
 #landing-page {
+    overflow-x: clip;
     --primary: var(--color-brand-700);
     --primary-light: var(--color-brand-500);
     --primary-dark: var(--color-brand-900);

@@ -58,14 +58,14 @@ const pillClasses = {
 export const PageIntro = ({ eyebrow, title, subtitle, light = false, actions, className }) => (
   <div className={cn('ui-page-header', className)}>
     {eyebrow ? <span className="ui-eyebrow">{eyebrow}</span> : null}
-    <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-      <div className="space-y-3">
+    <div className="flex min-w-0 max-w-full flex-col gap-3 md:flex-row md:items-end md:justify-between">
+      <div className="min-w-0 space-y-3">
         <h1 className={light ? 'ui-title-light' : 'ui-title'}>{title}</h1>
         {subtitle ? (
           <p className={light ? 'ui-subtitle-light' : 'ui-subtitle'}>{subtitle}</p>
         ) : null}
       </div>
-      {actions ? <div className="flex flex-wrap items-center gap-3">{actions}</div> : null}
+      {actions ? <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">{actions}</div> : null}
     </div>
   </div>
 );

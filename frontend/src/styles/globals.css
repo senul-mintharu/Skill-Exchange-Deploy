@@ -81,10 +81,12 @@
 
   html {
     @apply scroll-smooth;
+    overflow-x: clip;
   }
 
   body {
     @apply m-0 bg-canvas font-sans text-ink antialiased;
+    overflow-x: clip;
   }
 
   h1,
@@ -112,14 +114,16 @@
   }
 
   #root {
-    @apply min-h-screen;
+    @apply min-h-screen min-w-0;
   }
 }
 
 @layer components {
   .page-wrapper {
-    @apply min-h-screen bg-page-gradient bg-fixed text-ink;
+    @apply min-h-screen min-w-0 bg-page-gradient bg-fixed text-ink;
     background-image: var(--gradient-page-glow), var(--gradient-page);
+    padding-left: max(0px, env(safe-area-inset-left, 0px));
+    padding-right: max(0px, env(safe-area-inset-right, 0px));
   }
 
   .container {
@@ -128,14 +132,15 @@
 
   .content {
     min-height: calc(100vh - 72px);
+    @apply min-w-0;
   }
 
   .ui-shell {
-    @apply container py-8 md:py-10 lg:py-12;
+    @apply container min-w-0 py-6 sm:py-8 md:py-10 lg:py-12;
   }
 
   .ui-page-header {
-    @apply mb-6 flex flex-col gap-3;
+    @apply mb-6 flex min-w-0 max-w-full flex-col gap-3;
   }
 
   .ui-eyebrow {
@@ -388,15 +393,15 @@
 
 .toast-container {
   position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
+  bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
+  right: max(1.5rem, env(safe-area-inset-right, 0px));
   z-index: 9999;
   display: flex;
   flex-direction: column-reverse;
   gap: 0.625rem;
   pointer-events: none;
   max-width: 26rem;
-  width: calc(100vw - 3rem);
+  width: calc(100vw - 3rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
 }
 
 .toast-item {
@@ -515,9 +520,9 @@
 
 @media (max-width: 640px) {
   .toast-container {
-    bottom: 1rem;
-    right: 1rem;
-    left: 1rem;
+    bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+    right: max(1rem, env(safe-area-inset-right, 0px));
+    left: max(1rem, env(safe-area-inset-left, 0px));
     max-width: none;
     width: auto;
   }
