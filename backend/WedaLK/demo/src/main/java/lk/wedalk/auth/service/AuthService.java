@@ -13,6 +13,7 @@ import lk.wedalk.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -65,6 +66,8 @@ public class AuthService {
     try {
       authenticationManager.authenticate(
           new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+    } catch (DisabledException ex) {
+      throw new UnauthorizedException("Your account has been banned. Please contact support.");
     } catch (BadCredentialsException ex) {
       throw new UnauthorizedException("Invalid email or password");
     }

@@ -228,6 +228,7 @@ public class DisputeService {
 
         dispute.setStatus(DisputeStatus.RESOLVED);
         dispute.setResolution(resolution);
+        dispute.setResolveOutcome(effectiveOutcome);
         dispute.setResolvedBy(admin);
         dispute.setResolvedAt(LocalDateTime.now());
 
@@ -247,6 +248,9 @@ public class DisputeService {
             }
             worker.setIsSuspended(true);
             userRepository.save(worker);
+            // Ban-and-close flow also marks the job completed per admin policy.
+            serviceRequest.setStatus(RequestStatus.COMPLETED);
+            serviceRequestRepository.save(serviceRequest);
         }
 
         return mapToResponse(saved);
@@ -273,6 +277,7 @@ public class DisputeService {
                 .seekerReason(dispute.getSeekerReason())
                 .workerResponse(dispute.getWorkerResponse())
                 .status(dispute.getStatus())
+                .resolveOutcome(dispute.getResolveOutcome())
                 .resolution(dispute.getResolution())
                 .resolvedAt(dispute.getResolvedAt())
                 .createdAt(dispute.getCreatedAt())

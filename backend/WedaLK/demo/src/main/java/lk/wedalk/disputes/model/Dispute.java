@@ -2,6 +2,7 @@ package lk.wedalk.disputes.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import lk.wedalk.common.enums.DisputeResolveOutcome;
 import lk.wedalk.common.enums.DisputeStatus;
 import lk.wedalk.requests.model.ServiceRequest;
 import lk.wedalk.users.model.User;
@@ -52,6 +53,10 @@ public class Dispute {
 
     @Column(columnDefinition = "TEXT")
     private String resolution;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "resolve_outcome", length = 50)
+    private DisputeResolveOutcome resolveOutcome;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "resolved_by")

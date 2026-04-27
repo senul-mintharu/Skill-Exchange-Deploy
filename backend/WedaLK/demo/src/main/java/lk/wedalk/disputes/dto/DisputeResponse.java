@@ -1,6 +1,7 @@
 package lk.wedalk.disputes.dto;
 
 import java.time.LocalDateTime;
+import lk.wedalk.common.enums.DisputeResolveOutcome;
 import lk.wedalk.common.enums.DisputeStatus;
 import lk.wedalk.common.enums.RequestStatus;
 import lombok.AllArgsConstructor;
@@ -34,6 +35,7 @@ public class DisputeResponse {
     private String seekerReason;
     private String workerResponse;
     private DisputeStatus status;
+    private DisputeResolveOutcome resolveOutcome;
     private String resolution;
     private LocalDateTime resolvedAt;
     private LocalDateTime createdAt;

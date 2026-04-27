@@ -5,6 +5,7 @@ import { EmptyState, LoadingPanel, PageIntro, SectionCard, StatusPill } from '..
 import { getDisputeById, resolveDispute } from '../../services/disputeService';
 
 const isResolved = (status) => String(status || '').toUpperCase() === 'RESOLVED';
+const isBanOutcome = (outcome) => String(outcome || '').toUpperCase() === 'SUSPEND_WORKER';
 
 const formatStatusLabel = (value) =>
   String(value || '')
@@ -82,7 +83,7 @@ const DisputeDetailsPage = () => {
 
     if (outcome === 'SUSPEND_WORKER') {
       const ok = window.confirm(
-        'Suspend this worker and close the dispute? They will not be able to sign in until an admin reactivates their account. The job will stay in the not-completed state.'
+        'Ban this worker and close the dispute? The worker account will be deactivated and this job will be marked completed.'
       );
       if (!ok) return;
     }
@@ -96,9 +97,9 @@ const DisputeDetailsPage = () => {
       setDispute(updated);
       setResolutionText(updated?.resolution || trimmed);
       if (outcome === 'SUSPEND_WORKER') {
-        setSuccessMessage('Dispute closed and user banned (suspended). Job remains not completed.');
+        setSuccessMessage('Dispute closed. Worker account has been banned and the job is marked completed.');
       } else {
-        setSuccessMessage('Dispute closed and the job has been marked completed again.');
+        setSuccessMessage('Dispute closed. Job has been marked completed.');
       }
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to resolve dispute.');
@@ -205,6 +206,12 @@ const DisputeDetailsPage = () => {
               {isResolved(dispute.status) ? (
                 <div className="space-y-3 rounded-card border border-green-200 bg-green-50 p-4">
                   <p className="text-sm font-semibold uppercase tracking-[0.12em] text-green-800">Final Decision (Read Only)</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="ui-stat-label">Outcome</span>
+                    <StatusPill tone={isBanOutcome(dispute.resolveOutcome) ? 'danger' : 'success'}>
+                      {isBanOutcome(dispute.resolveOutcome) ? 'Worker Banned' : 'Completed'}
+                    </StatusPill>
+                  </div>
                   <p className="whitespace-pre-line text-sm leading-7 text-ink-muted">
                     {dispute.resolution || 'No final resolution note recorded.'}
                   </p>
@@ -247,7 +254,7 @@ const DisputeDetailsPage = () => {
                   </div>
                   <p className="text-xs text-ink-muted">
                     Use "mark job completed" when parties resolve verbally. Use "ban user" for serious misconduct;
-                    this closes the case and keeps the job in not-completed state.
+                    both outcomes close the case and mark the job completed.
                   </p>
                 </div>
               )}

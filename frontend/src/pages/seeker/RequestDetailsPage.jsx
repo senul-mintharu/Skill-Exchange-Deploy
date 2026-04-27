@@ -10,7 +10,7 @@ import {
   StatusPill,
 } from '../../components/ui/PortalPrimitives';
 import { deleteRequest, getRequestById, updateRequestStatus } from '../../services/requestService';
-import { getQuotesByRequest } from '../../services/quoteService';
+import { acceptQuote, getQuotesByRequest, rejectQuote } from '../../services/quoteService';
 import { getMyReviews, submitReview } from '../../services/reviewService';
 import { getDisputeByRequest, submitDispute } from '../../services/disputeService';
 import { formatBudget, formatCategoryLabel } from '../../utils/constants';
@@ -66,6 +66,14 @@ const formatDateTime = (value) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return 'N/A';
   return date.toLocaleString();
+};
+
+const quoteStatusTone = (status) => {
+  const normalized = String(status || '').toUpperCase();
+  if (normalized === 'ACCEPTED') return 'success';
+  if (normalized === 'NOT_ACCEPTED' || normalized === 'REJECTED' || normalized === 'WITHDRAWN') return 'danger';
+  if (normalized === 'PENDING') return 'warning';
+  return 'info';
 };
 
 const buildTimeline = (request, quoteCount) => {
@@ -155,6 +163,7 @@ const RequestDetailsPage = () => {
   const [quotes, setQuotes] = useState([]);
   const [quotesLoading, setQuotesLoading] = useState(false);
   const [quotesError, setQuotesError] = useState('');
+  const [actingQuoteId, setActingQuoteId] = useState(null);
 
   // Review form state
   const [reviewRating, setReviewRating] = useState(null);
@@ -325,6 +334,29 @@ const RequestDetailsPage = () => {
     }
   };
 
+  const handleQuoteDecision = async (quoteId, decision) => {
+    const verb = decision === 'accept' ? 'accept' : 'reject';
+    const confirmed = window.confirm(`Are you sure you want to ${verb} this quotation?`);
+    if (!confirmed) return;
+
+    setActingQuoteId(quoteId);
+    setStatusUpdateMessage('');
+    try {
+      if (decision === 'accept') {
+        await acceptQuote(quoteId);
+        setStatusUpdateMessage('Quotation accepted. Worker has been assigned to this request.');
+      } else {
+        await rejectQuote(quoteId);
+        setStatusUpdateMessage('Quotation rejected successfully.');
+      }
+      await Promise.all([fetchRequestDetails(false), fetchQuotes()]);
+    } catch (err) {
+      setStatusUpdateMessage(resolveHttpError(err, `Failed to ${verb} quotation. Please try again.`));
+    } finally {
+      setActingQuoteId(null);
+    }
+  };
+
   const timeline = useMemo(() => {
     if (!request) return [];
     return buildTimeline(request, quotes.length);
@@ -362,6 +394,7 @@ const RequestDetailsPage = () => {
   const tone = statusTone(request.status);
   const accentClass = metricAccent(tone);
   const canManageRequest = request.status === 'OPEN';
+  const canDecideQuotes = !isWorker && request.status === 'OPEN';
   const disputeModalTitle = disputeMode === 'general' ? 'Raise Dispute' : 'Mark as Not Completed';
   const disputeModalMessage = disputeMode === 'general'
     ? 'Use this when you need to raise a dispute about the work, even if the job is already underway.'
@@ -659,6 +692,14 @@ const RequestDetailsPage = () => {
                   </p>
 
                   {disputeOutcome.status === 'RESOLVED' ? (
+                    <p className="mt-2 text-sm font-semibold text-ink">
+                      {String(disputeOutcome.resolveOutcome || '').toUpperCase() === 'SUSPEND_WORKER'
+                        ? 'Worker banned.'
+                        : 'Completed.'}
+                    </p>
+                  ) : null}
+
+                  {disputeOutcome.status === 'RESOLVED' ? (
                     <p className="mt-2 text-sm text-ink-muted">
                       Resolved At: <span className="font-semibold text-ink">{formatDateTime(disputeOutcome.resolvedAt)}</span>
                     </p>
@@ -801,7 +842,9 @@ const RequestDetailsPage = () => {
                                 <p className="text-sm text-ink-muted">Quote #{quote.id}</p>
                               </div>
                             </div>
-                            <StatusPill tone="info">Received</StatusPill>
+                            <StatusPill tone={quoteStatusTone(quote.status)}>
+                              {String(quote.status || 'PENDING').replaceAll('_', ' ')}
+                            </StatusPill>
                           </div>
 
                           <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -823,6 +866,27 @@ const RequestDetailsPage = () => {
                               {quote.message?.trim() ? quote.message : 'No written proposal was provided for this quote.'}
                             </p>
                           </div>
+
+                          {canDecideQuotes && String(quote.status || '').toUpperCase() === 'PENDING' ? (
+                            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                              <button
+                                type="button"
+                                className="ui-button-primary flex-1"
+                                disabled={actingQuoteId === quote.id}
+                                onClick={() => handleQuoteDecision(quote.id, 'accept')}
+                              >
+                                {actingQuoteId === quote.id ? 'Processing...' : 'Accept & Assign Worker'}
+                              </button>
+                              <button
+                                type="button"
+                                className="ui-button-secondary flex-1"
+                                disabled={actingQuoteId === quote.id}
+                                onClick={() => handleQuoteDecision(quote.id, 'reject')}
+                              >
+                                Reject Quote
+                              </button>
+                            </div>
+                          ) : null}
                         </article>
                       ))}
                     </div>

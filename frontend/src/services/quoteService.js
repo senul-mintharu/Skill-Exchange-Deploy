@@ -49,3 +49,23 @@ export const getQuotesByRequest = async (requestId) => {
     const response = await apiClient.get(`/quotes/request/${requestId}`);
     return response.data.data;
 };
+
+/**
+ * Accept a quotation as the seeker (assigns worker to request).
+ * @param {number} quoteId
+ * @returns {Promise<Object>} Updated QuoteResponse
+ */
+export const acceptQuote = async (quoteId) => {
+    const response = await apiClient.patch(`/quotes/${quoteId}/accept`);
+    return response.data.data;
+};
+
+/**
+ * Reject a quotation as the seeker.
+ * @param {number} quoteId
+ * @returns {Promise<Object>} Updated QuoteResponse
+ */
+export const rejectQuote = async (quoteId) => {
+    const response = await apiClient.patch(`/quotes/${quoteId}/reject`);
+    return response.data.data;
+};
