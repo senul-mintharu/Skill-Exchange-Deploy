@@ -26,9 +26,8 @@ import org.springframework.web.bind.annotation.*;
  * ServiceRequestController.java — Service Request REST Controller
  *
  * <p>
- * Exposes service request CRUD and search APIs. Authentication is disabled -
- * all endpoints are
- * publicly accessible.
+ * Exposes service request CRUD and search APIs.
+ * Endpoints use authenticated-user context via JWT.
  */
 @RestController
 @RequestMapping("/api/requests")
