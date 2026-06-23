@@ -1,0 +1,11 @@
+.git
+.gitignore
+.vscode
+*.md
+debug-*.log
+target/
+node_modules/
+frontend/
+docs/
+uploads/
+docker-compose.yml
